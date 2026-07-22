@@ -1,0 +1,39 @@
+# common 프로파일: 모든 프로젝트의 기본값
+name: common
+
+defaults:
+  models:
+    discovery: reasoning-high
+    planner: reasoning-high
+    worker: auto
+    critic: reasoning-high
+    summarizer: fast-reliable
+    documentation: balanced
+  workflow:
+    max_active_tasks: 1
+    reviewer_required: true
+  grill:
+    # 작업 위험도에 따른 공동 이해 확인 수준
+    low: LIGHT
+    medium: STANDARD
+    high: DEEP
+    critical: DEEP
+
+discovery_checklist:
+  - 저장소 구조와 진입점
+  - 기존 문서와 코드의 불일치
+  - 테스트와 검증 수단
+  - 숨은 가정과 미결정 사항
+
+required_docs:
+  - README.md
+  - AGENTS.md
+
+critics:
+  - discovery
+  - architecture
+  - implementation
+  - test
+  - simplicity
+
+design_profile: false

@@ -1,0 +1,13 @@
+# cli 프로파일: 커맨드라인 도구 프로젝트
+name: cli
+extends: common
+
+discovery_checklist:
+  - 명령 구조와 도움말 일관성
+  - 종료 코드 규약
+  - 에러 메시지와 복구 안내
+
+# CLI 출력·터미널 표현에 사용자 경험 규칙이 필요하면
+# 경량 Experience Specification 을 선택 활성화할 수 있다.
+design_profile: false
+experience_spec_optional: true

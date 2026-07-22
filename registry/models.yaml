@@ -1,0 +1,58 @@
+# BASS 중앙 모델 레지스트리
+#
+# - 프로젝트와 작업 파일은 여기의 alias만 사용한다. 모델명을 직접 쓰지 않는다.
+# - stable: 검증된 기본 매핑. candidate: 평가 중인 신모델.
+# - 실제 모델 식별자는 운영 데이터이므로 이 파일에서만 갱신한다.
+#   (COL은 동일 핀을 10곳 이상에 복제했다 — docs/audit/COL-model-routing.md 참조)
+# - NOTE: 아래 stable 매핑의 초기값은 COL 핀과 현재 가용 모델 기준 제안이며,
+#   승격 절차(candidate → 평가 → 승인) 전까지는 사용자 확인 후 조정한다.
+
+version: 1
+
+providers:
+  openai:
+    channels: [codex, cursor]
+  anthropic:
+    channels: [claude, cursor]
+
+aliases:
+  reasoning-high:
+    description: 심층 추론이 필요한 discovery, 계획, 비판 역할
+    capabilities: [deep-reasoning, tool-use, long-context]
+    stable:
+      provider: openai
+      model: gpt-5.6
+    candidate:
+      provider: anthropic
+      model: claude-4.5-opus
+    fallback: balanced
+
+  balanced:
+    description: 품질과 비용의 균형. 문서화, 일반 구현
+    capabilities: [tool-use, long-context]
+    stable:
+      provider: openai
+      model: gpt-5.5
+    candidate:
+      provider: anthropic
+      model: claude-4.5-sonnet
+    fallback: fast-reliable
+
+  fast-reliable:
+    description: 요약, 단순 변환, 반복 작업
+    capabilities: [fast, cheap, tool-use]
+    stable:
+      provider: openai
+      model: gpt-5.4
+    fallback: null
+
+  auto:
+    description: 라우터가 위험도와 capability로 결정하는 위임 alias
+    capabilities: [tool-use]
+    stable:
+      provider: openai
+      model: gpt-5.5
+    fallback: fast-reliable
+
+# 명시적 pinning: 프로젝트/작업이 특정 모델을 고정해야 할 때만 사용.
+# bass.yaml 에서 models.<role>: "pin:openai/gpt-5.6" 형식으로 지정한다.

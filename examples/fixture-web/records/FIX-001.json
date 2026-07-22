@@ -1,0 +1,40 @@
+{
+  "task_id": "FIX-001",
+  "summary_of_changes": "LoginForm 에 error/loading 상태와 복구 안내 메시지를 추가",
+  "why": "로그인 실패 시 사용자가 다음 행동을 알 수 없었다",
+  "files_changed": ["src/LoginForm.tsx"],
+  "models_used": [
+    { "role": "worker", "alias": "balanced", "actual_model": "gpt-5.5", "followed_recommendation": true }
+  ],
+  "verification": {
+    "evaluations_run": [
+      { "name": "fixture-static-check", "level": 1, "status": "pass" },
+      { "name": "fixture-behavior-check", "level": 2, "status": "pass" }
+    ],
+    "not_verified": ["실제 브라우저의 스크린리더 동작"]
+  },
+  "critic_findings": {
+    "total": 1,
+    "open_high_or_medium": 0,
+    "report_path": "critiques/FIX-001/"
+  },
+  "human_approval": {
+    "approved": true,
+    "approver": "user",
+    "at": "2026-07-21T15:00:00+09:00",
+    "notes": "touches-user-session 승인. 오류 카피 확인 완료"
+  },
+  "known_limitations": ["오프라인 상태 처리는 범위 외"],
+  "out_of_scope_findings": ["회원가입 폼에도 동일한 오류 패턴 필요 — 별도 작업 후보"],
+  "docs_updated": { "needed": false, "updated": [] },
+  "lessons": {
+    "recorded": true,
+    "candidates": ["오류 카피 규칙은 폼 컴포넌트 전반에 반복 적용됨 — project memory 후보"]
+  },
+  "rollback": { "method": "git revert 단일 커밋" },
+  "design": {
+    "rendered_verification": true,
+    "environment": "local dev server, Chrome + 모바일 뷰포트",
+    "notes": "error/loading/empty 상태 강제 확인"
+  }
+}

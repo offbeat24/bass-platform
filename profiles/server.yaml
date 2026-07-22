@@ -1,0 +1,19 @@
+# server 프로파일: 백엔드/API 서버 프로젝트
+name: server
+extends: common
+
+discovery_checklist:
+  - API 계약과 버전 정책
+  - 데이터 모델과 마이그레이션 이력
+  - 인증·권한 경계
+  - 로깅과 관측 수단
+
+risk_rules:
+  # 이 파일 패턴을 건드리는 작업은 risk.reasons 후보를 제안한다
+  sensitive_patterns:
+    - pattern: "**/migrations/**"
+      suggest_reason: production-db-migration
+    - pattern: "**/auth/**"
+      suggest_reason: touches-auth
+
+design_profile: false

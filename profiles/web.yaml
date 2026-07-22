@@ -1,0 +1,51 @@
+# web 프로파일: 시각적 UI가 있는 웹 프로젝트
+name: web
+extends: common
+
+defaults:
+  models:
+    # UI 비판은 시각·제품 판단이 얽혀 상위 모델 권장
+    critic: reasoning-high
+
+discovery_checklist:
+  - 전역 CSS, 디자인 토큰, 테마 설정
+  - 공통 컴포넌트와 상태(loading/error/empty) 구현
+  - 반응형과 접근성 구현 수준
+  - 제품 카피와 Voice
+
+required_docs:
+  - README.md
+  - AGENTS.md
+  - DESIGN.md
+
+critics:
+  - discovery
+  - architecture
+  - implementation
+  - test
+  - simplicity
+  - design
+
+evaluators:
+  # 프로젝트 bass.yaml 의 evaluators 가 이를 덮어쓴다. 여기는 권장 기본값.
+  level1: []
+  level2: []
+  level3: []
+
+design_profile: true
+
+design:
+  # 디자인 평가기 기본 활성 항목
+  checks:
+    token_consistency: true
+    state_completeness: true
+    design_md_loaded: true
+  state_checklist:
+    - hover
+    - focus
+    - active
+    - disabled
+    - loading
+    - error
+    - empty
+    - success
