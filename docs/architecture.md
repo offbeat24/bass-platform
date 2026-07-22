@@ -60,6 +60,17 @@ flowchart TD
   finding 스키마. 변경 시 bass-platform 버전을 올리고, 프로젝트는 `bass.yaml` 의
   `bass.version` 으로 특정 버전에 의존한다.
 
+### CLI 전달 경계
+
+- 런타임 전달물은 `npm pack`으로 생성한 tarball이며 source, tests, examples를
+  포함하지 않는다.
+- 소비 프로젝트의 package manager 설치는 실행 파일과 dependencies를 전달하고,
+  `bass.yaml`은 허용된 런타임 버전을 선언한다. 두 역할은 대체 관계가 아니다.
+- 0.x에서는 exact version 일치를 강제한다. package registry와 publish 권한이
+  결정되기 전에는 `private` package와 로컬 tarball 설치를 사용한다.
+- `npm run smoke:package`는 격리 프로젝트에 실제 tarball과 런타임 dependencies를
+  오프라인 설치해 CLI, init, config, version mismatch를 검증한다.
+
 ## 프로젝트 통합 (§6, Design §8)
 
 ```text

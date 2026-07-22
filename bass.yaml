@@ -1,0 +1,27 @@
+bass:
+  version: 0.1.0
+  profiles:
+    - common
+    - cli
+
+project:
+  name: bass-platform
+  description: BASS 코어 런타임과 배포 가능한 CLI 패키지
+
+models:
+  worker: auto
+
+workflow:
+  max_active_tasks: 1
+  reviewer_required: true
+
+evaluators:
+  level1:
+    - name: typecheck
+      command: npm run typecheck
+  level2:
+    - name: test
+      command: npm test
+    - name: build
+      command: npm run build
+  level3: []

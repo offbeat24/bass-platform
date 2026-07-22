@@ -6,12 +6,22 @@
   "bin": {
     "bass": "./dist/cli/main.js"
   },
+  "files": [
+    "dist/",
+    "profiles/",
+    "policies/",
+    "prompt-library/",
+    "registry/",
+    "templates/"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "bass": "tsx src/cli/main.ts"
+    "bass": "tsx src/cli/main.ts",
+    "prepack": "npm run build",
+    "smoke:package": "node scripts/smoke-package.mjs"
   },
   "engines": {
     "node": ">=20"

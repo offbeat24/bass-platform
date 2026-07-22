@@ -7,6 +7,7 @@ import { loadConfig } from "../src/config/loader.js";
 import { composeInstructions } from "../src/compose/composer.js";
 import { parseTaskFile } from "../src/task/taskFile.js";
 import { writeTask } from "./helpers.js";
+import { BASS_VERSION } from "../src/version.js";
 
 function tempDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "bass-init-"));
@@ -39,6 +40,8 @@ describe("bass init (shim 생성)", () => {
     const config = loadConfig({ projectRoot: root });
     expect(config.bassYaml.project.name).toBe("demo");
     expect(config.effective["design_profile"]).toBe(true);
+    expect(config.bassYaml.bass.version).toBe(BASS_VERSION);
+    expect(fs.readFileSync(path.join(root, "AGENTS.md"), "utf8")).toContain(`v${BASS_VERSION}`);
   });
 
   it("기존 파일은 --force 없이 건너뛴다", () => {

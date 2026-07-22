@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { templatesDir } from "../paths.js";
+import { BASS_VERSION } from "../version.js";
 
 /**
  * `bass init`: 프로젝트에 BASS 를 연결한다.
@@ -65,7 +66,7 @@ export function initProject(opts: InitOptions): InitResult {
 function renderBassYaml(opts: InitOptions): string {
   return `# BASS 프로젝트 설정. BASS 코드를 복사하지 않고 버전을 의존한다.
 bass:
-  version: 0.1.0
+  version: ${BASS_VERSION}
   profiles:
 ${opts.profiles.map((p) => `    - ${p}`).join("\n")}
 
@@ -89,7 +90,7 @@ evaluators:
 }
 
 function renderAgentsShim(opts: InitOptions): string {
-  return `<!-- ${SHIM_MARKER}: agents v0.1.0 — 이 파일은 얇은 참조 shim 이다. 규칙 원문을 여기에 복사하지 마라. -->
+  return `<!-- ${SHIM_MARKER}: agents v${BASS_VERSION} — 이 파일은 얇은 참조 shim 이다. 규칙 원문을 여기에 복사하지 마라. -->
 # AGENTS.md — ${opts.name}
 
 이 프로젝트는 BASS (Behavior Architecture & System Supervisor) 워크플로를 따른다.
@@ -116,7 +117,7 @@ description: BASS workflow rules for this project
 alwaysApply: true
 ---
 
-<!-- ${SHIM_MARKER}: cursor v0.1.0 — 얇은 참조 shim. 규칙 원문을 복사하지 마라. -->
+<!-- ${SHIM_MARKER}: cursor v${BASS_VERSION} — 얇은 참조 shim. 규칙 원문을 복사하지 마라. -->
 
 이 프로젝트는 BASS 워크플로를 따른다. 규칙의 단일 원천은 다음과 같다.
 
@@ -129,7 +130,7 @@ AGENTS.md 와 이 파일의 내용이 다르면 드리프트다. \`bass doctor\`
 }
 
 function renderClaudeShim(): string {
-  return `<!-- ${SHIM_MARKER}: claude v0.1.0 — 얇은 참조 shim. 규칙 원문을 복사하지 마라. -->
+  return `<!-- ${SHIM_MARKER}: claude v${BASS_VERSION} — 얇은 참조 shim. 규칙 원문을 복사하지 마라. -->
 # CLAUDE.md
 
 이 프로젝트의 에이전트 규칙은 \`AGENTS.md\` 를 따른다. 그 파일을 먼저 읽어라.

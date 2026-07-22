@@ -61,3 +61,14 @@ environments:             # 선택
     workflow:
       reviewer_required: true
 ```
+
+## 런타임 버전 계약
+
+- `package.json`의 `version`이 설치된 CLI, `bass --version`, `bass init` 출력의
+  단일 원천이다.
+- 프로젝트의 `bass.version`은 현재 0.x 동안 exact version으로 해석한다.
+- 설치된 런타임과 값이 다르면 config, gate, route, compose, evaluate 등 프로젝트
+  의존 명령을 실행하지 않는다.
+- 버전 변경은 release notes와 migration 안내를 검토한 뒤 `bass.yaml`과 설치
+  패키지를 함께 올린다.
+- semver range 호환은 동작·정책·prompt 변경의 호환 기준이 정해질 때까지 지원하지 않는다.

@@ -1,17 +1,19 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { BASS_VERSION } from "../src/version.js";
 
 export function makeTempProject(opts: {
   profiles?: string[];
   extraYaml?: string;
+  version?: string;
 }): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bass-test-"));
   const profiles = opts.profiles ?? ["common"];
   fs.writeFileSync(
     path.join(dir, "bass.yaml"),
     `bass:
-  version: 0.1.0
+  version: ${opts.version ?? BASS_VERSION}
   profiles:
 ${profiles.map((p) => `    - ${p}`).join("\n")}
 project:
