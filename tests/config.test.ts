@@ -54,6 +54,13 @@ describe("계층형 설정 병합", () => {
     expect(() => loadConfig({ projectRoot: root })).toThrow(/max_active_tasks/);
   });
 
+  it("프로젝트 요구 버전과 런타임 버전이 다르면 설치 방법을 포함한 오류", () => {
+    const root = makeTempProject({ profiles: ["common"], version: "999.0.0" });
+    expect(() => loadConfig({ projectRoot: root })).toThrow(
+      /BASS version mismatch: project requires 999\.0\.0.*Install bass-platform@999\.0\.0/,
+    );
+  });
+
   it("환경 설정: 정의되지 않은 env 는 오류, 정의된 env 는 적용", () => {
     const root = makeTempProject({
       profiles: ["common"],

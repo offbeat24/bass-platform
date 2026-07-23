@@ -16,12 +16,13 @@ import { runDesignChecks, addCorrection, loadCorrections, reviewCorrection } fro
 import { initProject, doctor } from "../project/init.js";
 import { parse } from "yaml";
 import type { ModelRole } from "../types.js";
+import { BASS_VERSION } from "../version.js";
 
 const program = new Command();
 program
   .name("bass")
   .description("BASS — Behavior Architecture & System Supervisor. A runtime for human-supervised AI software engineering.")
-  .version("0.1.0");
+  .version(BASS_VERSION);
 
 function requireProject(): { projectRoot: string; config: LoadedConfig } {
   const projectRoot = findProjectRoot();
@@ -318,4 +319,9 @@ program
     process.exit(checks.some((c) => c.status === "fail") ? 1 : 0);
   });
 
-program.parse();
+try {
+  program.parse();
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(1);
+}

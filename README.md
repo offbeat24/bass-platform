@@ -73,6 +73,29 @@ bass-platform/
 프로젝트는 BASS 코드를 복사하지 않는다. `bass.yaml` 로 버전을 의존하고,
 도구별 파일(AGENTS.md, .cursor/rules, CLAUDE.md)은 참조만 담은 얇은 shim 이다.
 
+## CLI 설치와 버전
+
+현재 0.x 배포 경계는 빌드된 npm tarball이다. 실제 registry publish는 아직
+활성화하지 않았으며 package는 `private` 상태를 유지한다.
+
+```bash
+# BASS 저장소에서 검증된 tarball 생성
+npm ci
+npm pack
+
+# 소비 프로젝트에서 개발 의존성으로 설치
+npm install --save-dev /path/to/bass-platform-0.1.0.tgz
+npx bass --version
+npx bass doctor
+```
+
+tarball에는 `dist/`, profiles, policies, prompt library, registry와 templates만
+들어간다. 프로젝트의 `bass.yaml`에 적힌 `bass.version`은 설치된 CLI 버전과 정확히
+일치해야 한다. 불일치하면 프로젝트 명령은 필요한 설치 버전을 안내하며 중단한다.
+`bass init`과 `bass --version`은 기존 프로젝트 설정을 요구하지 않는다.
+
+package name, registry 위치와 publish 권한은 별도 인간 결정 전까지 미정이다.
+
 ## 문서
 
 - [docs/vision.md](docs/vision.md) — 목적과 비전

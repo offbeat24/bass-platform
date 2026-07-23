@@ -1,0 +1,108 @@
+{
+  "task_id": "BASS-001",
+  "summary_of_changes": "BASS package metadata를 CLI 버전의 단일 원천으로 만들고, runtime-only npm tarball 경계, exact bass.version 검증, 격리 설치 smoke test를 추가했다.",
+  "why": "파일럿 프로젝트가 로컬 소스 절대 경로에 의존했고 프로젝트가 선언한 BASS 버전과 실제 실행 런타임 사이의 drift를 차단하지 못했기 때문이다.",
+  "files_changed": [
+    "package.json",
+    "src/version.ts",
+    "src/cli/main.ts",
+    "src/project/bassYaml.ts",
+    "src/project/init.ts",
+    "scripts/smoke-package.mjs",
+    "tests/helpers.ts",
+    "tests/config.test.ts",
+    "tests/project.test.ts",
+    "tests/version.test.ts",
+    "README.md",
+    "docs/configuration.md",
+    "docs/architecture.md",
+    "docs/decisions/0003-portable-cli-version-contract.md",
+    "bass.yaml",
+    "tasks/BASS-001.md",
+    "critiques/BASS-001/implementation-1.yaml",
+    "records/BASS-001.json"
+  ],
+  "models_used": [
+    {
+      "role": "worker",
+      "alias": "balanced",
+      "followed_recommendation": true
+    }
+  ],
+  "verification": {
+    "evaluations_run": [
+      {
+        "name": "typecheck",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "unit-tests-71",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "build",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "package-install-smoke",
+        "level": 2,
+        "status": "pass"
+      }
+    ],
+    "not_verified": [
+      "공개 또는 사내 registry publish와 원격 설치는 package name, registry, 권한이 결정되지 않아 수행하지 않았다",
+      "Windows와 Linux에서의 tarball 설치는 실행하지 않았으며 현재 smoke environment는 macOS Node 20이다",
+      "semver range 호환은 정책을 결정하지 않아 exact version만 검증했다"
+    ]
+  },
+  "critic_findings": {
+    "total": 0,
+    "open_high_or_medium": 0,
+    "report_path": "critiques/BASS-001/implementation-1.yaml"
+  },
+  "human_approval": {
+    "approved": true,
+    "approver": "user",
+    "at": "2026-07-22T04:22:47Z",
+    "notes": "개인 로컬 사용을 기준으로 registry 배포는 보류하고 private package, 로컬 경로 또는 tgz 설치, exact version 검증을 승인함"
+  },
+  "known_limitations": [
+    "package는 registry 정책 결정 전까지 private라 배포 전달물은 로컬 tarball이다",
+    "package smoke는 현재 checkout의 node_modules에서 세 direct dependency tarball을 만들어 오프라인 설치한다",
+    "artifact 서명, provenance와 release automation은 아직 없다"
+  ],
+  "out_of_scope_findings": [
+    "package name과 registry 위치 및 publish 권한 결정",
+    "semver compatibility와 migration matrix 정의",
+    "tag, release notes, checksum 또는 provenance 자동화",
+    "소비 프로젝트 package.json을 새 tarball 의존으로 갱신",
+    "AGENTS migration, UI evidence, hooks와 CI 후속 작업"
+  ],
+  "docs_updated": {
+    "needed": true,
+    "updated": [
+      "README.md",
+      "docs/configuration.md",
+      "docs/architecture.md",
+      "docs/decisions/0003-portable-cli-version-contract.md"
+    ]
+  },
+  "lessons": {
+    "recorded": true,
+    "candidates": [
+      "bass.yaml의 버전 선언은 package manager 설치를 대체하지 않으며 둘을 대조해야 실제 runtime drift를 막을 수 있다",
+      "package.json을 단일 버전 원천으로 사용하면 CLI, init config와 shim marker의 중복 하드코딩을 제거할 수 있다",
+      "registry 없이도 npm tarball과 오프라인 dependency pack으로 실제 설치 경계를 재현 가능하게 검증할 수 있다"
+    ]
+  },
+  "rollback": {
+    "method": "package files와 smoke script, src/version.ts, runtime exact-version check를 제거하고 CLI와 init의 기존 0.1.0 상수를 복원한다. registry publish나 외부 프로젝트 변경은 없어 외부 rollback은 필요 없다."
+  },
+  "design": {
+    "rendered_verification": false,
+    "notes": "CLI package와 configuration contract 작업이며 UI 렌더링 변경이 없다"
+  }
+}

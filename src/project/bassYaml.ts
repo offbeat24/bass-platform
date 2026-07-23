@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { parse } from "yaml";
 import { z } from "zod";
+import { BASS_PACKAGE, BASS_VERSION } from "../version.js";
 
 const evaluatorSchema = z.object({
   name: z.string(),
@@ -51,6 +52,12 @@ export function loadBassYaml(projectRoot: string): BassYaml {
       .map((i) => `  - ${i.path.join(".")}: ${i.message}`)
       .join("\n");
     throw new Error(`Invalid bass.yaml (${file}):\n${issues}`);
+  }
+  if (result.data.bass.version !== BASS_VERSION) {
+    throw new Error(
+      `BASS version mismatch: project requires ${result.data.bass.version}, but the installed runtime is ${BASS_VERSION}. ` +
+        `Install ${BASS_PACKAGE.name}@${result.data.bass.version}, or update bass.yaml only after reviewing the matching release notes.`,
+    );
   }
   return result.data;
 }
