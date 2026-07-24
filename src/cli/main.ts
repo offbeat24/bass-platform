@@ -14,14 +14,16 @@ import { validateFindingsFile, shouldStopIteration, findingsFileSchema } from ".
 import { composeInstructions } from "../compose/composer.js";
 import { runDesignChecks, addCorrection, loadCorrections, reviewCorrection } from "../design/designProfile.js";
 import { initProject, doctor } from "../project/init.js";
+import { initNanPreset } from "../nan/project.js";
+import { registerNanCommands } from "../nan/cli.js";
 import { parse } from "yaml";
 import type { ModelRole } from "../types.js";
-import { BASS_VERSION } from "../version.js";
+import { BASS_DISPLAY_NAME, BASS_VERSION } from "../version.js";
 
 const program = new Command();
 program
   .name("bass")
-  .description("BASS — Behavior Architecture & System Supervisor. A runtime for human-supervised AI software engineering.")
+  .description(`${BASS_DISPLAY_NAME}. A runtime for human-supervised AI software engineering.`)
   .version(BASS_VERSION);
 
 function requireProject(): { projectRoot: string; config: LoadedConfig } {
@@ -37,22 +39,43 @@ function requireProject(): { projectRoot: string; config: LoadedConfig } {
 program
   .command("init")
   .description("프로젝트에 BASS 연결: bass.yaml + 에이전트 shim (Codex/Cursor/Claude) 생성")
-  .requiredOption("--name <name>", "프로젝트 이름")
-  .option("--profiles <list>", "프로파일 목록 (쉼표 구분)", "common")
+  .option("--name <name>", "프로젝트 이름 (생략 시 현재 디렉터리 이름)")
+  .option("--profiles <list>", "프로파일 목록 (쉼표 구분)")
+  .option("--preset <preset>", "초기화 preset (nan2026)")
   .option("--owner <owner>", "작업 소유자", "user")
   .option("--design", "Design Profile 활성화 (DESIGN.md 템플릿 생성)", false)
   .option("--force", "기존 파일 덮어쓰기", false)
   .action((opts) => {
+    if (opts.preset && opts.preset !== "nan2026") {
+      throw new Error(`Unknown preset "${opts.preset}"`);
+    }
+    if (opts.preset === "nan2026" && opts.force) {
+      throw new Error("NAN preset does not allow --force; preserve conflicts and resolve them explicitly.");
+    }
+    const name = opts.name ? String(opts.name) : path.basename(process.cwd());
+    const profiles = opts.profiles
+      ? String(opts.profiles).split(",").map((s: string) => s.trim())
+      : opts.preset === "nan2026"
+        ? ["common", "nan2026"]
+        : ["common"];
     const result = initProject({
       projectRoot: process.cwd(),
-      name: opts.name,
-      profiles: String(opts.profiles).split(",").map((s: string) => s.trim()),
+      name,
+      profiles,
       owner: opts.owner,
       withDesign: Boolean(opts.design),
       force: Boolean(opts.force),
     });
     for (const f of result.created) console.log(`created: ${f}`);
     for (const f of result.skipped) console.log(`skipped (exists): ${f}`);
+    if (opts.preset === "nan2026") {
+      const nan = initNanPreset(process.cwd());
+      for (const f of nan.created) console.log(`created: ${f}`);
+      for (const f of nan.updated) console.log(`updated: ${f}`);
+      for (const f of nan.unchanged) console.log(`unchanged: ${f}`);
+      for (const f of nan.conflicts) console.log(`conflict (preserved): ${f}`);
+      if (nan.conflicts.length > 0) process.exitCode = 1;
+    }
   });
 
 // ---------- config ----------
@@ -318,6 +341,8 @@ program
     }
     process.exit(checks.some((c) => c.status === "fail") ? 1 : 0);
   });
+
+registerNanCommands(program, () => requireProject().projectRoot);
 
 try {
   program.parse();

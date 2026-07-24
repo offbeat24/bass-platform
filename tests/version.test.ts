@@ -9,6 +9,7 @@ describe("BASS package metadata", () => {
 
     expect(BASS_PACKAGE.name).toBe(packageJson.name);
     expect(BASS_VERSION).toBe(packageJson.version);
+    expect(BASS_VERSION).toBe("0.1.1");
     expect(loadPackageMetadata()).toBe(BASS_PACKAGE);
   });
 });

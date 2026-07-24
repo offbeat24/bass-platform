@@ -34,7 +34,7 @@ models.worker = "balanced"
 
 ```yaml
 bass:
-  version: 0.1.0          # 의존하는 BASS 버전
+  version: 0.1.1          # 의존하는 BASS 버전
   profiles: [common, web] # 프로파일 체인
 
 project:

@@ -4,6 +4,7 @@ import { promptLibraryDir, policyPath, profilePath } from "../paths.js";
 import type { TaskFile } from "../task/taskFile.js";
 import type { LoadedConfig } from "../config/loader.js";
 import { findRequiredApprovals } from "../policy/policyEngine.js";
+import { BASS_VERSION } from "../version.js";
 
 export interface ComposeOptions {
   projectRoot: string;
@@ -75,6 +76,10 @@ export function composeInstructions(opts: ComposeOptions): string {
     source: path.join(opts.projectRoot, "bass.yaml"),
     content: projectParts.join("\n"),
   });
+  const nanWorkflow = path.join(opts.projectRoot, "nan", "AGENT_WORKFLOW.md");
+  if (fs.existsSync(path.join(opts.projectRoot, "nan2026.yaml")) && fs.existsSync(nanWorkflow)) {
+    parts.push(readPart("NAN 2026 workflow", nanWorkflow));
+  }
 
   // 5. active policy
   const policyFile = policyPath("approval");
@@ -104,7 +109,7 @@ export function composeInstructions(opts: ComposeOptions): string {
 
   const header = [
     "<!-- composed by bass compose -->",
-    `<!-- bass-platform v0.1.0 | composed at ${new Date().toISOString()} -->`,
+    `<!-- bass-platform v${BASS_VERSION} | composed at ${new Date().toISOString()} -->`,
     "<!-- 이 파일은 파생물이다. 수정하지 말고 원본(source 주석)을 수정하라. -->",
   ].join("\n");
 

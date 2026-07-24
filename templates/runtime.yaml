@@ -1,0 +1,13 @@
+# Copy to .bass/nan2026/adapters/<name>/runtime.yaml.
+# Metadata registration is safe by default. Executable scaffold/install/verify code
+# must be added through a reviewed adapter implementation.
+id: custom-example
+name: Example Team Runtime
+version: 1.0.0
+kind: custom
+description: Describe why this runtime is appropriate for the concept.
+suitedTags: [card, turn-based]
+capabilities: [render, input]
+supportedTargets: [web]
+license: MIT
+licenseRisk: low

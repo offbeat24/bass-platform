@@ -1,8 +1,9 @@
 bass:
-  version: 0.1.0
+  version: 0.1.1
   profiles:
     - common
     - cli
+    - nan2026
 
 project:
   name: bass-platform

@@ -24,6 +24,8 @@ export interface InitOptions {
 export interface InitResult {
   created: string[];
   skipped: string[];
+  updated?: string[];
+  conflicts?: string[];
 }
 
 const SHIM_MARKER = "bass-shim";
@@ -105,6 +107,9 @@ function renderAgentsShim(opts: InitOptions): string {
 4. 인증·권한·데이터 삭제·배포 등 승인 조건(\`bass route\` 출력의 approvals)이 있으면
    구현 전에 정지하고 인간 승인을 받는다.
 ${opts.withDesign ? "5. UI 작업 전 반드시 루트의 `DESIGN.md` 를 읽는다. 디자인 의도의 단일 명세다.\n" : ""}
+프로젝트에 \`nan2026.yaml\`이 있으면 작업 전 \`nan/AGENT_WORKFLOW.md\`도 읽고,
+concept/runtime 사람 승인, trace, evidence, session protection 규칙을 지킨다.
+
 ## 설정
 
 - 프로젝트 설정: \`bass.yaml\` / 유효 설정 확인: \`bass config explain\`
@@ -125,6 +130,7 @@ alwaysApply: true
 - 작업 명세: \`tasks/<ID>.md\` — 시작 전 \`bass gate pre-task\`, 완료 전 \`bass gate pre-complete\`
 - 모델 선택: \`bass route\` 권고 사용, 모델명 하드코딩 금지
 ${opts.withDesign ? "- UI 작업 전 루트 `DESIGN.md` 필독\n" : ""}
+- \`nan2026.yaml\`이 있으면 \`nan/AGENT_WORKFLOW.md\` 필독
 AGENTS.md 와 이 파일의 내용이 다르면 드리프트다. \`bass doctor\` 로 검사하고 shim 을 재생성하라.
 `;
 }

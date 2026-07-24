@@ -7,12 +7,14 @@ import path from "node:path";
 const root = path.resolve(import.meta.dirname, "..");
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "bass-package-smoke-"));
+const npmCache = path.join(tempRoot, "npm-cache");
 
 function run(command, args, cwd = root) {
   return execFileSync(command, args, {
     cwd,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
+    env: { ...process.env, npm_config_cache: npmCache },
   }).trim();
 }
 
@@ -22,6 +24,7 @@ try {
   const packedPaths = packed[0].files.map((file) => file.path);
   assert.ok(packedPaths.includes("dist/cli/main.js"));
   assert.ok(packedPaths.includes("templates/task.md"));
+  assert.ok(packedPaths.includes("templates/runtime.yaml"));
   for (const excludedPrefix of ["src/", "tests/", "examples/", "scripts/", "tasks/"]) {
     assert.equal(packedPaths.some((file) => file.startsWith(excludedPrefix)), false);
   }
@@ -51,9 +54,12 @@ try {
   const bassBin = path.join(consumer, "node_modules", ".bin", "bass");
 
   assert.equal(run(bassBin, ["--version"], consumer), packageJson.version);
-  run(bassBin, ["init", "--name", "package-smoke", "--profiles", "common,cli"], demo);
+  run(bassBin, ["init", "--name", "package-smoke", "--preset", "nan2026"], demo);
   const explanation = run(bassBin, ["config", "explain"], demo);
-  assert.match(explanation, /profiles: common, cli/);
+  assert.match(explanation, /profiles: common, nan2026/);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(demo, ".bass", "nan2026-manifest.json"), "utf8")).bassVersion, "0.1.1");
+  assert.match(run(bassBin, ["nan", "trace", "validate"], demo), /trace PASS/);
+  assert.match(run(bassBin, ["nan", "protect", "verify"], demo), /\[pass\]/);
 
   const configFile = path.join(demo, "bass.yaml");
   const config = fs.readFileSync(configFile, "utf8").replace(

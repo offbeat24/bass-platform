@@ -26,3 +26,5 @@ export function loadPackageMetadata(): BassPackageMetadata {
 
 export const BASS_PACKAGE = loadPackageMetadata();
 export const BASS_VERSION = BASS_PACKAGE.version;
+export const BASS_EDITION = "NAN Edition";
+export const BASS_DISPLAY_NAME = `BASS ${BASS_VERSION} — ${BASS_EDITION}`;

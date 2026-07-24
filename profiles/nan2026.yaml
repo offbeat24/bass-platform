@@ -1,0 +1,13 @@
+name: nan2026
+extends: common
+defaults:
+  workflow:
+    max_active_tasks: 3
+    reviewer_required: true
+  nan2026:
+    failure_policy:
+      consecutive_failures_before_blocked: 2
+      max_reworks_before_human_decision: 3
+    human_approval:
+      concept: required
+      runtime: required

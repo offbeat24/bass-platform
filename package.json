@@ -1,7 +1,7 @@
 {
   "name": "bass-platform",
-  "version": "0.1.0",
-  "description": "BASS - Behavior Architecture & System Supervisor. A runtime for human-supervised AI software engineering.",
+  "version": "0.1.1",
+  "description": "BASS 0.1.1 — NAN Edition. A runtime for human-supervised AI software engineering.",
   "type": "module",
   "bin": {
     "bass": "./dist/cli/main.js"
@@ -19,9 +19,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "bass": "tsx src/cli/main.ts",
+    "bass": "node dist/cli/main.js",
+    "check:boundaries": "node scripts/check-import-boundaries.mjs",
+    "check:nan": "npm run check:boundaries && npm test",
     "prepack": "npm run build",
-    "smoke:package": "node scripts/smoke-package.mjs"
+    "smoke:package": "node scripts/smoke-package.mjs",
+    "smoke:nan": "npm run build && node scripts/smoke-nan.mjs"
   },
   "engines": {
     "node": ">=20"

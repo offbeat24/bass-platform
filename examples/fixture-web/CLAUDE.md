@@ -1,4 +1,4 @@
-<!-- bass-shim: claude v0.1.0 — 얇은 참조 shim. 규칙 원문을 복사하지 마라. -->
+<!-- bass-shim: claude v0.1.1 — 얇은 참조 shim. 규칙 원문을 복사하지 마라. -->
 # CLAUDE.md
 
 이 프로젝트의 에이전트 규칙은 `AGENTS.md` 를 따른다. 그 파일을 먼저 읽어라.

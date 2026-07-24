@@ -1,4 +1,4 @@
-<!-- bass-shim: agents v0.1.0 — 이 파일은 얇은 참조 shim 이다. 규칙 원문을 여기에 복사하지 마라. -->
+<!-- bass-shim: agents v0.1.1 — 이 파일은 얇은 참조 shim 이다. 규칙 원문을 여기에 복사하지 마라. -->
 # AGENTS.md — fixture-web
 
 이 프로젝트는 BASS (Behavior Architecture & System Supervisor) 워크플로를 따른다.
@@ -13,6 +13,9 @@
 4. 인증·권한·데이터 삭제·배포 등 승인 조건(`bass route` 출력의 approvals)이 있으면
    구현 전에 정지하고 인간 승인을 받는다.
 5. UI 작업 전 반드시 루트의 `DESIGN.md` 를 읽는다. 디자인 의도의 단일 명세다.
+
+프로젝트에 `nan2026.yaml`이 있으면 작업 전 `nan/AGENT_WORKFLOW.md`도 읽고,
+concept/runtime 사람 승인, trace, evidence, session protection 규칙을 지킨다.
 
 ## 설정
 
