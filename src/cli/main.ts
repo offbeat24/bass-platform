@@ -14,6 +14,7 @@ import { validateFindingsFile, shouldStopIteration, findingsFileSchema } from ".
 import { composeInstructions } from "../compose/composer.js";
 import { runDesignChecks, addCorrection, loadCorrections, reviewCorrection } from "../design/designProfile.js";
 import { initProject, doctor } from "../project/init.js";
+import { createProject } from "../project/create.js";
 import { initNanPreset } from "../nan/project.js";
 import { registerNanCommands } from "../nan/cli.js";
 import { parse } from "yaml";
@@ -34,6 +35,52 @@ function requireProject(): { projectRoot: string; config: LoadedConfig } {
   }
   return { projectRoot, config: loadConfig({ projectRoot }) };
 }
+
+// ---------- create ----------
+program
+  .command("create <directory>")
+  .description("새 프로젝트 폴더를 만들고 BASS package 설치와 NAN init을 한 번에 수행")
+  .option("--name <name>", "프로젝트 이름 (생략 시 대상 폴더 이름)")
+  .option("--profiles <list>", "추가 프로파일 목록 (쉼표 구분)")
+  .option("--preset <preset>", "초기화 preset (nan2026 | none)", "nan2026")
+  .option("--owner <owner>", "작업 소유자", "user")
+  .option("--design", "Design Profile 활성화 (DESIGN.md 템플릿 생성)", false)
+  .option("--no-install", "로컬 BASS package pack/install 생략")
+  .action((directory, opts) => {
+    const preset = String(opts.preset);
+    if (preset !== "nan2026" && preset !== "none") {
+      throw new Error(`Unknown preset "${preset}"`);
+    }
+    const destination = path.resolve(String(directory));
+    const requestedProfiles = opts.profiles
+      ? String(opts.profiles).split(",").map((s: string) => s.trim())
+      : ["common"];
+    const profiles =
+      preset === "nan2026"
+        ? [...new Set([...requestedProfiles, "nan2026"])]
+        : requestedProfiles;
+    const result = createProject({
+      destination,
+      name: opts.name ? String(opts.name) : path.basename(destination),
+      profiles,
+      owner: String(opts.owner),
+      withDesign: Boolean(opts.design),
+      install: Boolean(opts.install),
+    });
+    console.log(`project: ${result.projectRoot}`);
+    if (result.packageArtifact) console.log(`package: ${result.packageArtifact}`);
+    console.log(`BASS package: ${result.packageInstalled ? "installed" : "skipped"}`);
+    for (const f of result.initialized.created) console.log(`created: ${f}`);
+    for (const f of result.initialized.skipped) console.log(`skipped (exists): ${f}`);
+    if (preset === "nan2026") {
+      const nan = initNanPreset(result.projectRoot);
+      for (const f of nan.created) console.log(`created: ${f}`);
+      for (const f of nan.updated) console.log(`updated: ${f}`);
+      for (const f of nan.unchanged) console.log(`unchanged: ${f}`);
+      for (const f of nan.conflicts) console.log(`conflict (preserved): ${f}`);
+      if (nan.conflicts.length > 0) process.exitCode = 1;
+    }
+  });
 
 // ---------- init ----------
 program

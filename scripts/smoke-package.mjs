@@ -61,6 +61,25 @@ try {
   assert.match(run(bassBin, ["nan", "trace", "validate"], demo), /trace PASS/);
   assert.match(run(bassBin, ["nan", "protect", "verify"], demo), /\[pass\]/);
 
+  const createdProject = path.join(consumer, "created-project");
+  run(
+    bassBin,
+    ["create", createdProject, "--profiles", "common,web", "--design"],
+    consumer,
+  );
+  const createdBassBin = path.join(createdProject, "node_modules", ".bin", "bass");
+  assert.ok(fs.existsSync(path.join(createdProject, "tools", `bass-platform-${packageJson.version}.tgz`)));
+  assert.equal(run(createdBassBin, ["--version"], createdProject), packageJson.version);
+  assert.match(run(createdBassBin, ["doctor"], createdProject), /\[PASS\]/);
+  assert.ok(fs.existsSync(path.join(createdProject, "nan2026.yaml")));
+  assert.match(run(createdBassBin, ["nan", "protect", "verify"], createdProject), /\[pass\]/);
+  assert.match(
+    JSON.parse(fs.readFileSync(path.join(createdProject, "package.json"), "utf8")).devDependencies[
+      "bass-platform"
+    ],
+    /^file:tools\/bass-platform-/,
+  );
+
   const configFile = path.join(demo, "bass.yaml");
   const config = fs.readFileSync(configFile, "utf8").replace(
     `version: ${packageJson.version}`,
