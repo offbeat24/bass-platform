@@ -45,10 +45,14 @@ program
   .option("--no-install", "로컬 BASS package pack/install 생략")
   .action((directory, opts) => {
     const destination = path.resolve(String(directory));
+    const profiles = String(opts.profiles).split(",").map((s: string) => s.trim());
+    if (opts.design && !profiles.includes("web")) {
+      profiles.push("web");
+    }
     const result = createProject({
       destination,
       name: opts.name ? String(opts.name) : path.basename(destination),
-      profiles: String(opts.profiles).split(",").map((s: string) => s.trim()),
+      profiles,
       owner: String(opts.owner),
       withDesign: Boolean(opts.design),
       install: Boolean(opts.install),

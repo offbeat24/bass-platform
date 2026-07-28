@@ -25,9 +25,7 @@ BASS 저장소에서 다음 명령을 실행하면 대상 폴더 생성, 현재 
 cd /path/to/bass-platform
 npm ci
 npm run build
-npm run bass -- create /path/to/my-project \
-  --profiles common,web \
-  --design
+npm run bass -- create /path/to/my-project --design
 ```
 
 생성된 프로젝트에는 `tools/bass-platform-0.1.0.tgz`, `package.json`,
