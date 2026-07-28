@@ -14,6 +14,7 @@ import { validateFindingsFile, shouldStopIteration, findingsFileSchema } from ".
 import { composeInstructions } from "../compose/composer.js";
 import { runDesignChecks, addCorrection, loadCorrections, reviewCorrection } from "../design/designProfile.js";
 import { initProject, doctor } from "../project/init.js";
+import { createProject } from "../project/create.js";
 import { parse } from "yaml";
 import type { ModelRole } from "../types.js";
 import { BASS_VERSION } from "../version.js";
@@ -32,6 +33,32 @@ function requireProject(): { projectRoot: string; config: LoadedConfig } {
   }
   return { projectRoot, config: loadConfig({ projectRoot }) };
 }
+
+// ---------- create ----------
+program
+  .command("create <directory>")
+  .description("새 프로젝트 폴더를 만들고 로컬 BASS package 설치와 init을 한 번에 수행")
+  .option("--name <name>", "프로젝트 이름 (생략 시 대상 폴더 이름)")
+  .option("--profiles <list>", "프로파일 목록 (쉼표 구분)", "common")
+  .option("--owner <owner>", "작업 소유자", "user")
+  .option("--design", "Design Profile 활성화 (DESIGN.md 템플릿 생성)", false)
+  .option("--no-install", "로컬 BASS package pack/install 생략")
+  .action((directory, opts) => {
+    const destination = path.resolve(String(directory));
+    const result = createProject({
+      destination,
+      name: opts.name ? String(opts.name) : path.basename(destination),
+      profiles: String(opts.profiles).split(",").map((s: string) => s.trim()),
+      owner: String(opts.owner),
+      withDesign: Boolean(opts.design),
+      install: Boolean(opts.install),
+    });
+    console.log(`project: ${result.projectRoot}`);
+    if (result.packageArtifact) console.log(`package: ${result.packageArtifact}`);
+    console.log(`BASS package: ${result.packageInstalled ? "installed" : "skipped"}`);
+    for (const f of result.initialized.created) console.log(`created: ${f}`);
+    for (const f of result.initialized.skipped) console.log(`skipped (exists): ${f}`);
+  });
 
 // ---------- init ----------
 program

@@ -7,12 +7,14 @@ import path from "node:path";
 const root = path.resolve(import.meta.dirname, "..");
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "bass-package-smoke-"));
+const npmCache = path.join(tempRoot, "npm-cache");
 
 function run(command, args, cwd = root) {
   return execFileSync(command, args, {
     cwd,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
+    env: { ...process.env, npm_config_cache: npmCache },
   }).trim();
 }
 
@@ -54,6 +56,23 @@ try {
   run(bassBin, ["init", "--name", "package-smoke", "--profiles", "common,cli"], demo);
   const explanation = run(bassBin, ["config", "explain"], demo);
   assert.match(explanation, /profiles: common, cli/);
+
+  const createdProject = path.join(consumer, "created-project");
+  run(
+    bassBin,
+    ["create", createdProject, "--profiles", "common,web", "--design"],
+    consumer,
+  );
+  const createdBassBin = path.join(createdProject, "node_modules", ".bin", "bass");
+  assert.ok(fs.existsSync(path.join(createdProject, "tools", `bass-platform-${packageJson.version}.tgz`)));
+  assert.equal(run(createdBassBin, ["--version"], createdProject), packageJson.version);
+  assert.match(run(createdBassBin, ["doctor"], createdProject), /\[PASS\]/);
+  assert.match(
+    JSON.parse(fs.readFileSync(path.join(createdProject, "package.json"), "utf8")).devDependencies[
+      "bass-platform"
+    ],
+    /^file:tools\/bass-platform-/,
+  );
 
   const configFile = path.join(demo, "bass.yaml");
   const config = fs.readFileSync(configFile, "utf8").replace(

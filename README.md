@@ -16,6 +16,25 @@ BASS는 LLM을 직접 호출하거나 시스템 package를 자동 설치하지 �
 
 ## 1. 가장 빠른 시작
 
+### 새 프로젝트를 BASS와 함께 생성
+
+BASS 저장소에서 다음 명령을 실행하면 대상 폴더 생성, 현재 BASS package 고정,
+의존성 설치와 프로젝트 초기화를 한 번에 수행한다.
+
+```bash
+cd /path/to/bass-platform
+npm ci
+npm run build
+npm run bass -- create /path/to/my-project \
+  --profiles common,web \
+  --design
+```
+
+생성된 프로젝트에는 `tools/bass-platform-0.1.0.tgz`, `package.json`,
+`package-lock.json`, `bass.yaml`과 agent shim이 함께 생긴다. 대상 폴더가 이미
+내용을 가지고 있으면 기존 파일 보호를 위해 중단하며, 그 경우 아래의 기존 프로젝트
+연결 절차를 사용한다.
+
 ### BASS package 담당자: 최초 1회
 
 ```bash

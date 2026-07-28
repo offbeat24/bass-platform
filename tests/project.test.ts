@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { initProject, doctor } from "../src/project/init.js";
+import { createProject } from "../src/project/create.js";
 import { loadConfig } from "../src/config/loader.js";
 import { composeInstructions } from "../src/compose/composer.js";
 import { parseTaskFile } from "../src/task/taskFile.js";
@@ -12,6 +13,44 @@ import { BASS_VERSION } from "../src/version.js";
 function tempDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "bass-init-"));
 }
+
+describe("bass create (새 프로젝트 자동 연결)", () => {
+  it("새 폴더를 만들면서 BASS 설정을 자동 초기화한다", () => {
+    const parent = tempDir();
+    const projectRoot = path.join(parent, "new-project");
+    const result = createProject({
+      destination: projectRoot,
+      name: "new-project",
+      profiles: ["common", "web"],
+      owner: "user",
+      withDesign: true,
+      install: false,
+    });
+
+    expect(result.projectRoot).toBe(projectRoot);
+    expect(result.packageInstalled).toBe(false);
+    expect(fs.existsSync(path.join(projectRoot, "bass.yaml"))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, "AGENTS.md"))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, "DESIGN.md"))).toBe(true);
+  });
+
+  it("내용이 있는 폴더는 보존하고 bass init 사용을 안내한다", () => {
+    const projectRoot = tempDir();
+    fs.writeFileSync(path.join(projectRoot, "keep.txt"), "keep", "utf8");
+
+    expect(() =>
+      createProject({
+        destination: projectRoot,
+        name: "existing",
+        profiles: ["common"],
+        owner: "user",
+        withDesign: false,
+        install: false,
+      }),
+    ).toThrow(/Use `bass init`/);
+    expect(fs.readFileSync(path.join(projectRoot, "keep.txt"), "utf8")).toBe("keep");
+  });
+});
 
 describe("bass init (shim 생성)", () => {
   it("bass.yaml 과 세 에이전트 shim 을 생성한다", () => {
