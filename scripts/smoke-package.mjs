@@ -64,12 +64,13 @@ try {
   const createdProject = path.join(consumer, "created-project");
   run(
     bassBin,
-    ["create", createdProject, "--profiles", "common,web", "--design"],
+    ["create", createdProject, "--design"],
     consumer,
   );
   const createdBassBin = path.join(createdProject, "node_modules", ".bin", "bass");
   assert.ok(fs.existsSync(path.join(createdProject, "tools", `bass-platform-${packageJson.version}.tgz`)));
   assert.equal(run(createdBassBin, ["--version"], createdProject), packageJson.version);
+  assert.match(run(createdBassBin, ["config", "explain"], createdProject), /profiles: common, web/);
   assert.match(run(createdBassBin, ["doctor"], createdProject), /\[PASS\]/);
   assert.ok(fs.existsSync(path.join(createdProject, "nan2026.yaml")));
   assert.match(run(createdBassBin, ["nan", "protect", "verify"], createdProject), /\[pass\]/);

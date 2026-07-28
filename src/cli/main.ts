@@ -55,6 +55,9 @@ program
     const requestedProfiles = opts.profiles
       ? String(opts.profiles).split(",").map((s: string) => s.trim())
       : ["common"];
+    if (opts.design && !requestedProfiles.includes("web")) {
+      requestedProfiles.push("web");
+    }
     const profiles =
       preset === "nan2026"
         ? [...new Set([...requestedProfiles, "nan2026"])]
