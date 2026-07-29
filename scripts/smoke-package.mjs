@@ -56,6 +56,7 @@ try {
   run(bassBin, ["init", "--name", "package-smoke", "--profiles", "common,cli"], demo);
   const explanation = run(bassBin, ["config", "explain"], demo);
   assert.match(explanation, /profiles: common, cli/);
+  assert.match(run(bassBin, ["agent", "guide"], demo), /user interface: natural-language/);
 
   const createdProject = path.join(consumer, "created-project");
   run(
@@ -68,6 +69,7 @@ try {
   assert.equal(run(createdBassBin, ["--version"], createdProject), packageJson.version);
   assert.match(run(createdBassBin, ["config", "explain"], createdProject), /profiles: common, web/);
   assert.match(run(createdBassBin, ["doctor"], createdProject), /\[PASS\]/);
+  assert.match(run(createdBassBin, ["agent", "guide"], createdProject), /design spec: template/);
   assert.match(
     JSON.parse(fs.readFileSync(path.join(createdProject, "package.json"), "utf8")).devDependencies[
       "bass-platform"

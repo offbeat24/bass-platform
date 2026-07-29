@@ -6,6 +6,10 @@ BASS 는 LLM API 를 직접 호출하지 않는다. 실행 주체는 Codex / Cur
 세션이며, BASS 는 그 세션들이 따라야 할 규칙·게이트·권고를 제공한다.
 COL 의 `harness.py pre-task / pre-complete` 패턴을 일반화한 것이다.
 
+사람의 인터페이스는 AI 도구와의 자연어 대화다. BASS CLI는 AI 에이전트가 내부적으로
+호출하는 실행 API이며, 상태·승인 파일·run record를 사람이 직접 관리하는 운영 UI가 아니다.
+`bass agent guide`가 현재 프로젝트와 task에 맞는 동적 실행 계약을 제공한다.
+
 이 결정의 이유:
 
 - 세 에이전트 채널 모두 자체 실행 루프를 가진다. BASS 가 실행까지 소유하면
@@ -24,8 +28,8 @@ COL 의 `harness.py pre-task / pre-complete` 패턴을 일반화한 것이다.
 | Prompt/Instruction Composer | `prompt-library/` + `src/compose/` |
 | Project Profiles | `profiles/*.yaml` |
 | Evaluators | `src/evaluators/` — 프로젝트 선언 명령 위임 실행 |
-| Subagent Orchestrator | critic 프로토콜 (`src/critics/` + `prompt-library/critics/`) — 실행은 에이전트 채널의 서브에이전트 기능에 위임 |
-| Human Approval Gates | `pre-task` / `pre-complete` 의 needs-human 체크 |
+| Subagent Orchestrator | host agent 실행 계약 + critic 프로토콜 (`src/agent/`, `src/critics/`, `prompt-library/critics/`) |
+| Human Approval Gates | 위험 결정 기록, `pre-review`, 최종 승인, `task finalize` |
 | Memory and Learning | run record 의 lessons + 디자인 교정 pending 루프 |
 | Observability | run record (`records/<id>.json`) — 모델·검증·finding·승인 기록 |
 | CLI | `src/cli/main.ts` |
@@ -34,21 +38,26 @@ COL 의 `harness.py pre-task / pre-complete` 패턴을 일반화한 것이다.
 
 ```mermaid
 flowchart TD
-    Human[인간 의도] --> Task[tasks/ID.md 작업 명세]
+    Human[자연어 의도와 피드백] --> Agent[Codex / Cursor / Claude]
+    Agent --> Guide[bass agent guide]
+    Guide --> Task[tasks/ID.md 내부 작업 명세]
     Task --> PreTask[bass gate pre-task]
-    PreTask -->|approvals needed| HumanGate[인간 승인]
+    PreTask -->|meaningful decision needed| HumanGate[사람의 제품·위험 결정]
+    HumanGate --> Approval[bass approval risk]
+    Approval --> PreTask
     PreTask --> Route[bass route 모델 권고]
     Route --> RegistryY[registry/models.yaml alias 해석]
     Task --> Compose[bass compose 지침 조합]
-    Compose --> Agent[Codex / Cursor / Claude 세션]
+    Compose --> Agent
     Agent --> Evaluate[bass evaluate L1-L3]
     Agent --> Critic[독립 critic 실행]
     Critic --> Validate[bass critique validate / stop]
     Evaluate --> Record[records/ID.json run record]
     Validate --> Record
-    Record --> PreComplete[bass gate pre-complete]
-    PreComplete --> HumanReview[인간 최종 승인]
-    HumanReview --> Done[DONE]
+    Record --> PreReview[bass gate pre-review]
+    PreReview --> HumanReview[결과·근거의 인간 리뷰]
+    HumanReview --> FinalApproval[bass approval final]
+    FinalApproval --> Done[bass task finalize → DONE]
     Record --> Lessons[교훈 -> project memory -> BASS learning 후보]
 ```
 

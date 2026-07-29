@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { bassRoot } from "../paths.js";
 import { initProject, type InitOptions, type InitResult } from "./init.js";
+import { BASS_VERSION } from "../version.js";
 
 export interface CreateProjectOptions
   extends Omit<InitOptions, "projectRoot" | "force"> {
@@ -76,7 +77,7 @@ function ensurePackageJson(projectRoot: string, name: string): void {
   if (fs.existsSync(packageFile)) return;
   fs.writeFileSync(
     packageFile,
-    `${JSON.stringify({ name: packageName(name), version: "0.1.0", private: true }, null, 2)}\n`,
+    `${JSON.stringify({ name: packageName(name), version: BASS_VERSION, private: true }, null, 2)}\n`,
     "utf8",
   );
 }

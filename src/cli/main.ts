@@ -6,8 +6,8 @@ import { findProjectRoot, templatesDir } from "../paths.js";
 import { loadConfig, explainConfig, parseSetArgs, type LoadedConfig } from "../config/loader.js";
 import { loadRegistry, resolveAlias } from "../registry/registry.js";
 import { routeTask } from "../router/router.js";
-import { findTask, listTasks, checkSections, TASK_SECTIONS } from "../task/taskFile.js";
-import { preTaskGate, preCompleteGate, formatGateReport } from "../workflow/gates.js";
+import { findTask, listTasks, checkSections, TASK_SECTIONS, transitionTask } from "../task/taskFile.js";
+import { preTaskGate, preReviewGate, preCompleteGate, formatGateReport } from "../workflow/gates.js";
 import { allowedTransitions } from "../workflow/stateMachine.js";
 import { planEvaluators, runEvaluators, formatEvaluatorResults } from "../evaluators/runner.js";
 import { validateFindingsFile, shouldStopIteration, findingsFileSchema } from "../critics/findings.js";
@@ -15,14 +15,18 @@ import { composeInstructions } from "../compose/composer.js";
 import { runDesignChecks, addCorrection, loadCorrections, reviewCorrection } from "../design/designProfile.js";
 import { initProject, doctor } from "../project/init.js";
 import { createProject } from "../project/create.js";
+import { recordRiskApproval } from "../task/approvalRecord.js";
+import { recordFinalApproval } from "../task/runRecord.js";
+import { buildAgentGuide } from "../agent/guide.js";
+import { findRequiredApprovals } from "../policy/policyEngine.js";
 import { parse } from "yaml";
-import type { ModelRole } from "../types.js";
+import type { ModelRole, WorkflowState } from "../types.js";
 import { BASS_VERSION } from "../version.js";
 
 const program = new Command();
 program
   .name("bass")
-  .description("BASS — Behavior Architecture & System Supervisor. A runtime for human-supervised AI software engineering.")
+  .description("BASS — agent runtime for natural-language, human-supervised software engineering.")
   .version(BASS_VERSION);
 
 function requireProject(): { projectRoot: string; config: LoadedConfig } {
@@ -150,12 +154,17 @@ program
 const taskCmd = program.command("task").description("작업 명세 관리");
 taskCmd
   .command("new <taskId>")
-  .description("표준 템플릿으로 작업 파일 생성")
+  .description("에이전트가 표준 작업 파일을 멱등하게 준비")
   .requiredOption("--title <title>")
+  .option("--if-missing", "이미 존재하면 성공한 no-op 으로 처리", false)
   .action((taskId, opts) => {
     const { projectRoot, config } = requireProject();
     const dest = path.join(projectRoot, "tasks", `${taskId}.md`);
     if (fs.existsSync(dest)) {
+      if (opts.ifMissing) {
+        console.log(`unchanged: ${dest}`);
+        return;
+      }
       console.error(`already exists: ${dest}`);
       process.exit(1);
     }
@@ -172,6 +181,35 @@ taskCmd
       "utf8",
     );
     console.log(`created: ${dest}`);
+  });
+taskCmd
+  .command("transition <taskId> <state>")
+  .description("에이전트가 내부 workflow 상태를 안전하고 멱등하게 전이")
+  .action((taskId, state) => {
+    const { projectRoot } = requireProject();
+    const result = transitionTask(projectRoot, taskId, String(state).toUpperCase() as WorkflowState);
+    console.log(
+      `${result.changed ? "updated" : "unchanged"}: ${result.taskId} ${result.from} -> ${result.to}`,
+    );
+  });
+taskCmd
+  .command("finalize <taskId>")
+  .description("최종 승인과 완료 근거를 검사한 뒤 DONE 으로 멱등하게 전이")
+  .action((taskId) => {
+    const { projectRoot, config } = requireProject();
+    const task = findTask(projectRoot, taskId);
+    if (task.frontmatter.status === "DONE") {
+      console.log(`unchanged: ${taskId} is already DONE`);
+      return;
+    }
+    const report = preCompleteGate(task, { projectRoot, effective: config.effective });
+    console.log(formatGateReport(report));
+    if (!report.passed) {
+      process.exitCode = 1;
+      return;
+    }
+    const result = transitionTask(projectRoot, taskId, "DONE");
+    console.log(`${result.changed ? "updated" : "unchanged"}: ${taskId} -> DONE`);
   });
 taskCmd
   .command("validate [taskId]")
@@ -213,6 +251,16 @@ gateCmd
     process.exit(report.passed ? 0 : 1);
   });
 gateCmd
+  .command("pre-review <taskId>")
+  .description("사람에게 결과를 제시하기 전 검증·critic·렌더링 근거 준비 상태 검사")
+  .action((taskId) => {
+    const { projectRoot, config } = requireProject();
+    const task = findTask(projectRoot, taskId);
+    const report = preReviewGate(task, { projectRoot, effective: config.effective });
+    console.log(formatGateReport(report));
+    process.exit(report.passed ? 0 : 1);
+  });
+gateCmd
   .command("pre-complete <taskId>")
   .description("DONE 처리 가능 여부 검사 (run record + DONE 조건)")
   .action((taskId) => {
@@ -221,6 +269,90 @@ gateCmd
     const report = preCompleteGate(task, { projectRoot, effective: config.effective });
     console.log(formatGateReport(report));
     process.exit(report.passed ? 0 : 1);
+  });
+
+// ---------- approval ----------
+const approvalCmd = program
+  .command("approval")
+  .description("사람이 명시적으로 내린 위험·최종 결정을 에이전트가 기록");
+approvalCmd
+  .command("risk <taskId>")
+  .requiredOption("--rule <ruleId>", "정책 rule id")
+  .requiredOption("--decision <decision>", "approved | rejected")
+  .requiredOption("--approver <name>", "명시적으로 결정한 사람")
+  .requiredOption("--reason <reason>", "결정 이유")
+  .description("사전 위험 결정을 보존하며 멱등하게 기록")
+  .action((taskId, opts) => {
+    const { projectRoot } = requireProject();
+    const task = findTask(projectRoot, taskId);
+    const triggeredRuleIds = findRequiredApprovals(task.frontmatter).map((approval) => approval.rule.id);
+    if (!triggeredRuleIds.includes(String(opts.rule))) {
+      throw new Error(
+        `Approval rule "${opts.rule}" is not triggered by ${taskId}. Triggered rules: ${triggeredRuleIds.join(", ") || "(none)"}`,
+      );
+    }
+    const decision = String(opts.decision);
+    if (decision !== "approved" && decision !== "rejected") {
+      throw new Error(`Invalid decision "${decision}" (expected approved or rejected)`);
+    }
+    const result = recordRiskApproval({
+      projectRoot,
+      taskId,
+      ruleId: String(opts.rule),
+      decision,
+      approver: String(opts.approver),
+      reason: String(opts.reason),
+    });
+    console.log(
+      `${result.changed ? "recorded" : "unchanged"}: ${result.approval.rule_id} ${result.approval.decision} by ${result.approval.approver}`,
+    );
+  });
+approvalCmd
+  .command("final <taskId>")
+  .requiredOption("--approver <name>", "결과를 승인한 사람")
+  .option("--notes <notes>", "승인 메모")
+  .description("pre-review 이후 사람의 최종 결과 승인을 멱등하게 기록")
+  .action((taskId, opts) => {
+    const { projectRoot } = requireProject();
+    const task = findTask(projectRoot, taskId);
+    if (task.frontmatter.status !== "HUMAN_REVIEW") {
+      throw new Error(`Final approval requires HUMAN_REVIEW status (current: ${task.frontmatter.status})`);
+    }
+    const result = recordFinalApproval(
+      projectRoot,
+      taskId,
+      String(opts.approver),
+      opts.notes ? String(opts.notes) : undefined,
+    );
+    console.log(`${result.changed ? "recorded" : "unchanged"}: final approval by ${opts.approver}`);
+  });
+
+// ---------- agent ----------
+const agentCmd = program
+  .command("agent")
+  .description("AI 도구가 자연어 요청을 BASS 내부 실행으로 연결할 때 사용하는 인터페이스");
+agentCmd
+  .command("guide [taskId]")
+  .option("--json", "기계 판독 JSON 출력", false)
+  .description("현재 프로젝트·작업에 맞는 실행 계약과 다음 행동 제안")
+  .action((taskId, opts) => {
+    const { projectRoot, config } = requireProject();
+    const task = taskId ? findTask(projectRoot, String(taskId)) : undefined;
+    const guide = buildAgentGuide(projectRoot, config, task);
+    if (opts.json) {
+      console.log(JSON.stringify(guide, null, 2));
+      return;
+    }
+    console.log("BASS agent contract");
+    console.log(`  user interface: ${guide.contract.user_interface}`);
+    console.log(`  CLI operator: ${guide.contract.cli_operator}`);
+    console.log(`  project: ${guide.project.name} (${guide.project.profiles.join(", ")})`);
+    console.log(`  design spec: ${guide.project.design_spec}`);
+    for (const rule of guide.operating_rules) console.log(`  - ${rule}`);
+    if (guide.task) {
+      console.log(`  task: ${guide.task.id} [${guide.task.status}] depth=${guide.task.workflow_depth}`);
+      for (const action of guide.task.suggested_next_actions) console.log(`  next: ${action}`);
+    }
   });
 
 // ---------- evaluate ----------

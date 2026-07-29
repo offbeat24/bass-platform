@@ -3,7 +3,10 @@
 ## 승인 게이트
 
 인증·권한·결제·개인정보·데이터 삭제·비밀정보 접근·배포는
-`policies/approval.yaml` 규칙으로 pre-task 에서 needs-human 처리된다.
+`policies/approval.yaml` 규칙은 pre-task를 실제로 중지한다. 에이전트는 사람에게
+문제·사실·선택지·권장안·영향을 제시하고, 사람의 명시적 결정만
+`bass approval risk`로 기록한다. 같은 결정을 재기록하면 중복 없이 no-op이다.
+에이전트가 스스로 승인하거나 승인 기록을 덮어써서는 안 된다.
 작업 파일의 `risk.reasons` 에 해당 태그를 누락하면 게이트가 잡지 못하므로,
 Discovery/Planner 역할 프롬프트가 위험 태그 부여를 지시한다.
 Security Critic (`prompt-library/critics/security.md`)은 관련 작업에서만 실행한다.

@@ -4,6 +4,7 @@ import { promptLibraryDir, policyPath, profilePath } from "../paths.js";
 import type { TaskFile } from "../task/taskFile.js";
 import type { LoadedConfig } from "../config/loader.js";
 import { findRequiredApprovals } from "../policy/policyEngine.js";
+import { BASS_VERSION } from "../version.js";
 
 export interface ComposeOptions {
   projectRoot: string;
@@ -104,7 +105,7 @@ export function composeInstructions(opts: ComposeOptions): string {
 
   const header = [
     "<!-- composed by bass compose -->",
-    `<!-- bass-platform v0.1.0 | composed at ${new Date().toISOString()} -->`,
+    `<!-- bass-platform v${BASS_VERSION} | composed at ${new Date().toISOString()} -->`,
     "<!-- 이 파일은 파생물이다. 수정하지 말고 원본(source 주석)을 수정하라. -->",
   ].join("\n");
 

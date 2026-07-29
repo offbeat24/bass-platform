@@ -118,7 +118,7 @@ export interface GateCheck {
 }
 
 export interface GateReport {
-  gate: "pre-task" | "pre-complete";
+  gate: "pre-task" | "pre-review" | "pre-complete";
   taskId: string;
   passed: boolean;
   checks: GateCheck[];

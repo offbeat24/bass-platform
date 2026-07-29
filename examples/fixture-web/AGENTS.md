@@ -1,18 +1,17 @@
-<!-- bass-shim: agents v0.1.0 — 이 파일은 얇은 참조 shim 이다. 규칙 원문을 여기에 복사하지 마라. -->
+<!-- bass-shim: agents v0.2.0 — 이 파일은 얇은 참조 shim 이다. 규칙 원문을 여기에 복사하지 마라. -->
 # AGENTS.md — fixture-web
 
-이 프로젝트는 BASS (Behavior Architecture & System Supervisor) 워크플로를 따른다.
+이 프로젝트는 BASS를 AI 에이전트의 내부 실행 런타임으로 사용한다.
+사용자 인터페이스는 자연어 대화이며, 사용자가 BASS 명령이나 기록 파일을 직접 관리하게 하지 마라.
 
-## 작업 규칙
+## 에이전트 실행 계약
 
-1. 전체 행동 규칙은 `bass compose --role <role>` 출력이 기준이다.
-   원문: bass-platform `prompt-library/` (복사본을 만들지 마라).
-2. 작업은 `tasks/<ID>.md` 명세로 정의한다. 시작 전 `bass gate pre-task <ID>`,
-   완료 전 run record 작성 후 `bass gate pre-complete <ID>` 를 통과해야 한다.
-3. 모델 선택은 `bass route <ID> --role <role>` 권고를 따른다. 모델명을 하드코딩하지 마라.
-4. 인증·권한·데이터 삭제·배포 등 승인 조건(`bass route` 출력의 approvals)이 있으면
-   구현 전에 정지하고 인간 승인을 받는다.
-5. UI 작업 전 반드시 루트의 `DESIGN.md` 를 읽는다. 디자인 의도의 단일 명세다.
+1. 작업 시작 시 `bass agent guide [task-id]`를 내부적으로 실행하고 현재 계약을 읽는다.
+2. 저장소 사실은 직접 조사하고 사람에게는 제품·가치·위험 결정만 묻는다.
+3. task·상태·검증·critic·record는 에이전트가 관리한다.
+4. 위험 결정은 사용자의 명시적 답만 `bass approval risk`로 기록한다.
+5. `bass gate pre-review` 후 결과를 보여주고, 승인 뒤 `bass task finalize`를 실행한다.
+6. UI 작업은 `DESIGN.md`와 실제 렌더링을 조사한다.
 
 ## 설정
 

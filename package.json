@@ -1,6 +1,6 @@
 {
   "name": "bass-platform",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "BASS - Behavior Architecture & System Supervisor. A runtime for human-supervised AI software engineering.",
   "type": "module",
   "bin": {
@@ -19,7 +19,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "bass": "tsx src/cli/main.ts",
+    "bass": "node dist/cli/main.js",
     "prepack": "npm run build",
     "smoke:package": "node scripts/smoke-package.mjs"
   },
@@ -35,7 +35,6 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
-    "tsx": "^4.23.1",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   }
