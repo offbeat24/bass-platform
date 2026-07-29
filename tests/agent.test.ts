@@ -15,6 +15,10 @@ describe("agent guide", () => {
     expect(guide.contract.cli_operator).toBe("ai-agent");
     expect(guide.task?.workflow_depth).toBe("LIGHT");
     expect(guide.operating_rules.join(" ")).toContain("Do not ask the user to run BASS commands");
+    expect(guide.operating_rules.join(" ")).toContain(
+      "Treat adoption into an existing repository as one proportional task",
+    );
+    expect(guide.operating_rules.join(" ")).toContain("do not create a second source of truth");
   });
 
   it("빈 DESIGN.md 템플릿을 준비 완료로 오인하지 않는다", () => {

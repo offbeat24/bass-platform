@@ -22,6 +22,19 @@ NAN 2026 프로젝트라는 근거가 있을 때만 `--preset nan2026`을 제안
 의도가 불명확하고 두 경로가 결과를 크게 바꿀 때만 한 번 질문한다. 그 외에는 저장소와
 사용자 요청에서 합리적으로 판단해 진행한다.
 
+## 기존 프로젝트에 연결할 때
+
+`docs/adopting-existing-project.md`를 먼저 읽고 다음을 지킨다.
+
+- BASS 연결을 별도 의식이나 대규모 마이그레이션으로 만들지 않는다.
+- 기존 기술 스택, 검증 명령, AI 지침, 디자인과 운영 규칙을 먼저 조사한다.
+- 조사한 사실로 profile과 evaluator를 선택하고, 사람에게 설정값을 고르게 하지 않는다.
+- 기존 파일은 프로젝트의 원천이다. `bass init`이 건너뛴 파일을 `--force`로 덮지 말고
+  BASS 계약만 작은 diff로 통합한다.
+- 이미 같은 목적의 하네스·문서·기록이 있으면 두 번째 원천을 만들지 않는다.
+- 파일 생성으로 이식 성공을 주장하지 않는다. 실제 작업 하나로 작업·검증·피드백 루프를 확인한다.
+- 교훈은 먼저 프로젝트 로컬에 반영하고, 반복 검증된 경우에만 profile이나 BASS 코어로 승격한다.
+
 ## 내부 운영 원칙
 
 - `npm run build` 후 `npm run bass -- agent guide [task-id]`로 동적 실행 계약을 확인한다.
@@ -34,4 +47,5 @@ NAN 2026 프로젝트라는 근거가 있을 때만 `--preset nan2026`을 제안
 - NAN 관련 코드를 바꾸면 `npm run check:nan`과 `npm run smoke:nan`을 변경 위험에 맞게 실행한다.
 - Core와 Design 마스터 프롬프트의 의도에 어긋나는 형식적 문서나 승인 절차를 추가하지 않는다.
 
-상세 운영 가이드는 `docs/agent-operations.md`를 따른다.
+상세 운영 가이드는 `docs/agent-operations.md`, 기존 프로젝트 연결은
+`docs/adopting-existing-project.md`를 따른다.

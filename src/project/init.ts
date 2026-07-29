@@ -104,7 +104,9 @@ function renderAgentsShim(opts: InitOptions): string {
 4. 위험 승인 조건이 있으면 선택지·권장안·영향을 제시하고, 사용자의 명시적 결정만 \`bass approval risk\`로 기록한다.
 5. 구현 후 \`bass gate pre-review\`로 근거를 준비하고 결과를 한 번에 보여준다. 최종 승인을 기록한 뒤 \`bass task finalize\`를 실행한다.
 6. 재실행 시 이미 완료된 단계·결정·부작용을 재사용하고 중복 생성하지 마라.
-${opts.withDesign ? "7. UI 작업은 `DESIGN.md`와 실제 렌더링을 조사하고, 기계 검사와 독립 Design Critic을 거친다.\n" : ""}
+7. 기존 프로젝트의 지침·검증·디자인·이력을 원천으로 보존하고, BASS와 겹치는 부분만 최소 변경으로 통합한다.
+8. 파일 생성만으로 연결 완료를 주장하지 말고 실제 사용자 작업 하나로 검증·피드백 루프를 확인한다.
+${opts.withDesign ? "9. UI 작업은 `DESIGN.md`와 실제 렌더링을 조사하고, 기계 검사와 독립 Design Critic을 거친다.\n" : ""}
 프로젝트에 \`nan2026.yaml\`이 있으면 \`nan/AGENT_WORKFLOW.md\`도 읽는다.
 NAN의 concept/runtime 승인과 evidence gate는 대회 의사결정에만 적용하며 일반 상태 전환 승인으로 확대하지 마라.
 ## 원천
@@ -130,6 +132,8 @@ alwaysApply: true
 - 행동 규칙: \`bass compose --role <role>\` (원문은 bass-platform prompt-library)
 - task·상태·검증·record는 에이전트가 내부 관리
 - 사람 결정은 정책이 요구하는 제품·가치·위험 판단에만 요청
+- 기존 프로젝트의 지침·검증·디자인·이력을 보존하고 BASS와 겹치는 부분만 통합
+- 파일 생성이 아니라 실제 사용자 작업 하나로 연결 적합성을 검증
 - 검토 전 \`bass gate pre-review\`, 명시적 승인 후 \`bass task finalize\`
 - 모델 선택: \`bass route\` 권고 사용, 모델명 하드코딩 금지
 ${opts.withDesign ? "- UI 작업 전 루트 `DESIGN.md` 필독\n" : ""}
@@ -146,6 +150,7 @@ function renderClaudeShim(): string {
 
 - 사용자는 자연어로만 협업한다. BASS CLI와 기록 파일은 에이전트가 내부 관리한다.
 - 시작 시 \`bass agent guide [task-id]\`를 읽고 위험에 비례한 실행 깊이를 선택한다.
+- 기존 프로젝트의 지침·검증·디자인·이력을 우선하며 두 번째 원천을 만들지 않는다.
 - 작업 게이트: \`bass gate pre-task <ID>\` / \`bass gate pre-review <ID>\` / \`bass task finalize <ID>\`
 - UI 작업이 있다면 루트 \`DESIGN.md\` 를 먼저 읽는다 (존재하는 경우).
 - \`nan2026.yaml\`이 있으면 \`nan/AGENT_WORKFLOW.md\`를 읽고 concept/runtime/evidence 규칙을 적용한다.

@@ -80,7 +80,9 @@ describe("bass init (shim 생성)", () => {
     expect(config.bassYaml.project.name).toBe("demo");
     expect(config.effective["design_profile"]).toBe(true);
     expect(config.bassYaml.bass.version).toBe(BASS_VERSION);
-    expect(fs.readFileSync(path.join(root, "AGENTS.md"), "utf8")).toContain(`v${BASS_VERSION}`);
+    const agents = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
+    expect(agents).toContain(`v${BASS_VERSION}`);
+    expect(agents).toContain("기존 프로젝트의 지침·검증·디자인·이력을 원천으로 보존");
   });
 
   it("기존 파일은 --force 없이 건너뛴다", () => {

@@ -1,7 +1,7 @@
 {
   "name": "bass-platform",
-  "version": "0.2.0",
-  "description": "BASS 0.2.0 — natural-language agent runtime with the optional NAN 2026 profile.",
+  "version": "0.2.1",
+  "description": "BASS 0.2.1 — natural-language agent runtime with the optional NAN 2026 profile.",
   "type": "module",
   "bin": {
     "bass": "./dist/cli/main.js"

@@ -61,9 +61,29 @@ try {
     JSON.parse(fs.readFileSync(path.join(demo, ".bass", "nan2026-manifest.json"), "utf8")).bassVersion,
     packageJson.version,
   );
-  assert.match(run(bassBin, ["agent", "guide"], demo), /concept\/runtime selection/);
+  const agentGuide = run(bassBin, ["agent", "guide"], demo);
+  assert.match(agentGuide, /concept\/runtime selection/);
+  assert.match(agentGuide, /adoption into an existing repository as one proportional task/);
+  assert.match(
+    fs.readFileSync(path.join(demo, "AGENTS.md"), "utf8"),
+    /기존 프로젝트의 지침·검증·디자인·이력을 원천으로 보존/,
+  );
   assert.match(run(bassBin, ["nan", "trace", "validate"], demo), /trace PASS/);
   assert.match(run(bassBin, ["nan", "protect", "verify"], demo), /\[pass\]/);
+
+  const existingProject = path.join(consumer, "existing-project");
+  fs.mkdirSync(existingProject, { recursive: true });
+  fs.writeFileSync(path.join(existingProject, "AGENTS.md"), "# Existing project rules\n", "utf8");
+  const existingInit = run(
+    bassBin,
+    ["init", "--name", "existing-project", "--profiles", "common"],
+    existingProject,
+  );
+  assert.match(existingInit, /integration required: preserve skipped files/);
+  assert.equal(
+    fs.readFileSync(path.join(existingProject, "AGENTS.md"), "utf8"),
+    "# Existing project rules\n",
+  );
 
   const createdProject = path.join(consumer, "created-project");
   run(
@@ -77,6 +97,10 @@ try {
   assert.match(run(createdBassBin, ["config", "explain"], createdProject), /profiles: common, web/);
   assert.match(run(createdBassBin, ["doctor"], createdProject), /\[PASS\]/);
   assert.match(run(createdBassBin, ["agent", "guide"], createdProject), /design spec: template/);
+  assert.match(
+    fs.readFileSync(path.join(createdProject, "AGENTS.md"), "utf8"),
+    /기존 프로젝트의 지침·검증·디자인·이력을 원천으로 보존/,
+  );
   assert.equal(fs.existsSync(path.join(createdProject, "nan2026.yaml")), false);
   assert.match(
     JSON.parse(fs.readFileSync(path.join(createdProject, "package.json"), "utf8")).devDependencies[

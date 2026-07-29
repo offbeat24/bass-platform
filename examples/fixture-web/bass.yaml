@@ -1,6 +1,6 @@
 # BASS 프로젝트 설정. BASS 코드를 복사하지 않고 버전을 의존한다.
 bass:
-  version: 0.2.0
+  version: 0.2.1
   profiles:
     - common
     - web

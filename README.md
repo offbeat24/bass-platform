@@ -1,4 +1,4 @@
-# BASS 0.2.0 — 자연어 기반 AI 에이전트 런타임
+# BASS 0.2.1 — 자연어 기반 AI 에이전트 런타임
 
 BASS를 설치하면 Codex, Cursor, Claude가 같은 task·정책·검증 기준을 내부적으로
 사용한다. 사람의 기본 인터페이스는 자연어 대화다. CLI는 사람이 단계별로 운전하는
@@ -14,7 +14,8 @@ BASS를 설치하면 Codex, Cursor, Claude가 같은 task·정책·검증 기준
 
 사람에게 task 상태, gate 명령, approval JSON 또는 run record 작성을 요구하지 않는다.
 AI 도구가 이 저장소를 clone한 뒤 읽어야 할 계약은 [AGENTS.md](AGENTS.md), 상세
-운영 방법은 [AI agent operations](docs/agent-operations.md)에 있다. 목적과 설계는
+운영 방법은 [AI agent operations](docs/agent-operations.md), 기존 프로젝트 연결은
+[기존 프로젝트 연결 방법론](docs/adopting-existing-project.md)에 있다. 목적과 설계는
 [Vision](docs/vision.md), [Architecture](docs/architecture.md),
 [Principles](docs/principles.md)에 정리되어 있다.
 
@@ -23,7 +24,7 @@ AI 도구가 이 저장소를 clone한 뒤 읽어야 할 계약은 [AGENTS.md](A
 - Node.js 20 이상
 - npm과 Git
 - macOS 또는 일반 Node.js 개발 환경
-- BASS package와 프로젝트 설정 버전 `0.2.0`
+- BASS package와 프로젝트 설정 버전 `0.2.1`
 
 BASS Core는 LLM을 직접 호출하지 않는다. 설치된 AI 도구가 BASS CLI를 내부 도구로
 사용하며, 사람은 자연어로만 협업한다.
@@ -54,25 +55,39 @@ npm run build
 npm run bass -- create /path/to/my-project --design
 ```
 
-생성된 프로젝트에는 `tools/bass-platform-0.2.0.tgz`, `package.json`,
+생성된 프로젝트에는 `tools/bass-platform-0.2.1.tgz`, `package.json`,
 `package-lock.json`, `bass.yaml`과 agent shim이 함께 생긴다. 대상 폴더가 이미
 내용을 가지고 있으면 기존 파일 보호를 위해 중단하며, 그 경우 아래의 기존 프로젝트
 연결 절차를 사용한다.
 
+### 기존 프로젝트 연결
+
+사람은 AI 도구에 다음처럼 자연어로 요청한다.
+
+```text
+"/path/to/project의 기존 방식은 보존하면서 BASS 감독 계약을 연결하고,
+실제 작업 하나로 적합성까지 확인해줘."
+```
+
+AI는 [기존 프로젝트 연결 방법론](docs/adopting-existing-project.md)에 따라 기존
+기술 스택, 검증 명령, AI 지침, 디자인과 운영 규칙을 먼저 조사한다. 조사 결과로
+profile과 evaluator를 선택하고 설치·초기화 명령을 내부적으로 실행한다.
+
+기존 파일이 있으면 `bass init`은 이를 건너뛴다. AI는 `--force`로 덮어쓰지 않고
+기존 원문에 BASS 계약만 작은 diff로 통합한다. 이미 같은 목적의 하네스·문서·기록이
+있다면 두 번째 원천을 만들지 않는다. 파일 생성만으로 완료하지 않고 사용자가 원래
+필요로 하던 실제 작업 하나를 수행해 구현·검증·피드백 루프를 확인한다.
+
 ### NAN 2026은 명시적으로 선택
 
-일반 프로젝트에는 NAN 절차를 적용하지 않는다. NAN 2026 대회 프로젝트라는 맥락이
-있을 때 AI 에이전트가 `--preset nan2026`을 명시적으로 사용한다.
+일반 프로젝트에는 NAN 절차를 적용하지 않는다. 기존 프로젝트 조사에서 NAN 2026 대회
+맥락이 확인된 경우에만 AI 에이전트가 `--preset nan2026`을 명시적으로 사용한다.
 
 ```bash
 npm run bass -- create /path/to/game-project \
   --preset nan2026 \
   --design
-```
 
-기존 게임 프로젝트는 package 설치 후 다음처럼 연결한다.
-
-```bash
 npx --no-install bass init \
   --name game-project \
   --preset nan2026 \
@@ -82,67 +97,14 @@ npx --no-install bass init \
 NAN preset은 concept 비교, runtime 선택, trace, evidence, session protection을
 추가한다. concept과 runtime 선택은 사람이 책임지는 실제 결정이므로 명시적 승인을
 요구하지만, checkpoint나 workflow 상태 전환을 형식적 승인 질문으로 노출하지 않는다.
-에이전트는 `nan/AGENT_WORKFLOW.md`와 [NAN 설계 설명서](docs/nan2026.md)를 읽고
-관련 명령과 기록을 내부 관리한다.
-
-### BASS package 담당자: 최초 1회
-
-```bash
-cd /path/to/bass-platform
-npm ci
-npm run typecheck
-npm test
-npm run build
-npm run smoke:package
-npm run check:nan
-npm run smoke:nan
-
-mkdir -p /path/to/project/tools
-npm pack --pack-destination /path/to/project/tools
-```
-
-### 프로젝트 담당자: 최초 1회
-
-```bash
-cd /path/to/project
-test -f package.json || npm init -y
-npm install --save-dev ./tools/bass-platform-0.2.0.tgz
-
-npx --no-install bass --version
-npx --no-install bass init \
-  --name my-project \
-  --profiles common,web \
-  --design
-npx --no-install bass doctor
-```
-
-출력 버전은 반드시 `0.2.0`이어야 한다. 다음 파일을 commit해 팀에 공유한다.
-
-- `tools/bass-platform-0.2.0.tgz`
-- `package.json`, `package-lock.json`
-- `bass.yaml`
-- `AGENTS.md`, `.cursor/rules/bass.mdc`, `CLAUDE.md`
-- `tasks/`, `records/`, `critiques/`, `docs/decisions/`
-- UI 프로젝트라면 `DESIGN.md`
-
-`node_modules/`는 commit하지 않는다.
-
-### 팀원: 저장소를 받은 뒤
-
-```bash
-cd /path/to/project
-npm ci
-npx --no-install bass --version
-npx --no-install bass doctor
-npx --no-install bass config explain
-```
-
-일반 팀원은 `bass init`을 다시 실행하지 않는다. 초기화와 shim 충돌 해결은 프로젝트
-담당자가 수행한다.
+기존 게임 프로젝트의 코드·검증·디자인·하네스도 일반
+[연결 방법론](docs/adopting-existing-project.md)에 따라 보존·통합한다. 에이전트는
+`nan/AGENT_WORKFLOW.md`와 [NAN 설계 설명서](docs/nan2026.md)를 읽고 관련 명령과
+기록을 내부 관리한다.
 
 ## 2. Package 배포와 설치
 
-BASS 0.2.0은 공개 npm registry package가 아니며 `private` package다. 반드시 이
+BASS 0.2.1은 공개 npm registry package가 아니며 `private` package다. 반드시 이
 저장소에서 검증한 tarball을 설치한다. 설치 전의 `npx bass`는 사용하지 않는다.
 
 ```bash
@@ -155,7 +117,7 @@ npm pack --pack-destination /path/to/project/tools
 
 # 소비 프로젝트
 cd /path/to/project
-npm install --save-dev ./tools/bass-platform-0.2.0.tgz
+npm install --save-dev ./tools/bass-platform-0.2.1.tgz
 npx --no-install bass --version
 ```
 
@@ -165,7 +127,7 @@ package를 가져오지 않는다.
 필요하면 배포 artifact checksum을 기록한다.
 
 ```bash
-shasum -a 256 tools/bass-platform-0.2.0.tgz
+shasum -a 256 tools/bass-platform-0.2.1.tgz
 ```
 
 ## 3. 프로젝트 초기화
@@ -199,7 +161,8 @@ docs/decisions/
 ```
 
 기존 파일은 기본적으로 보존된다. `--force`는 기존 shim과 설정을 덮어쓸 수 있으므로
-diff와 백업 없이 사용하지 않는다.
+일반적인 연결 수단으로 사용하지 않는다. AI는 건너뛴 원문을 보존하고 BASS 계약만
+통합한다.
 
 ## 4. 매 세션 시작
 
@@ -414,6 +377,8 @@ npm run typecheck
 npm test
 npm run build
 npm run smoke:package
+npm run check:nan
+npm run smoke:nan
 ```
 
 ## 설계 문서
@@ -421,6 +386,7 @@ npm run smoke:package
 - [Vision](docs/vision.md) — BASS의 목적과 범위
 - [Architecture](docs/architecture.md) — 구성 요소와 데이터 흐름
 - [Principles](docs/principles.md) — 운영·설계 원칙
+- [Adopting an existing project](docs/adopting-existing-project.md) — 기존 프로젝트 연결
 - [Workflows](docs/workflows.md) — 상태 머신과 gate
 - [Configuration](docs/configuration.md) — 설정 계층과 override
 - [Project profiles](docs/project-profiles.md) — profile 선택
