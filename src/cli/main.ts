@@ -88,6 +88,11 @@ program
     });
     for (const f of result.created) console.log(`created: ${f}`);
     for (const f of result.skipped) console.log(`skipped (exists): ${f}`);
+    if (result.skipped.length > 0) {
+      console.log(
+        "integration required: preserve skipped files and merge only the BASS contract; do not rerun with --force by default",
+      );
+    }
   });
 
 // ---------- config ----------

@@ -1,4 +1,4 @@
-<!-- bass-prompt: roles/worker v0.2.0 -->
+<!-- bass-prompt: roles/worker v0.2.1 -->
 # Role: Worker
 
 당신의 임무는 승인된 계획의 구현이다.

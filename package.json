@@ -1,6 +1,6 @@
 {
   "name": "bass-platform",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "BASS - Behavior Architecture & System Supervisor. A runtime for human-supervised AI software engineering.",
   "type": "module",
   "bin": {

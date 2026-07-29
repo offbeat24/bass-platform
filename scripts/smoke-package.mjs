@@ -56,7 +56,27 @@ try {
   run(bassBin, ["init", "--name", "package-smoke", "--profiles", "common,cli"], demo);
   const explanation = run(bassBin, ["config", "explain"], demo);
   assert.match(explanation, /profiles: common, cli/);
-  assert.match(run(bassBin, ["agent", "guide"], demo), /user interface: natural-language/);
+  const agentGuide = run(bassBin, ["agent", "guide"], demo);
+  assert.match(agentGuide, /user interface: natural-language/);
+  assert.match(agentGuide, /adoption into an existing repository as one proportional task/);
+  assert.match(
+    fs.readFileSync(path.join(demo, "AGENTS.md"), "utf8"),
+    /기존 프로젝트의 지침·검증·디자인·이력을 원천으로 보존/,
+  );
+
+  const existingProject = path.join(consumer, "existing-project");
+  fs.mkdirSync(existingProject, { recursive: true });
+  fs.writeFileSync(path.join(existingProject, "AGENTS.md"), "# Existing project rules\n", "utf8");
+  const existingInit = run(
+    bassBin,
+    ["init", "--name", "existing-project", "--profiles", "common"],
+    existingProject,
+  );
+  assert.match(existingInit, /integration required: preserve skipped files/);
+  assert.equal(
+    fs.readFileSync(path.join(existingProject, "AGENTS.md"), "utf8"),
+    "# Existing project rules\n",
+  );
 
   const createdProject = path.join(consumer, "created-project");
   run(

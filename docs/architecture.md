@@ -82,6 +82,12 @@ flowchart TD
 
 ## 프로젝트 통합 (§6, Design §8)
 
+기존 프로젝트 연결도 일반 BASS 작업과 같은 Observe → Understand → Plan → Implement
+→ Verify → Review 루프를 따른다. BASS는 별도의 마이그레이션 엔진이 아니며, 호스트
+에이전트가 프로젝트를 조사해 package, 설정과 얇은 shim만 최소 침습적으로 연결한다.
+기존 규칙·검증·이력은 프로젝트 원천으로 유지하고, 겹치는 체계는 통합해 두 번째
+Single Source of Truth를 만들지 않는다.
+
 ```text
 project/
 ├── bass.yaml          # 유일한 실질 설정. 프로파일과 alias 만 참조
@@ -96,3 +102,5 @@ project/
 ```
 
 shim 드리프트는 `bass doctor` 가 감시한다 (마커 부재, 비대화).
+구체적인 조사·통합·파일럿·학습 승격 기준은
+[기존 프로젝트 연결 방법론](adopting-existing-project.md)을 따른다.
