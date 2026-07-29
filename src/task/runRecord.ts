@@ -86,3 +86,41 @@ export function loadRunRecord(projectRoot: string, taskId: string): RunRecord | 
   }
   return result.data;
 }
+
+export function recordFinalApproval(
+  projectRoot: string,
+  taskId: string,
+  approver: string,
+  notes?: string,
+): { record: RunRecord; changed: boolean; filePath: string } {
+  const filePath = runRecordPath(projectRoot, taskId);
+  const record = loadRunRecord(projectRoot, taskId);
+  if (!record) {
+    throw new Error(`Run record not found: ${filePath}. Prepare verification evidence before human review.`);
+  }
+
+  if (
+    record.human_approval?.approved &&
+    record.human_approval.approver === approver &&
+    (record.human_approval.notes ?? "") === (notes ?? "")
+  ) {
+    return { record, changed: false, filePath };
+  }
+  if (record.human_approval) {
+    throw new Error(
+      `Final approval already exists for ${taskId}. Preserve the original approval instead of overwriting it.`,
+    );
+  }
+
+  const updated: RunRecord = {
+    ...record,
+    human_approval: {
+      approved: true,
+      approver,
+      at: new Date().toISOString(),
+      ...(notes ? { notes } : {}),
+    },
+  };
+  fs.writeFileSync(filePath, `${JSON.stringify(updated, null, 2)}\n`, "utf8");
+  return { record: updated, changed: true, filePath };
+}

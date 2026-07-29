@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
+import { buildAgentGuide } from "../src/agent/guide.js";
 import { initProject } from "../src/project/init.js";
 import { builtinAdapters } from "../src/nan/adapters/builtin.js";
 import { recommendRuntimes } from "../src/nan/domain/recommendation.js";
@@ -24,6 +25,7 @@ import { loadConcept } from "../src/nan/runtimeCatalog.js";
 import { CapacitorMobileTargetAdapter } from "../src/nan/adapters/capacitor.js";
 import { loadConfig } from "../src/config/loader.js";
 import { composeInstructions } from "../src/compose/composer.js";
+import { BASS_DISPLAY_NAME, BASS_VERSION } from "../src/version.js";
 
 function tempProject(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "bass-nan-"));
@@ -63,7 +65,19 @@ describe("NAN preset", () => {
     expect(snapshot(root)).toEqual(first);
     expect(validateProjectTrace(root)).toEqual([]);
     expect(parse(fs.readFileSync(path.join(root, "nan2026.yaml"), "utf8")).displayName).toBe(
-      "BASS 0.1.1 — NAN Edition",
+      BASS_DISPLAY_NAME,
+    );
+  });
+
+  it("tells the agent that NAN is an explicit profile with meaningful decision boundaries", () => {
+    const root = tempProject();
+    const guide = buildAgentGuide(root, loadConfig({ projectRoot: root }));
+    expect(guide.project.nan2026).toBe(true);
+    expect(guide.operating_rules.join(" ")).toContain(
+      "concept/runtime selection as meaningful human decisions",
+    );
+    expect(guide.operating_rules.join(" ")).toContain(
+      "do not turn checkpoint bookkeeping into user approval prompts",
     );
   });
 
@@ -148,7 +162,7 @@ licenseRisk: low
       projectName: "nan-demo",
     };
     expect(adapter.scaffold(options).status).toBe("applied");
-    expect(JSON.parse(fs.readFileSync(path.join(root, "game", "package.json"), "utf8")).version).toBe("0.1.1");
+    expect(JSON.parse(fs.readFileSync(path.join(root, "game", "package.json"), "utf8")).version).toBe(BASS_VERSION);
     const first = snapshot(root);
     expect(adapter.scaffold(options).status).toBe("unchanged");
     expect(snapshot(root)).toEqual(first);

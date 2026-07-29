@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Node-independent macOS prerequisite check for BASS 0.1.1 — NAN Edition.
+# Node-independent macOS prerequisite check for the optional BASS NAN Edition.
 # This script never installs packages or changes system settings.
 
 NODE_DOWNLOAD_URL="https://nodejs.org/en/download"

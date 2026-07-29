@@ -49,7 +49,7 @@ jobs:
       - run: npm run build --if-present
 `,
   "nan2026.yaml": `edition: nan2026
-displayName: BASS 0.1.1 — NAN Edition
+displayName: BASS {{BASS_VERSION}} — NAN Edition
 event:
   durationHours: 48
   deliveryLockHour: 42
@@ -193,7 +193,10 @@ export function initNanPreset(projectRoot: string): NanInitResult {
   const manifestFile = path.join(projectRoot, MANIFEST_PATH);
   const previous = loadManagedManifest(manifestFile);
   const renderedFiles = Object.fromEntries(
-    Object.entries(nanFiles).map(([file, content]) => [file, content.replaceAll("0.1.1", BASS_VERSION)]),
+    Object.entries(nanFiles).map(([file, content]) => [
+      file,
+      content.replaceAll("{{BASS_VERSION}}", BASS_VERSION),
+    ]),
   );
   const { report, managed } = writeManagedFiles(projectRoot, renderedFiles, previous);
   const manifest: ManagedManifest = {

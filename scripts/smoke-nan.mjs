@@ -7,6 +7,7 @@ import path from "node:path";
 const root = path.resolve(import.meta.dirname, "..");
 const bass = path.join(root, "dist", "cli", "main.js");
 const project = fs.mkdtempSync(path.join(os.tmpdir(), "bass-nan-smoke-"));
+const packageVersion = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).version;
 
 function run(args) {
   return execFileSync(process.execPath, [bass, ...args], {
@@ -17,7 +18,7 @@ function run(args) {
 }
 
 try {
-  assert.equal(run(["--version"]), "0.1.1");
+  assert.equal(run(["--version"]), packageVersion);
   run(["init", "--preset", "nan2026"]);
   assert.doesNotMatch(run(["init", "--preset", "nan2026"]), /conflict/);
   assert.match(run(["doctor"]), /\[PASS\]/);
@@ -31,7 +32,7 @@ try {
   assert.match(run(["nan", "runtime", "apply", "vanilla-web", "--targets", "web", "--dest", "game"]), /"applied"/);
   assert.match(run(["nan", "runtime", "apply", "vanilla-web", "--targets", "web", "--dest", "game"]), /"unchanged"/);
   assert.match(run(["nan", "protect", "verify"]), /\[pass\]/);
-  console.log("NAN smoke PASS: BASS 0.1.1 — NAN Edition");
+  console.log(`NAN smoke PASS: BASS ${packageVersion} — NAN Edition`);
 } finally {
   fs.rmSync(project, { recursive: true, force: true });
 }

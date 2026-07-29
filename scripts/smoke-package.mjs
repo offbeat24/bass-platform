@@ -57,7 +57,11 @@ try {
   run(bassBin, ["init", "--name", "package-smoke", "--preset", "nan2026"], demo);
   const explanation = run(bassBin, ["config", "explain"], demo);
   assert.match(explanation, /profiles: common, nan2026/);
-  assert.equal(JSON.parse(fs.readFileSync(path.join(demo, ".bass", "nan2026-manifest.json"), "utf8")).bassVersion, "0.1.1");
+  assert.equal(
+    JSON.parse(fs.readFileSync(path.join(demo, ".bass", "nan2026-manifest.json"), "utf8")).bassVersion,
+    packageJson.version,
+  );
+  assert.match(run(bassBin, ["agent", "guide"], demo), /concept\/runtime selection/);
   assert.match(run(bassBin, ["nan", "trace", "validate"], demo), /trace PASS/);
   assert.match(run(bassBin, ["nan", "protect", "verify"], demo), /\[pass\]/);
 
@@ -72,14 +76,24 @@ try {
   assert.equal(run(createdBassBin, ["--version"], createdProject), packageJson.version);
   assert.match(run(createdBassBin, ["config", "explain"], createdProject), /profiles: common, web/);
   assert.match(run(createdBassBin, ["doctor"], createdProject), /\[PASS\]/);
-  assert.ok(fs.existsSync(path.join(createdProject, "nan2026.yaml")));
-  assert.match(run(createdBassBin, ["nan", "protect", "verify"], createdProject), /\[pass\]/);
+  assert.match(run(createdBassBin, ["agent", "guide"], createdProject), /design spec: template/);
+  assert.equal(fs.existsSync(path.join(createdProject, "nan2026.yaml")), false);
   assert.match(
     JSON.parse(fs.readFileSync(path.join(createdProject, "package.json"), "utf8")).devDependencies[
       "bass-platform"
     ],
     /^file:tools\/bass-platform-/,
   );
+
+  const nanCreatedProject = path.join(consumer, "nan-created-project");
+  run(
+    bassBin,
+    ["create", nanCreatedProject, "--preset", "nan2026", "--design", "--no-install"],
+    consumer,
+  );
+  assert.ok(fs.existsSync(path.join(nanCreatedProject, "nan2026.yaml")));
+  assert.match(run(bassBin, ["nan", "protect", "verify"], nanCreatedProject), /\[pass\]/);
+  assert.match(run(bassBin, ["agent", "guide"], nanCreatedProject), /concept\/runtime selection/);
 
   const configFile = path.join(demo, "bass.yaml");
   const config = fs.readFileSync(configFile, "utf8").replace(

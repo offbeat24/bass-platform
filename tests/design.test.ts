@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { runDesignChecks, addCorrection, loadCorrections, reviewCorrection } from "../src/design/designProfile.js";
 import { makeTempProject } from "./helpers.js";
+import { loadConfig } from "../src/config/loader.js";
 
 describe("Design Profile 검사", () => {
   it("DESIGN.md 없으면 실패", () => {
@@ -32,6 +33,17 @@ describe("Design Profile 검사", () => {
     const root = makeTempProject({ profiles: ["web"] });
     fs.writeFileSync(path.join(root, "DESIGN.md"), "# design\n색상만 정의", "utf8");
     const checks = runDesignChecks({ projectRoot: root, effective: { design_profile: true } });
+    expect(checks.find((c) => c.id === "state-completeness-spec")?.status).toBe("warn");
+  });
+
+  it("빈 템플릿의 주석 키워드는 상태 명세로 인정하지 않는다", () => {
+    const root = makeTempProject({ profiles: ["web"] });
+    fs.writeFileSync(
+      path.join(root, "DESIGN.md"),
+      "# Product design identity\n\n## Interaction states\n\n<!-- hover focus active disabled loading error empty success -->\n",
+      "utf8",
+    );
+    const checks = runDesignChecks({ projectRoot: root, effective: loadConfig({ projectRoot: root }).effective });
     expect(checks.find((c) => c.id === "state-completeness-spec")?.status).toBe("warn");
   });
 });

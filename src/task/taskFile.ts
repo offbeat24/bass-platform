@@ -3,6 +3,7 @@ import path from "node:path";
 import { parse } from "yaml";
 import { z } from "zod";
 import type { WorkflowState } from "../types.js";
+import { assertTransition } from "../workflow/stateMachine.js";
 
 const WORKFLOW_STATES = [
   "CAPTURED", "DISCOVERY", "SHAPED", "READY", "PLANNED", "IMPLEMENTING",
@@ -118,6 +119,42 @@ export function findTask(projectRoot: string, taskId: string): TaskFile {
   const found = all.find((t) => t.frontmatter.id === taskId);
   if (!found) throw new Error(`Task "${taskId}" not found under ${dir}`);
   return found;
+}
+
+export interface TaskTransitionResult {
+  taskId: string;
+  from: WorkflowState;
+  to: WorkflowState;
+  changed: boolean;
+  filePath: string;
+}
+
+/**
+ * 에이전트가 내부 상태를 안전하게 갱신한다.
+ * 같은 상태로의 재실행은 성공한 no-op 이며, 잘못된 전이는 거부한다.
+ */
+export function transitionTask(
+  projectRoot: string,
+  taskId: string,
+  to: WorkflowState,
+): TaskTransitionResult {
+  const task = findTask(projectRoot, taskId);
+  const from = task.frontmatter.status;
+  if (from === to) {
+    return { taskId, from, to, changed: false, filePath: task.filePath };
+  }
+
+  assertTransition(from, to);
+  const raw = fs.readFileSync(task.filePath, "utf8");
+  const fmMatch = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!fmMatch) throw new Error(`Task file has no YAML frontmatter: ${task.filePath}`);
+  const frontmatter = fmMatch[1]!;
+  if (!/^status:\s*\S+\s*$/m.test(frontmatter)) {
+    throw new Error(`Task frontmatter has no status field: ${task.filePath}`);
+  }
+  const updatedFrontmatter = frontmatter.replace(/^status:\s*\S+\s*$/m, `status: ${to}`);
+  fs.writeFileSync(task.filePath, raw.replace(frontmatter, updatedFrontmatter), "utf8");
+  return { taskId, from, to, changed: true, filePath: task.filePath };
 }
 
 export function countActiveTasks(projectRoot: string): number {

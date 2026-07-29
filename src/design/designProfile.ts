@@ -42,13 +42,14 @@ export function runDesignChecks(opts: DesignCheckOptions): GateCheck[] {
   });
 
   // 3. 상태 완결성 체크리스트: DESIGN.md 의 Interaction states 섹션에 명시됐는지
-  const designContent = fs.readFileSync(designMd, "utf8");
+  const designContent = fs.readFileSync(designMd, "utf8").replace(/<!--[\s\S]*?-->/g, "");
+  const interactionStates = extractMarkdownSection(designContent, "Interaction states");
   const design = (opts.effective["design"] ?? {}) as Record<string, unknown>;
   const stateChecklist = (design["state_checklist"] ?? [
     "hover", "focus", "disabled", "loading", "error", "empty",
   ]) as string[];
   const missingStates = stateChecklist.filter(
-    (s) => !new RegExp(`\\b${s}\\b`, "i").test(designContent),
+    (s) => !new RegExp(`\\b${s}\\b`, "i").test(interactionStates),
   );
   checks.push({
     id: "state-completeness-spec",
@@ -58,6 +59,15 @@ export function runDesignChecks(opts: DesignCheckOptions): GateCheck[] {
   });
 
   return checks;
+}
+
+function extractMarkdownSection(content: string, heading: string): string {
+  const lines = content.split(/\r?\n/);
+  const start = lines.findIndex((line) => line.trim().toLowerCase() === `## ${heading.toLowerCase()}`);
+  if (start < 0) return "";
+  const endOffset = lines.slice(start + 1).findIndex((line) => /^##\s+/.test(line));
+  const end = endOffset < 0 ? lines.length : start + 1 + endOffset;
+  return lines.slice(start + 1, end).join("\n").trim();
 }
 
 const TOKEN_FILE_PATTERN = /(token|theme|palette|design)/i;

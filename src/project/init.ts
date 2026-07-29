@@ -24,8 +24,6 @@ export interface InitOptions {
 export interface InitResult {
   created: string[];
   skipped: string[];
-  updated?: string[];
-  conflicts?: string[];
 }
 
 const SHIM_MARKER = "bass-shim";
@@ -95,24 +93,25 @@ function renderAgentsShim(opts: InitOptions): string {
   return `<!-- ${SHIM_MARKER}: agents v${BASS_VERSION} — 이 파일은 얇은 참조 shim 이다. 규칙 원문을 여기에 복사하지 마라. -->
 # AGENTS.md — ${opts.name}
 
-이 프로젝트는 BASS (Behavior Architecture & System Supervisor) 워크플로를 따른다.
+이 프로젝트는 BASS를 AI 에이전트의 내부 실행 런타임으로 사용한다.
+사용자 인터페이스는 자연어 대화이며, 사용자가 BASS 명령이나 기록 파일을 직접 관리하게 하지 마라.
 
-## 작업 규칙
+## 에이전트 실행 계약
 
-1. 전체 행동 규칙은 \`bass compose --role <role>\` 출력이 기준이다.
-   원문: bass-platform \`prompt-library/\` (복사본을 만들지 마라).
-2. 작업은 \`tasks/<ID>.md\` 명세로 정의한다. 시작 전 \`bass gate pre-task <ID>\`,
-   완료 전 run record 작성 후 \`bass gate pre-complete <ID>\` 를 통과해야 한다.
-3. 모델 선택은 \`bass route <ID> --role <role>\` 권고를 따른다. 모델명을 하드코딩하지 마라.
-4. 인증·권한·데이터 삭제·배포 등 승인 조건(\`bass route\` 출력의 approvals)이 있으면
-   구현 전에 정지하고 인간 승인을 받는다.
-${opts.withDesign ? "5. UI 작업 전 반드시 루트의 `DESIGN.md` 를 읽는다. 디자인 의도의 단일 명세다.\n" : ""}
-프로젝트에 \`nan2026.yaml\`이 있으면 작업 전 \`nan/AGENT_WORKFLOW.md\`도 읽고,
-concept/runtime 사람 승인, trace, evidence, session protection 규칙을 지킨다.
+1. 작업 시작 시 \`bass agent guide [task-id]\`를 내부적으로 실행하고 현재 계약을 읽는다.
+2. 저장소에서 확인할 수 있는 사실은 직접 조사한다. 사람에게는 제품·가치·위험 결정을 한 번에 하나씩 묻는다.
+3. task·상태·검증·critic·record는 에이전트가 관리한다. 내부 상태 전환을 승인 질문으로 노출하지 마라.
+4. 위험 승인 조건이 있으면 선택지·권장안·영향을 제시하고, 사용자의 명시적 결정만 \`bass approval risk\`로 기록한다.
+5. 구현 후 \`bass gate pre-review\`로 근거를 준비하고 결과를 한 번에 보여준다. 최종 승인을 기록한 뒤 \`bass task finalize\`를 실행한다.
+6. 재실행 시 이미 완료된 단계·결정·부작용을 재사용하고 중복 생성하지 마라.
+${opts.withDesign ? "7. UI 작업은 `DESIGN.md`와 실제 렌더링을 조사하고, 기계 검사와 독립 Design Critic을 거친다.\n" : ""}
+프로젝트에 \`nan2026.yaml\`이 있으면 \`nan/AGENT_WORKFLOW.md\`도 읽는다.
+NAN의 concept/runtime 승인과 evidence gate는 대회 의사결정에만 적용하며 일반 상태 전환 승인으로 확대하지 마라.
+## 원천
 
-## 설정
-
-- 프로젝트 설정: \`bass.yaml\` / 유효 설정 확인: \`bass config explain\`
+- 동적 실행 안내: \`bass agent guide --json\`
+- 전체 행동 규칙: \`bass compose --role <role>\`
+- 프로젝트 설정: \`bass.yaml\` / 유효 설정: \`bass config explain\`
 `;
 }
 
@@ -124,13 +123,17 @@ alwaysApply: true
 
 <!-- ${SHIM_MARKER}: cursor v${BASS_VERSION} — 얇은 참조 shim. 규칙 원문을 복사하지 마라. -->
 
-이 프로젝트는 BASS 워크플로를 따른다. 규칙의 단일 원천은 다음과 같다.
+이 프로젝트는 BASS를 AI 에이전트 내부 런타임으로 사용한다.
+사용자에게 CLI 실행이나 상태 파일 편집을 요구하지 말고 자연어 목적과 피드백만 받는다.
 
+- 동적 실행 계약: \`bass agent guide [task-id]\`
 - 행동 규칙: \`bass compose --role <role>\` (원문은 bass-platform prompt-library)
-- 작업 명세: \`tasks/<ID>.md\` — 시작 전 \`bass gate pre-task\`, 완료 전 \`bass gate pre-complete\`
+- task·상태·검증·record는 에이전트가 내부 관리
+- 사람 결정은 정책이 요구하는 제품·가치·위험 판단에만 요청
+- 검토 전 \`bass gate pre-review\`, 명시적 승인 후 \`bass task finalize\`
 - 모델 선택: \`bass route\` 권고 사용, 모델명 하드코딩 금지
 ${opts.withDesign ? "- UI 작업 전 루트 `DESIGN.md` 필독\n" : ""}
-- \`nan2026.yaml\`이 있으면 \`nan/AGENT_WORKFLOW.md\` 필독
+- \`nan2026.yaml\`이 있으면 \`nan/AGENT_WORKFLOW.md\` 필독; NAN 승인 규칙은 concept/runtime 결정에만 적용
 AGENTS.md 와 이 파일의 내용이 다르면 드리프트다. \`bass doctor\` 로 검사하고 shim 을 재생성하라.
 `;
 }
@@ -141,8 +144,11 @@ function renderClaudeShim(): string {
 
 이 프로젝트의 에이전트 규칙은 \`AGENTS.md\` 를 따른다. 그 파일을 먼저 읽어라.
 
-- 작업 게이트: \`bass gate pre-task <ID>\` / \`bass gate pre-complete <ID>\`
+- 사용자는 자연어로만 협업한다. BASS CLI와 기록 파일은 에이전트가 내부 관리한다.
+- 시작 시 \`bass agent guide [task-id]\`를 읽고 위험에 비례한 실행 깊이를 선택한다.
+- 작업 게이트: \`bass gate pre-task <ID>\` / \`bass gate pre-review <ID>\` / \`bass task finalize <ID>\`
 - UI 작업이 있다면 루트 \`DESIGN.md\` 를 먼저 읽는다 (존재하는 경우).
+- \`nan2026.yaml\`이 있으면 \`nan/AGENT_WORKFLOW.md\`를 읽고 concept/runtime/evidence 규칙을 적용한다.
 - 규칙 전문이 필요하면 \`bass compose --role <role>\` 을 실행한다.
 `;
 }

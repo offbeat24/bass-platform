@@ -10,6 +10,11 @@ CAPTURED → DISCOVERY → SHAPED → READY → PLANNED → IMPLEMENTING
 추가 상태: `BLOCKED`, `NEEDS_DECISION`, `NEEDS_EXPERT`, `FAILED`,
 `ROLLED_BACK`, `CANCELLED`
 
+이 상태들은 재시도·복구·관찰을 위한 내부 실행 상태다. 에이전트가
+`bass task transition`으로 관리하며, 각 전이를 사람의 승인 질문으로 노출하지 않는다.
+작업 위험에 따라 NONE/LIGHT/STANDARD/DEEP 깊이를 선택해 저위험 작업은 상태를 자동으로
+진행하고, 사람에게는 제품·가치·위험 결정을 요구하는 지점만 보여준다.
+
 규칙 (`src/workflow/stateMachine.ts`):
 
 - 단계 건너뛰기 금지 (CAPTURED → IMPLEMENTING 불가)
@@ -30,17 +35,27 @@ CAPTURED → DISCOVERY → SHAPED → READY → PLANNED → IMPLEMENTING
 - 승인 정책 트리거 시 needs-human 표시 (인간 승인 전 구현 금지)
 - 미해결 Assumptions 경고
 
-## DONE 조건 → `bass gate pre-complete`
+## 인간 리뷰 준비 → `bass gate pre-review`
+
+- status 가 CRITIQUING 또는 HUMAN_REVIEW
+- run record, 평가 결과, critic, 문서·rollback·디자인 근거 준비
+- 최종 인간 승인 자체는 아직 요구하지 않음
+- 미검증 항목은 사람 판단 대상으로 명시
+
+## DONE 조건 → `bass approval final` + `bass task finalize`
 
 - status 가 HUMAN_REVIEW
 - `records/<ID>.json` run record 존재 + 스키마 유효 (없으면 즉시 실패)
 - 평가기 결과에 fail/error 없음, 최소 1개 실행
 - 검증 못한 항목(`not_verified`)은 인간 판단 대상으로 표시
 - 미해결 high/medium critic finding 0건
-- 인간 승인 기록 (reviewer_required 시)
+- `pre-review` 이후 사람의 명시적 최종 승인 기록 (reviewer_required 시)
 - 문서 갱신 필요 여부 확인, 롤백 방법 기록, 교훈 판단 흔적
 - Design Profile 활성 시: 렌더링 검증 **여부 기록** 강제
   (렌더링하지 않은 UI 를 "시각적으로 검증 완료"로 표현하지 못하게 함)
+
+`task finalize`는 완료 조건을 검사하고 HUMAN_REVIEW → DONE을 수행한다. 이미 DONE이면
+성공한 no-op으로 종료한다.
 
 ## 종료 보고 (§28)
 

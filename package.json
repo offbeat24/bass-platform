@@ -1,7 +1,7 @@
 {
   "name": "bass-platform",
-  "version": "0.1.1",
-  "description": "BASS 0.1.1 — NAN Edition. A runtime for human-supervised AI software engineering.",
+  "version": "0.2.0",
+  "description": "BASS 0.2.0 — natural-language agent runtime with the optional NAN 2026 profile.",
   "type": "module",
   "bin": {
     "bass": "./dist/cli/main.js"
@@ -38,7 +38,6 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
-    "tsx": "^4.23.1",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   }

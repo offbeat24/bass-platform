@@ -4,6 +4,7 @@ import type { GateCheck, GateReport } from "../types.js";
 import { checkSections, countActiveTasks, TASK_SECTIONS, type TaskFile } from "../task/taskFile.js";
 import { loadRunRecord } from "../task/runRecord.js";
 import { findRequiredApprovals } from "../policy/policyEngine.js";
+import { loadRiskApprovals } from "../task/approvalRecord.js";
 
 /** READY 게이트에 필수인 섹션 (Core 프롬프트 §13 READY 조건) */
 const READY_SECTIONS = [
@@ -67,12 +68,18 @@ export function preTaskGate(task: TaskFile, ctx: GateContext): GateReport {
   });
 
   const approvals = findRequiredApprovals(fm);
+  const recordedApprovals = loadRiskApprovals(ctx.projectRoot, fm.id);
+  const unresolvedApprovals: string[] = [];
   for (const a of approvals) {
+    const recorded = recordedApprovals.find((entry) => entry.rule_id === a.rule.id);
+    if (!recorded) unresolvedApprovals.push(a.rule.id);
     checks.push({
       id: `approval:${a.rule.id}`,
       description: a.rule.description,
-      status: "needs-human",
-      detail: `triggered by ${a.matchedBy.join("; ")}`,
+      status: !recorded ? "needs-human" : recorded.decision === "approved" ? "pass" : "fail",
+      detail: !recorded
+        ? `triggered by ${a.matchedBy.join("; ")}`
+        : `${recorded.decision} by ${recorded.approver}: ${recorded.reason}`,
     });
   }
 
@@ -87,7 +94,25 @@ export function preTaskGate(task: TaskFile, ctx: GateContext): GateReport {
     });
   }
 
-  return buildReport("pre-task", fm.id, checks, approvals.map((a) => a.rule.id));
+  return buildReport("pre-task", fm.id, checks, unresolvedApprovals);
+}
+
+/**
+ * 인간에게 결과를 보여주기 전에 실행하는 준비 상태 검사.
+ * 최종 승인 자체는 요구하지 않고, 검증 근거와 미해결 인간 판단 항목을 모은다.
+ */
+export function preReviewGate(task: TaskFile, ctx: GateContext): GateReport {
+  const completion = preCompleteGate(task, ctx);
+  const checks = completion.checks.filter(
+    (check) => check.id !== "status-review" && check.id !== "human-approval",
+  );
+  checks.unshift({
+    id: "status-review-ready",
+    description: "인간 리뷰 준비는 CRITIQUING 또는 HUMAN_REVIEW 상태에서 가능하다",
+    status: ["CRITIQUING", "HUMAN_REVIEW"].includes(task.frontmatter.status) ? "pass" : "fail",
+    detail: `current status: ${task.frontmatter.status}`,
+  });
+  return buildReport("pre-review", task.frontmatter.id, checks, []);
 }
 
 /**
@@ -209,7 +234,7 @@ export function preCompleteGate(task: TaskFile, ctx: GateContext): GateReport {
 }
 
 function buildReport(
-  gate: "pre-task" | "pre-complete",
+  gate: "pre-task" | "pre-review" | "pre-complete",
   taskId: string,
   checks: GateCheck[],
   approvalsRequired: string[],
@@ -217,7 +242,9 @@ function buildReport(
   return {
     gate,
     taskId,
-    passed: checks.every((c) => c.status !== "fail"),
+    passed:
+      checks.every((c) => c.status !== "fail") &&
+      (gate !== "pre-task" || checks.every((c) => c.status !== "needs-human")),
     checks,
     approvalsRequired,
   };
