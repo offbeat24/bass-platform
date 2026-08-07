@@ -147,6 +147,8 @@ describe("bass compose (지침 조합)", () => {
     expect(composed).toContain("section: task: T-001");
     expect(composed).toContain("auth-and-permissions");
     expect(composed).toContain("DESIGN.md");
+    expect(composed).toContain("Ouroboros의 interview/evaluate 루프");
+    expect(composed).toContain("Ponytail은 승인된 범위의 구현에 적용한다");
     // 출처 추적
     expect(composed).toContain("source:");
   });

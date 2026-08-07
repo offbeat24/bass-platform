@@ -78,6 +78,11 @@ profile과 evaluator를 선택하고 설치·초기화 명령을 내부적으로
 있다면 두 번째 원천을 만들지 않는다. 파일 생성만으로 완료하지 않고 사용자가 원래
 필요로 하던 실제 작업 하나를 수행해 구현·검증·피드백 루프를 확인한다.
 
+Ouroboros와 Ponytail 같은 AI 하네스 플러그인이 있으면 긴 규칙을 BASS에 복사하지
+않고 필요한 단계에서만 조정해 사용한다. Ouroboros는 요구 명세·의미 평가, Ponytail은
+승인된 범위의 최소 구현에 집중하며 BASS task와 run record가 원천으로 남는다. 설치와
+활성화 경계는 [AI 하네스 플러그인 통합](docs/agent-harness-plugins.md)을 따른다.
+
 ### NAN 2026은 명시적으로 선택
 
 일반 프로젝트에는 NAN 절차를 적용하지 않는다. 기존 프로젝트 조사에서 NAN 2026 대회
@@ -394,4 +399,5 @@ npm run smoke:nan
 - [Evaluation](docs/evaluation.md) — evaluator level
 - [Security](docs/security.md) — 권한과 위험 제어
 - [Migration from COL](docs/migration-from-COL.md) — 기존 harness 이행
+- [AI harness plugins](docs/agent-harness-plugins.md) — Ouroboros·Ponytail 온디맨드 조정
 - [NAN 2026](docs/nan2026.md) — 선택적 대회 프로필과 evidence 계약

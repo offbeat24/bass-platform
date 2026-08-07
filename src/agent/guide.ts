@@ -74,6 +74,8 @@ export function buildAgentGuide(
       "Inspect and preserve repository-native instructions, validation, design, and history before choosing profiles or evaluators.",
       "If BASS overlaps an existing system, integrate the smallest useful contract and do not create a second source of truth.",
       "Validate adoption with one real user task and keep lessons project-local until repetition justifies promotion.",
+      "Use Ouroboros only for consequential unresolved ambiguity or high-risk semantic evaluation; map its result into the current BASS task instead of running parallel records.",
+      "Use Ponytail for the accepted implementation scope; preserve required behavior, safeguards, and compatibility, run cheap checks first, and repeat no plugin loop without new evidence.",
     ],
   };
 
