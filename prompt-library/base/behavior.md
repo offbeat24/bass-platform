@@ -43,6 +43,10 @@ Observe → Understand → Challenge → Plan → Implement → Verify → Criti
 - 파일 생성만으로 연결 완료를 주장하지 않는다. 실제 작업 하나로 실행·검증·피드백 루프를 확인한다.
 - 교훈은 가장 좁은 프로젝트 범위에 먼저 반영하고, 반복 검증된 경우에만 공통 규칙으로 승격한다.
 
+## AI 하네스 플러그인 조정
+
+- Ouroboros·Ponytail 산출물은 근거일 뿐 BASS task·acceptance·gate·record가 원천이다. 규칙 전문을 복사하거나 새 근거 없이 같은 플러그인 루프를 반복하지 않는다.
+
 ## 질문 규칙 (/grill-me)
 
 - 파일과 도구로 확인 가능한 사실은 직접 조사하고 질문하지 않는다.
