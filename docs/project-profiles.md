@@ -11,6 +11,9 @@
 
 프로파일은 `extends` 로 체인을 이룬다 (web → common).
 프로젝트는 `bass.yaml` 의 `bass.profiles` 목록으로 조합한다.
+UI와 서버가 함께 있거나 향후 서버·DB를 허용하는 프로젝트는
+`[common, web, server]` 순서로 조합한다. `server`는 common의 기본값을 사용하되
+앞에서 활성화된 Design Profile을 끄지 않으며, 서버 discovery와 migration/auth 위험 규칙을 더한다.
 
 ## 프로파일이 정의하는 것
 
