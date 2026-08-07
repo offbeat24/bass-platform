@@ -34,6 +34,22 @@ describe("계층형 설정 병합", () => {
     expect(config.layers.map((l) => l.name)).toContain("profile:web");
   });
 
+  it("web + server 조합은 디자인 검증과 서버·DB 위험 규칙을 함께 유지한다", () => {
+    const root = makeTempProject({ profiles: ["common", "web", "server"] });
+    const config = loadConfig({ projectRoot: root });
+    const discovery = config.effective["discovery_checklist"] as string[];
+    const riskRules = config.effective["risk_rules"] as {
+      sensitive_patterns: Array<{ pattern: string; suggest_reason: string }>;
+    };
+    expect(config.effective["design_profile"]).toBe(true);
+    expect(discovery).toContain("API 계약과 버전 정책");
+    expect(discovery).toContain("격리된 integration DB와 재현 가능한 seed");
+    expect(riskRules.sensitive_patterns).toContainEqual({
+      pattern: "**/migrations/**",
+      suggest_reason: "production-db-migration",
+    });
+  });
+
   it("런타임 override 가 최우선이다", () => {
     const root = makeTempProject({ profiles: ["common"] });
     const config = loadConfig({

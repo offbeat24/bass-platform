@@ -67,6 +67,7 @@ export function buildAgentGuide(
       "Record explicit human decisions before crossing a policy gate; never self-approve.",
       "Make retries idempotent: reuse completed state, evidence, and decisions instead of duplicating them.",
       "For UI work, inspect the rendered result and DESIGN.md before claiming visual completion.",
+      "Treat the current architecture as evidence, not a product boundary. When accepted scope adds backend APIs or persistent data, activate the server profile and extend API, integration, migration, security, and recovery verification in the same change.",
       "Treat adoption into an existing repository as one proportional task, not as a separate ceremony.",
       "Inspect and preserve repository-native instructions, validation, design, and history before choosing profiles or evaluators.",
       "If BASS overlaps an existing system, integrate the smallest useful contract and do not create a second source of truth.",

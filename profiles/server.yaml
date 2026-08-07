@@ -4,8 +4,10 @@ extends: common
 
 discovery_checklist:
   - API 계약과 버전 정책
-  - 데이터 모델과 마이그레이션 이력
-  - 인증·권한 경계
+  - 데이터 모델과 forward/rollback 마이그레이션 이력
+  - 인증·권한·비밀정보 경계
+  - 트랜잭션, 무결성, 멱등성과 복구 전략
+  - 격리된 integration DB와 재현 가능한 seed
   - 로깅과 관측 수단
 
 risk_rules:
@@ -15,5 +17,3 @@ risk_rules:
       suggest_reason: production-db-migration
     - pattern: "**/auth/**"
       suggest_reason: touches-auth
-
-design_profile: false

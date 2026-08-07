@@ -65,6 +65,20 @@ npx --no-install bass init --name <project> --profiles <selected-profiles> [--de
   Single Source of Truth를 만들지 않는다.
 - 연결하지 않은 항목과 이유를 결과 보고에 밝힌다.
 
+### 현재 구조가 제품 범위를 제한하지 않게 한다
+
+연결 시점에 프런트엔드만 있다고 해서 서버나 영속 데이터가 금지된 것으로 해석하지 않는다.
+사람이 백엔드, API, 데이터베이스, 인증, 저장·동기화를 제품 범위에 추가하면 그 작업에서
+`server` profile과 관련 evaluator를 함께 연결한다. UI도 있는 프로젝트는
+`common,web,server` 순서로 조합하면 Design Profile을 유지하면서 서버 discovery와
+migration/auth 위험 규칙을 적용할 수 있다.
+
+- API 계약과 버전·호환 정책을 기록한다.
+- 데이터 모델과 forward/rollback migration, 기존 데이터 보존을 검증한다.
+- 인증·권한·비밀정보 경계와 트랜잭션·무결성·멱등성을 검토한다.
+- 격리된 integration DB, 재현 가능한 seed, 복구와 관측 수단을 evaluator/CI에 연결한다.
+- 운영 DB 변경, 외부 서비스 생성과 배포는 명시적 승인 전 실행하지 않는다.
+
 ## 4. 연결을 검증한다
 
 AI는 적절한 범위에서 다음을 확인한다.

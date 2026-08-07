@@ -22,6 +22,8 @@ describe("agent guide", () => {
     expect(guide.operating_rules.join(" ")).toContain("Use Ouroboros only");
     expect(guide.operating_rules.join(" ")).toContain("Use Ponytail only within accepted scope");
     expect(guide.operating_rules.join(" ")).toContain("do not repeat loops without new evidence");
+    expect(guide.operating_rules.join(" ")).toContain("current architecture as evidence, not a product boundary");
+    expect(guide.operating_rules.join(" ")).toContain("backend APIs or persistent data");
   });
 
   it("빈 DESIGN.md 템플릿을 준비 완료로 오인하지 않는다", () => {
