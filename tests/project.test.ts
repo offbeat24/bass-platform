@@ -147,8 +147,8 @@ describe("bass compose (지침 조합)", () => {
     expect(composed).toContain("section: task: T-001");
     expect(composed).toContain("auth-and-permissions");
     expect(composed).toContain("DESIGN.md");
-    expect(composed).toContain("Ouroboros의 interview/evaluate 루프");
-    expect(composed).toContain("Ponytail은 승인된 범위의 구현에 적용한다");
+    expect(composed).toContain("Ouroboros·Ponytail 산출물은 근거");
+    expect(composed).toContain("Ponytail은 승인된 범위에만 적용한다");
     // 출처 추적
     expect(composed).toContain("source:");
   });
@@ -160,5 +160,15 @@ describe("bass compose (지침 조합)", () => {
     expect(() => composeInstructions({ projectRoot: root, config, role: "nonexistent" })).toThrow(
       /Prompt part not found/,
     );
+  });
+
+  it("Ouroboros 상세 규칙은 discovery 역할에만 필요할 때 조합한다", () => {
+    const root = tempDir();
+    initProject({ projectRoot: root, name: "demo", profiles: ["common"], owner: "user", withDesign: false });
+    const config = loadConfig({ projectRoot: root });
+    const discovery = composeInstructions({ projectRoot: root, config, role: "discovery" });
+    const worker = composeInstructions({ projectRoot: root, config, role: "worker" });
+    expect(discovery).toContain("Ouroboros interview/seed");
+    expect(worker).not.toContain("Ouroboros interview/seed");
   });
 });

@@ -160,15 +160,19 @@ This file is the shared entry point for Codex, Cursor, Claude, and other agents.
 
 1. Read \`nan2026.yaml\`, \`nan/gates.yaml\`, the active concept, and \`nan/team.yaml\`.
 2. Do not finalize a concept or runtime without a named human approval.
-3. Use \`bass nan runtime recommend\`, then doctor and certify before apply.
-4. Never claim an unexecuted target build; keep it \`not-verified\`.
-5. Link theme → concept → decision → requirement → scenario → test → evidence.
-6. Turn accepted critic findings into regression tests.
-7. Preserve user files. A managed-file conflict requires human resolution.
-8. Record failed attempts; two consecutive failures are BLOCKED and the fourth failed
+3. Use Ouroboros only for theme-to-rule ambiguity before concept approval; import once.
+   After lock it may evaluate, not evolve.
+4. Use Ponytail for playable code, never protected trace, gates, acceptance, evidence,
+   or platform requirements.
+5. Use \`bass nan runtime recommend\`, then doctor and certify before apply.
+6. Never claim an unexecuted target build; keep it \`not-verified\`.
+7. Link theme → concept → decision → requirement → scenario → test → evidence.
+8. Turn accepted critic findings into regression tests.
+9. Preserve user files. A managed-file conflict requires human resolution.
+10. Record failed attempts; two consecutive failures are BLOCKED and the fourth failed
    rework requires human judgment.
-9. Do not weaken gates, shims, or acceptance checks after \`bass nan session lock\`.
-10. Before handoff run trace, protection, relevant tests/builds, and evidence report.
+11. Do not weaken gates, shims, or acceptance checks after \`bass nan session lock\`.
+12. Before handoff run trace, protection, relevant tests/builds, and evidence report.
 `,
   "docs/submission/README.md": `# NAN 2026 submission workspace
 

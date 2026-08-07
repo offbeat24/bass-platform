@@ -79,6 +79,12 @@ describe("NAN preset", () => {
     expect(guide.operating_rules.join(" ")).toContain(
       "do not turn checkpoint bookkeeping into user approval prompts",
     );
+    expect(guide.operating_rules.join(" ")).toContain(
+      "Ouroboros is pre-approval clarification or post-lock evaluation only",
+    );
+    expect(guide.operating_rules.join(" ")).toContain(
+      "Ponytail never removes protected trace",
+    );
   });
 
   it("preserves a user-modified managed file and reports a conflict", () => {
@@ -95,6 +101,8 @@ describe("NAN preset", () => {
     const composed = composeInstructions({ projectRoot: root, config: loadConfig({ projectRoot: root }), role: "worker" });
     expect(composed).toContain("section: NAN 2026 workflow");
     expect(composed).toContain("Never claim an unexecuted target build");
+    expect(composed).toContain("Use Ouroboros only for theme-to-rule ambiguity");
+    expect(composed).toContain("Use Ponytail for playable code");
   });
 });
 

@@ -20,8 +20,8 @@ describe("agent guide", () => {
     );
     expect(guide.operating_rules.join(" ")).toContain("do not create a second source of truth");
     expect(guide.operating_rules.join(" ")).toContain("Use Ouroboros only");
-    expect(guide.operating_rules.join(" ")).toContain("Use Ponytail for the accepted implementation scope");
-    expect(guide.operating_rules.join(" ")).toContain("repeat no plugin loop without new evidence");
+    expect(guide.operating_rules.join(" ")).toContain("Use Ponytail only within accepted scope");
+    expect(guide.operating_rules.join(" ")).toContain("do not repeat loops without new evidence");
   });
 
   it("빈 DESIGN.md 템플릿을 준비 완료로 오인하지 않는다", () => {

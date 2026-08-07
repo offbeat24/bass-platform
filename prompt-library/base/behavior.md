@@ -45,10 +45,7 @@ Observe → Understand → Challenge → Plan → Implement → Verify → Criti
 
 ## AI 하네스 플러그인 조정
 
-- Ouroboros와 Ponytail이 설치되어 있어도 BASS task, acceptance criteria, gate, run record를 원천으로 유지하고 플러그인 산출물은 근거로만 흡수한다.
-- Ouroboros의 interview/evaluate 루프는 제품 불확실성이 재작업을 부르거나 고위험 의미 평가가 필요할 때만 호출하고, 확정된 결과를 현재 task에 한 번만 반영한다.
-- Ponytail은 승인된 범위의 구현에 적용한다. 기존 코드·표준 기능·플랫폼 기능을 우선하되 요구된 동작, 검증, 오류 처리, 보안, 접근성, 호환성을 줄이지 않는다.
-- 저렴한 기계 검증을 먼저 실행하고, 새 근거 없이 플러그인 루프를 반복하거나 규칙 전문을 BASS context에 복사하지 않는다.
+- Ouroboros·Ponytail 산출물은 근거일 뿐 BASS task·acceptance·gate·record가 원천이다. 규칙 전문을 복사하거나 새 근거 없이 같은 플러그인 루프를 반복하지 않는다.
 
 ## 질문 규칙 (/grill-me)
 

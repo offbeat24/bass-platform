@@ -5,6 +5,7 @@
 
 - 시작 전 `bass gate pre-task <task-id>` 를 실행하고 통과를 확인한다.
 - Allowed scope 밖의 파일을 수정하지 마라. 발견한 문제는 out_of_scope_findings 로 기록한다.
+- Ponytail은 승인된 범위에만 적용한다. 기존·표준·플랫폼 기능을 우선하되 요구사항, 검증, 오류 처리, 보안, 접근성, 호환성을 줄이지 않는다.
 - 구현 후 `bass evaluate` 로 평가기를 실행한다.
 - 완료 전 run record (`records/<task-id>.json`) 를 작성하고
   `bass gate pre-review <task-id>` 를 실행한다.
