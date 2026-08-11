@@ -8,6 +8,9 @@ const root = path.resolve(import.meta.dirname, "..");
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "bass-package-smoke-"));
 const npmCache = path.join(tempRoot, "npm-cache");
+const npmCli = process.env.npm_execpath;
+
+assert.ok(npmCli, "smoke:package must run through npm so npm_execpath is available");
 
 function run(command, args, cwd = root) {
   return execFileSync(command, args, {
@@ -18,12 +21,16 @@ function run(command, args, cwd = root) {
   }).trim();
 }
 
+function runNpm(args, cwd = root) {
+  return run(process.execPath, [npmCli, ...args], cwd);
+}
+
 function setupArgs(target, profiles = "common") {
   return ["setup", target, "--non-interactive", "--profiles", profiles, "--capability", "simplicity=builtin"];
 }
 
 try {
-  const packed = JSON.parse(run("npm", ["pack", "--json", "--pack-destination", tempRoot]));
+  const packed = JSON.parse(runNpm(["pack", "--json", "--pack-destination", tempRoot]));
   const tarball = path.join(tempRoot, packed[0].filename);
   const packedPaths = packed[0].files.map((file) => file.path);
   for (const required of [
@@ -38,34 +45,35 @@ try {
   }
 
   const dependencyTarballs = Object.keys(packageJson.dependencies).map((dependency) => {
-    const dependencyPack = JSON.parse(run("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", tempRoot, path.join(root, "node_modules", dependency)]));
+    const dependencyPack = JSON.parse(runNpm(["pack", "--ignore-scripts", "--json", "--pack-destination", tempRoot, path.join(root, "node_modules", dependency)]));
     return path.join(tempRoot, dependencyPack[0].filename);
   });
   const host = path.join(tempRoot, "host");
   fs.mkdirSync(host);
   fs.writeFileSync(path.join(host, "package.json"), JSON.stringify({ private: true }), "utf8");
-  run("npm", ["install", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", tarball, ...dependencyTarballs], host);
-  const bass = path.join(host, "node_modules", ".bin", process.platform === "win32" ? "bass.cmd" : "bass");
-  assert.equal(run(bass, ["--version"], host), packageJson.version);
+  runNpm(["install", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", tarball, ...dependencyTarballs], host);
+  const bassCli = path.join(host, "node_modules", packageJson.name, packageJson.bin.bass);
+  const runBass = (args, cwd = host) => run(process.execPath, [bassCli, ...args], cwd);
+  assert.equal(runBass(["--version"]), packageJson.version);
 
   const nodeRepo = path.join(tempRoot, "node-web");
   fs.mkdirSync(nodeRepo);
   const nodePackage = JSON.stringify({ name: "node-web", private: true, scripts: { test: "node --test" } }, null, 2);
   fs.writeFileSync(path.join(nodeRepo, "package.json"), nodePackage, "utf8");
-  run(bass, setupArgs(nodeRepo, "common,web"), host);
+  runBass(setupArgs(nodeRepo, "common,web"));
   assert.equal(fs.readFileSync(path.join(nodeRepo, "package.json"), "utf8"), nodePackage);
   assert.ok(fs.existsSync(path.join(nodeRepo, "bass.yaml")));
 
   const pythonRepo = path.join(tempRoot, "python-repo");
   fs.mkdirSync(pythonRepo);
   fs.writeFileSync(path.join(pythonRepo, "pyproject.toml"), "[project]\nname='demo'\n", "utf8");
-  run(bass, setupArgs(pythonRepo), host);
+  runBass(setupArgs(pythonRepo));
   assert.equal(fs.existsSync(path.join(pythonRepo, "package.json")), false);
 
   const unityRepo = path.join(tempRoot, "unity-repo");
   fs.mkdirSync(path.join(unityRepo, "Assets"), { recursive: true });
-  run(bass, setupArgs(unityRepo, "common,game"), host);
-  run(bass, ["runtime", "scaffold", "unity", "--destination", "prototype", "--targets", "macos", "--confirm"], unityRepo);
+  runBass(setupArgs(unityRepo, "common,game"));
+  runBass(["runtime", "scaffold", "unity", "--destination", "prototype", "--targets", "macos", "--confirm"], unityRepo);
   assert.equal(fs.existsSync(path.join(unityRepo, "package.json")), false);
   assert.equal(fs.existsSync(path.join(unityRepo, "prototype", "package.json")), false);
 
@@ -74,15 +82,15 @@ try {
   fs.writeFileSync(path.join(legacy, "bass.yaml"), "bass:\n  version: 0.2.1\n  profiles: [common]\nproject:\n  name: legacy\n", "utf8");
   fs.writeFileSync(path.join(legacy, "AGENTS.md"), "# Keep me\n", "utf8");
   const before = fs.readFileSync(path.join(legacy, "bass.yaml"), "utf8");
-  assert.match(run(bass, ["upgrade", "--check"], legacy), /No files changed/);
+  assert.match(runBass(["upgrade", "--check"], legacy), /No files changed/);
   assert.equal(fs.readFileSync(path.join(legacy, "bass.yaml"), "utf8"), before);
-  run(bass, ["upgrade", "--apply"], legacy);
+  runBass(["upgrade", "--apply"], legacy);
   assert.match(fs.readFileSync(path.join(legacy, "bass.yaml"), "utf8"), new RegExp(`version: ${packageJson.version}`));
   assert.match(fs.readFileSync(path.join(legacy, "AGENTS.md"), "utf8"), /# Keep me/);
 
   const mismatch = fs.readFileSync(path.join(nodeRepo, "bass.yaml"), "utf8").replace(`version: ${packageJson.version}`, "version: 999.0.0");
   fs.writeFileSync(path.join(nodeRepo, "bass.yaml"), mismatch, "utf8");
-  const failed = spawnSync(bass, ["config", "explain"], { cwd: nodeRepo, encoding: "utf8" });
+  const failed = spawnSync(process.execPath, [bassCli, "config", "explain"], { cwd: nodeRepo, encoding: "utf8" });
   assert.notEqual(failed.status, 0);
   assert.match(failed.stderr, /Install @offbeat24\/bass@999\.0\.0/);
 
