@@ -8,6 +8,9 @@ const root = path.resolve(import.meta.dirname, "..");
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "bass-package-smoke-"));
 const npmCache = path.join(tempRoot, "npm-cache");
+const npmCli = process.env.npm_execpath;
+
+assert.ok(npmCli, "smoke:package must run through npm so npm_execpath is available");
 
 function run(command, args, cwd = root) {
   return execFileSync(command, args, {
@@ -18,12 +21,16 @@ function run(command, args, cwd = root) {
   }).trim();
 }
 
+function runNpm(args, cwd = root) {
+  return run(process.execPath, [npmCli, ...args], cwd);
+}
+
 function setupArgs(target, profiles = "common") {
   return ["setup", target, "--non-interactive", "--profiles", profiles, "--capability", "simplicity=builtin"];
 }
 
 try {
-  const packed = JSON.parse(run("npm", ["pack", "--json", "--pack-destination", tempRoot]));
+  const packed = JSON.parse(runNpm(["pack", "--json", "--pack-destination", tempRoot]));
   const tarball = path.join(tempRoot, packed[0].filename);
   const packedPaths = packed[0].files.map((file) => file.path);
   for (const required of [
@@ -38,13 +45,13 @@ try {
   }
 
   const dependencyTarballs = Object.keys(packageJson.dependencies).map((dependency) => {
-    const dependencyPack = JSON.parse(run("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", tempRoot, path.join(root, "node_modules", dependency)]));
+    const dependencyPack = JSON.parse(runNpm(["pack", "--ignore-scripts", "--json", "--pack-destination", tempRoot, path.join(root, "node_modules", dependency)]));
     return path.join(tempRoot, dependencyPack[0].filename);
   });
   const host = path.join(tempRoot, "host");
   fs.mkdirSync(host);
   fs.writeFileSync(path.join(host, "package.json"), JSON.stringify({ private: true }), "utf8");
-  run("npm", ["install", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", tarball, ...dependencyTarballs], host);
+  runNpm(["install", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", tarball, ...dependencyTarballs], host);
   const bass = path.join(host, "node_modules", ".bin", process.platform === "win32" ? "bass.cmd" : "bass");
   assert.equal(run(bass, ["--version"], host), packageJson.version);
 
