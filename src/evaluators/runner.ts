@@ -1,5 +1,8 @@
 import { spawnSync } from "node:child_process";
-import type { EvaluatorResult } from "../types.js";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import type { EvaluatorResult, ExecutionPlan } from "../types.js";
 import type { EvaluatorSpec } from "../project/bassYaml.js";
 
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
@@ -21,6 +24,22 @@ export function planEvaluators(effective: Record<string, unknown>): EvaluatorPla
   return plans;
 }
 
+export function selectEvaluatorPlans(
+  plans: EvaluatorPlan[],
+  executionPlan: ExecutionPlan,
+  verification: "affected" | "all" = "affected",
+): EvaluatorPlan[] {
+  return plans
+    .filter((plan) => executionPlan.verificationLevels.includes(plan.level))
+    .map((plan) => ({
+      ...plan,
+      specs: plan.specs.filter((spec) => {
+        if (verification === "all" || plan.level === 1 || !spec.surfaces?.length) return true;
+        return spec.surfaces.some((surface) => executionPlan.changedSurfaces.includes(surface));
+      }),
+    }));
+}
+
 /**
  * 평가기를 순차 실행한다. BASS 는 프로젝트가 선언한 명령을 위임 실행할 뿐,
  * 무엇이 "테스트"인지 스스로 판단하지 않는다.
@@ -28,16 +47,106 @@ export function planEvaluators(effective: Record<string, unknown>): EvaluatorPla
 export function runEvaluators(
   plans: EvaluatorPlan[],
   cwd: string,
-  opts: { levels?: Array<1 | 2 | 3> } = {},
+  opts: { levels?: Array<1 | 2 | 3>; reusePassing?: boolean } = {},
 ): EvaluatorResult[] {
   const results: EvaluatorResult[] = [];
+  const changed = opts.reusePassing ? changedFiles(cwd) : null;
+  const canReuse = Boolean(opts.reusePassing && changed !== null);
+  const cache = canReuse ? loadCache(cwd) : {};
+  const seen = new Set<string>();
   for (const plan of plans) {
     if (opts.levels && !opts.levels.includes(plan.level)) continue;
     for (const spec of plan.specs) {
-      results.push(runOne(spec, plan.level, cwd));
+      const key = `${plan.level}:${spec.name}:${spec.command}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const fingerprint = canReuse ? evaluatorFingerprint(spec, cwd, changed!) : "";
+      if (canReuse && cache[key]?.status === "pass" && cache[key]?.fingerprint === fingerprint) {
+        results.push({
+          name: spec.name,
+          level: plan.level,
+          command: spec.command,
+          status: "skipped",
+          exitCode: 0,
+          durationMs: 0,
+          outputTail: "reused passing result for unchanged diff fingerprint",
+        });
+        continue;
+      }
+      const result = runOne(spec, plan.level, cwd);
+      results.push(result);
+      if (canReuse) {
+        if (result.status === "pass") cache[key] = { status: "pass", fingerprint, at: new Date().toISOString() };
+        else delete cache[key];
+      }
     }
   }
+  if (canReuse) saveCache(cwd, cache);
   return results;
+}
+
+interface CacheEntry {
+  status: "pass";
+  fingerprint: string;
+  at: string;
+}
+
+type EvaluationCache = Record<string, CacheEntry>;
+
+function cacheFile(cwd: string): string {
+  return path.join(cwd, ".bass", "cache", "evaluations.json");
+}
+
+function loadCache(cwd: string): EvaluationCache {
+  const file = cacheFile(cwd);
+  if (!fs.existsSync(file)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8")) as EvaluationCache;
+  } catch {
+    return {};
+  }
+}
+
+function saveCache(cwd: string, cache: EvaluationCache): void {
+  const file = cacheFile(cwd);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, `${JSON.stringify(cache, null, 2)}\n`, "utf8");
+}
+
+function changedFiles(cwd: string): string[] | null {
+  const result = spawnSync("git", ["status", "--porcelain=v1", "-z"], { cwd, encoding: "utf8" });
+  if (result.status !== 0) return null;
+  return result.stdout
+    .split("\0")
+    .filter(Boolean)
+    .map((line) => line.slice(3).split(" -> ").at(-1) ?? "")
+    .filter(Boolean)
+    .sort();
+}
+
+function evaluatorFingerprint(spec: EvaluatorSpec, cwd: string, changed: string[]): string {
+  const relevant = spec.surfaces?.length
+    ? changed.filter((file) => spec.surfaces!.some((surface) => surfaceForFile(file) === surface || file.startsWith(`${surface}/`)))
+    : changed;
+  const hash = crypto.createHash("sha256").update(spec.command);
+  const head = spawnSync("git", ["rev-parse", "HEAD"], { cwd, encoding: "utf8" });
+  hash.update(`\0HEAD:${head.status === 0 ? head.stdout.trim() : "unborn"}`);
+  for (const file of relevant) {
+    hash.update(`\0${file}\0`);
+    const absolute = path.join(cwd, file);
+    if (fs.existsSync(absolute) && fs.statSync(absolute).isFile()) hash.update(fs.readFileSync(absolute));
+    else hash.update("<deleted>");
+  }
+  return hash.digest("hex");
+}
+
+function surfaceForFile(file: string): string {
+  const normalized = file.replace(/\\/g, "/").toLowerCase();
+  if (/(^|\/)(ui|components|styles|app)(\/|$)/.test(normalized)) return "ui";
+  if (/(^|\/)(server|api|db|database|migrations?)(\/|$)/.test(normalized)) return "data";
+  if (/(^|\/)(game|assets|scenes)(\/|$)|\.unity$/.test(normalized)) return "game";
+  if (/(^|\/)(\.github|infra|deploy)(\/|$)|docker/.test(normalized)) return "release";
+  return normalized.split("/")[0] ?? normalized;
 }
 
 function runOne(spec: EvaluatorSpec, level: 1 | 2 | 3, cwd: string): EvaluatorResult {

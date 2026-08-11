@@ -4,6 +4,10 @@ export type RiskLevel = "low" | "medium" | "high" | "critical";
 
 export type WorkflowState =
   | "CAPTURED"
+  | "ACTIVE"
+  | "REVIEW"
+  | "DONE"
+  // 0.2 states remain readable and normalize to the four 0.3 states.
   | "DISCOVERY"
   | "SHAPED"
   | "READY"
@@ -12,13 +16,26 @@ export type WorkflowState =
   | "VERIFYING"
   | "CRITIQUING"
   | "HUMAN_REVIEW"
-  | "DONE"
   | "BLOCKED"
   | "NEEDS_DECISION"
   | "NEEDS_EXPERT"
   | "FAILED"
   | "ROLLED_BACK"
   | "CANCELLED";
+
+export type TaskKind = "explore" | "delete" | "fix" | "feature" | "refactor" | "release";
+export type ExecutionDepth = "fast" | "standard" | "hardened";
+
+export interface ExecutionPlan {
+  taskKind: TaskKind;
+  depth: ExecutionDepth;
+  changedSurfaces: string[];
+  scopeLock: string[];
+  verificationLevels: Array<1 | 2 | 3>;
+  critics: string[];
+  capabilityCalls: string[];
+  maxReworkLoops: number;
+}
 
 export type ModelRole =
   | "discovery"

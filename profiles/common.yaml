@@ -34,6 +34,7 @@ critics:
   - architecture
   - implementation
   - test
+  - security
   - simplicity
 
 design_profile: false

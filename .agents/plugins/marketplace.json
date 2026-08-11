@@ -1,0 +1,20 @@
+{
+  "name": "offbeat24-bass-platform",
+  "interface": {
+    "displayName": "Offbeat24 Bass Platform"
+  },
+  "plugins": [
+    {
+      "name": "bass",
+      "source": {
+        "source": "local",
+        "path": "./plugins/bass"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

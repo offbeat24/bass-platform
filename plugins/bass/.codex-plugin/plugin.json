@@ -1,0 +1,19 @@
+{
+  "name": "bass",
+  "version": "0.3.0",
+  "description": "Portable, risk-proportional development runtime for Codex teams.",
+  "author": {
+    "name": "Offbeat24"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "BASS",
+    "shortDescription": "Portable adaptive development runtime",
+    "longDescription": "Connect any repository to one small execution plan, affected verification, and minimal team handoff records.",
+    "developerName": "Offbeat24",
+    "category": "Productivity",
+    "capabilities": ["Skills", "Lifecycle hooks", "Cross-repository setup"],
+    "defaultPrompt": "Connect this repository to BASS or run its smallest risk-proportional execution plan."
+  },
+  "repository": "https://github.com/offbeat24/bass-platform"
+}

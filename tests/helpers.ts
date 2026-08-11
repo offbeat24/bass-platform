@@ -34,6 +34,8 @@ export function writeTask(
     models?: Record<string, string>;
     sections?: Record<string, string>;
     capabilities?: string[];
+    taskType?: string;
+    config?: Record<string, unknown>;
   } = {},
 ): string {
   const sections: Record<string, string> = {
@@ -59,12 +61,13 @@ export function writeTask(
 id: ${id}
 title: Test task
 status: ${opts.status ?? "READY"}
-type: feature
+type: ${opts.taskType ?? "feature"}
 risk:
   level: ${opts.riskLevel ?? "low"}
   reasons: [${(opts.riskReasons ?? []).join(", ")}]
 ${opts.models ? `models:\n${Object.entries(opts.models).map(([k, v]) => `  ${k}: ${v}`).join("\n")}` : ""}
 ${opts.capabilities ? `capabilities: [${opts.capabilities.join(", ")}]` : ""}
+${opts.config ? `config:\n${Object.entries(opts.config).map(([key, value]) => `  ${key}: ${JSON.stringify(value)}`).join("\n")}` : ""}
 human:
   owner: user
   reviewer_required: true
@@ -72,7 +75,7 @@ human:
 
 ${body}
 `;
-  const tasksDir = path.join(projectRoot, "tasks");
+  const tasksDir = path.join(projectRoot, ".bass", "tasks");
   fs.mkdirSync(tasksDir, { recursive: true });
   const file = path.join(tasksDir, `${id}.md`);
   fs.writeFileSync(file, content, "utf8");
@@ -98,7 +101,7 @@ export function writeRunRecord(projectRoot: string, taskId: string, overrides: R
     rollback: { method: "git revert" },
     ...overrides,
   };
-  const dir = path.join(projectRoot, "records");
+  const dir = path.join(projectRoot, ".bass", "records");
   fs.mkdirSync(dir, { recursive: true });
   const file = path.join(dir, `${taskId}.json`);
   fs.writeFileSync(file, JSON.stringify(record, null, 2), "utf8");

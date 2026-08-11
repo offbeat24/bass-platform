@@ -1,0 +1,4 @@
+interface:
+  display_name: "BASS Work"
+  short_description: "Plan and run risk-proportional repository work."
+  default_prompt: "Use the BASS execution plan for this task and avoid duplicate validation."

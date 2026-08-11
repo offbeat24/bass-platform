@@ -1,0 +1,12 @@
+{
+  "sourceCommit": "97b8ab6",
+  "context": {
+    "agentsChars": 3298,
+    "baseBehaviorChars": 4938,
+    "workerRoleChars": 924
+  },
+  "calls": {
+    "evaluators": 3,
+    "critics": 5
+  }
+}

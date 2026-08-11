@@ -20,11 +20,11 @@ const approvalFileSchema = z.object({
 export type RiskApproval = z.infer<typeof riskApprovalSchema>;
 
 function approvalFilePath(projectRoot: string, taskId: string): string {
-  return path.join(projectRoot, "records", `${taskId}.approvals.json`);
+  return path.join(projectRoot, ".bass", "records", `${taskId}.approvals.json`);
 }
 
 export function loadRiskApprovals(projectRoot: string, taskId: string): RiskApproval[] {
-  const file = approvalFilePath(projectRoot, taskId);
+  const file = existingApprovalFilePath(projectRoot, taskId);
   if (!fs.existsSync(file)) return [];
   const parsed = approvalFileSchema.safeParse(JSON.parse(fs.readFileSync(file, "utf8")));
   if (!parsed.success) {
@@ -50,7 +50,7 @@ export interface RecordRiskApprovalOptions {
 export function recordRiskApproval(
   options: RecordRiskApprovalOptions,
 ): { approval: RiskApproval; changed: boolean; filePath: string } {
-  const filePath = approvalFilePath(options.projectRoot, options.taskId);
+  const filePath = existingApprovalFilePath(options.projectRoot, options.taskId);
   const approvals = loadRiskApprovals(options.projectRoot, options.taskId);
   const existing = approvals.find((a) => a.rule_id === options.ruleId);
 
@@ -84,4 +84,10 @@ export function recordRiskApproval(
     "utf8",
   );
   return { approval, changed: true, filePath };
+}
+
+function existingApprovalFilePath(projectRoot: string, taskId: string): string {
+  const current = approvalFilePath(projectRoot, taskId);
+  const legacy = path.join(projectRoot, "records", `${taskId}.approvals.json`);
+  return fs.existsSync(current) || !fs.existsSync(legacy) ? current : legacy;
 }

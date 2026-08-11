@@ -13,17 +13,12 @@ describe("agent guide", () => {
     const guide = buildAgentGuide(root, loadConfig({ projectRoot: root }), task);
     expect(guide.contract.user_interface).toBe("natural-language");
     expect(guide.contract.cli_operator).toBe("ai-agent");
-    expect(guide.task?.workflow_depth).toBe("LIGHT");
-    expect(guide.operating_rules.join(" ")).toContain("Do not ask the user to run BASS commands");
-    expect(guide.operating_rules.join(" ")).toContain(
-      "Treat adoption into an existing repository as one proportional task",
-    );
-    expect(guide.operating_rules.join(" ")).toContain("do not create a second source of truth");
-    expect(guide.operating_rules.join(" ")).toContain("Use Ouroboros only");
-    expect(guide.operating_rules.join(" ")).toContain("Use Ponytail only within accepted scope");
-    expect(guide.operating_rules.join(" ")).toContain("do not repeat loops without new evidence");
-    expect(guide.operating_rules.join(" ")).toContain("current architecture as evidence, not a product boundary");
-    expect(guide.operating_rules.join(" ")).toContain("backend APIs or persistent data");
+    expect(guide.task?.workflow_depth).toBe("fast");
+    expect(guide.execution_plan.depth).toBe("fast");
+    expect(guide.execution_plan.verificationLevels).toEqual([1]);
+    expect(guide.execution_plan.maxReworkLoops).toBe(1);
+    expect(guide.operating_rules.join(" ")).toContain("never ask the user to run commands");
+    expect(guide.operating_rules.join(" ")).toContain("avoid a second source of truth");
   });
 
   it("빈 DESIGN.md 템플릿을 준비 완료로 오인하지 않는다", () => {

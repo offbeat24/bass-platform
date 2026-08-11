@@ -1,0 +1,4 @@
+interface:
+  display_name: "BASS Setup"
+  short_description: "Connect BASS without changing the project runtime."
+  default_prompt: "Connect this repository to BASS with the smallest safe adapter set."

@@ -1,31 +1,12 @@
-# Project Profiles
+# Project profiles
 
-## MVP 프로파일 (4개)
+| Profile | Purpose |
+|---|---|
+| `common` | shared model, workflow, and critic defaults |
+| `web` | rendered UI and DESIGN.md checks |
+| `server` | API, migration, authentication, and recovery risk |
+| `cli` | command-line behavior |
+| `game` | generic runtime recommendation and adapter contract |
+| `nan2026` | event-only overlay extending `game` |
 
-| 프로파일 | 용도 | design_profile |
-|----------|------|----------------|
-| `common` | 모든 프로젝트 기본. 모델 role 매핑, workflow 기본값, critic 5종 | off |
-| `web` | 시각적 UI 웹. DESIGN.md 필수, design critic 추가, 상태 체크리스트 | on |
-| `server` | 백엔드/API. 마이그레이션·인증 경로 위험 태그 제안 | off |
-| `cli` | 커맨드라인 도구. 경량 Experience Spec 선택 가능 | off |
-
-프로파일은 `extends` 로 체인을 이룬다 (web → common).
-프로젝트는 `bass.yaml` 의 `bass.profiles` 목록으로 조합한다.
-UI와 서버가 함께 있거나 향후 서버·DB를 허용하는 프로젝트는
-`[common, web, server]` 순서로 조합한다. `server`는 common의 기본값을 사용하되
-앞에서 활성화된 Design Profile을 끄지 않으며, 서버 discovery와 migration/auth 위험 규칙을 더한다.
-
-## 프로파일이 정의하는 것
-
-- `defaults`: models / workflow 등 설정 기본값 (계층 병합에 참여)
-- `discovery_checklist`: Discovery 역할의 기본 조사 항목
-- `required_docs`: 필수 문서
-- `critics`: 기본 critic 목록
-- `design_profile` / `design`: Design Profile 활성화와 검사 설정
-- `risk_rules`: 파일 패턴 → 위험 태그 제안
-
-## 후순위 프로파일 (§11 후보)
-
-mobile, desktop-ui, game, game-ui, design-system, component-library,
-marketing-site, database, library, data-pipeline — 실제 프로젝트에서
-필요해질 때 추가한다. 미리 만들지 않는다 (Simplicity 원칙).
+Profiles form an `extends` chain and are merged below project configuration. `game` evaluates dimension, targets, existing dependencies, team readiness, deployment, and license. `nan2026` adds only concept gate, time limit, evidence, trace, and session lock; ordinary game projects never inherit those event constraints.

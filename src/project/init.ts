@@ -1,16 +1,25 @@
 import fs from "node:fs";
 import path from "node:path";
+import { parse } from "yaml";
 import { templatesDir } from "../paths.js";
 import { BASS_VERSION } from "../version.js";
+import type { BassYaml } from "./bassYaml.js";
 
-/**
- * `bass init`: 프로젝트에 BASS 를 연결한다.
- *
- * 원칙 (Core §6, Design §8):
- * - BASS 코드를 복사하지 않는다. 프로젝트는 bass.yaml 로 버전을 의존한다.
- * - 도구별 파일(AGENTS.md, .cursor/rules, CLAUDE.md)은 원문 복사가 아니라
- *   같은 명세를 참조하는 얇은 shim 이다.
- */
+export type CapabilitySelection = BassYaml["capabilities"];
+export type AdapterSelection = BassYaml["adapters"];
+
+export const DEFAULT_CAPABILITIES: CapabilitySelection = {
+  specification: "builtin",
+  simplicity: "ponytail",
+  ui_direction: "bass",
+  ui_canvas: "off",
+  html_report: "bass",
+};
+
+export const DEFAULT_ADAPTERS: AdapterSelection = {
+  primary: "codex",
+  compatibility: ["claude", "cursor"],
+};
 
 export interface InitOptions {
   projectRoot: string;
@@ -18,69 +27,155 @@ export interface InitOptions {
   profiles: string[];
   owner: string;
   withDesign: boolean;
+  capabilities?: CapabilitySelection;
+  adapters?: AdapterSelection;
   force?: boolean;
 }
 
 export interface InitResult {
   created: string[];
+  updated: string[];
   skipped: string[];
+  conflicts: string[];
 }
 
-const SHIM_MARKER = "bass-shim";
+export interface DoctorCheck {
+  id: string;
+  status: "pass" | "fail" | "warn";
+  detail?: string;
+}
+
+export const BASS_BLOCK_START = "<!-- bass:managed:start -->";
+export const BASS_BLOCK_END = "<!-- bass:managed:end -->";
+const MAX_AGENTS_BLOCK_BYTES = 2 * 1024;
 
 export function initProject(opts: InitOptions): InitResult {
-  const created: string[] = [];
-  const skipped: string[] = [];
+  const result: InitResult = { created: [], updated: [], skipped: [], conflicts: [] };
+  const capabilities = opts.capabilities ?? DEFAULT_CAPABILITIES;
+  const adapters = opts.adapters ?? DEFAULT_ADAPTERS;
+  fs.mkdirSync(opts.projectRoot, { recursive: true });
 
-  const write = (rel: string, content: string): void => {
-    const abs = path.join(opts.projectRoot, rel);
-    if (fs.existsSync(abs) && !opts.force) {
-      skipped.push(rel);
-      return;
+  for (const relative of managedInstructionFiles(adapters)) {
+    const absolute = path.join(opts.projectRoot, relative);
+    if (fs.existsSync(absolute) && managedMarkersMalformed(fs.readFileSync(absolute, "utf8"))) {
+      result.conflicts.push(relative);
     }
-    fs.mkdirSync(path.dirname(abs), { recursive: true });
-    fs.writeFileSync(abs, content, "utf8");
-    created.push(rel);
-  };
+  }
+  const existingBass = path.join(opts.projectRoot, "bass.yaml");
+  if (fs.existsSync(existingBass) && configuredBassVersion(fs.readFileSync(existingBass, "utf8")) !== BASS_VERSION) {
+    result.conflicts.push("bass.yaml");
+  }
+  if (result.conflicts.length > 0) return result;
 
-  write("bass.yaml", renderBassYaml(opts));
-  write("AGENTS.md", renderAgentsShim(opts));
-  write(".cursor/rules/bass.mdc", renderCursorShim(opts));
-  write("CLAUDE.md", renderClaudeShim());
+  writeNewFile(opts.projectRoot, "bass.yaml", renderBassYaml(opts, capabilities, adapters), result, opts.force);
+  updateManagedBlock(opts.projectRoot, "AGENTS.md", renderAgentsBlock(), result);
 
+  if (adapters.compatibility.includes("claude") || adapters.primary === "claude") {
+    updateManagedBlock(opts.projectRoot, "CLAUDE.md", renderClaudeShim(), result);
+  }
+  if (adapters.compatibility.includes("cursor") || adapters.primary === "cursor") {
+    updateManagedBlock(
+      opts.projectRoot,
+      ".cursor/rules/bass.mdc",
+      renderCursorShim(),
+      result,
+      "---\ndescription: BASS runtime entrypoint\nalwaysApply: true\n---\n",
+    );
+  }
   if (opts.withDesign) {
-    write("DESIGN.md", fs.readFileSync(path.join(templatesDir(), "DESIGN.md"), "utf8"));
+    writeNewFile(
+      opts.projectRoot,
+      "DESIGN.md",
+      fs.readFileSync(path.join(templatesDir(), "DESIGN.md"), "utf8"),
+      result,
+      opts.force,
+    );
   }
 
-  for (const dir of ["tasks", "records", "critiques", "docs/decisions"]) {
-    const abs = path.join(opts.projectRoot, dir);
-    if (!fs.existsSync(abs)) {
-      fs.mkdirSync(abs, { recursive: true });
-      created.push(`${dir}/`);
+  for (const dir of [".bass/tasks", ".bass/records", ".bass/cache"]) {
+    const absolute = path.join(opts.projectRoot, dir);
+    if (!fs.existsSync(absolute)) {
+      fs.mkdirSync(absolute, { recursive: true });
+      result.created.push(`${dir}/`);
     }
   }
-
-  return { created, skipped };
+  updateGitignore(opts.projectRoot, result);
+  return result;
 }
 
-function renderBassYaml(opts: InitOptions): string {
-  return `# BASS 프로젝트 설정. BASS 코드를 복사하지 않고 버전을 의존한다.
-bass:
+function writeNewFile(
+  root: string,
+  relative: string,
+  content: string,
+  result: InitResult,
+  force = false,
+): void {
+  const absolute = path.join(root, relative);
+  if (fs.existsSync(absolute) && !force) {
+    result.skipped.push(relative);
+    return;
+  }
+  fs.mkdirSync(path.dirname(absolute), { recursive: true });
+  const existed = fs.existsSync(absolute);
+  fs.writeFileSync(absolute, content, "utf8");
+  (existed ? result.updated : result.created).push(relative);
+}
+
+export function updateManagedBlock(
+  root: string,
+  relative: string,
+  block: string,
+  result: InitResult,
+  initialContent = "",
+): void {
+  const absolute = path.join(root, relative);
+  const existed = fs.existsSync(absolute);
+  const current = existed ? fs.readFileSync(absolute, "utf8") : initialContent;
+  if (managedMarkersMalformed(current)) {
+    result.conflicts.push(relative);
+    return;
+  }
+  const startCount = current.split(BASS_BLOCK_START).length - 1;
+  const hasStart = startCount === 1;
+
+  const managed = `${BASS_BLOCK_START}\n${block.trim()}\n${BASS_BLOCK_END}`;
+  const next = hasStart
+    ? current.replace(new RegExp(`${escapeRegExp(BASS_BLOCK_START)}[\\s\\S]*?${escapeRegExp(BASS_BLOCK_END)}`), managed)
+    : `${current.trimEnd()}${current.trim().length ? "\n\n" : ""}${managed}\n`;
+  if (Buffer.byteLength(managed, "utf8") > MAX_AGENTS_BLOCK_BYTES) {
+    throw new Error(`BASS AGENTS.md block exceeds ${MAX_AGENTS_BLOCK_BYTES} bytes`);
+  }
+  if (next === current) {
+    result.skipped.push(relative);
+    return;
+  }
+  fs.mkdirSync(path.dirname(absolute), { recursive: true });
+  fs.writeFileSync(absolute, next, "utf8");
+  (existed ? result.updated : result.created).push(relative);
+}
+
+function renderBassYaml(opts: InitOptions, capabilities: CapabilitySelection, adapters: AdapterSelection): string {
+  return `bass:
   version: ${BASS_VERSION}
-  profiles:
-${opts.profiles.map((p) => `    - ${p}`).join("\n")}
+  profiles: [${opts.profiles.join(", ")}]
 
 project:
-  name: ${opts.name}
+  name: ${yamlScalar(opts.name)}
 
-# capability alias 만 사용한다. 모델명을 직접 쓰지 마라.
-# 특정 모델 고정이 꼭 필요하면 "pin:provider/model" 표기를 쓴다.
-models:
-  worker: auto
+execution:
+  depth: adaptive
+  verification: affected
 
-workflow:
-  max_active_tasks: 1
-  reviewer_required: true
+capabilities:
+  specification: ${capabilities.specification}
+  simplicity: ${capabilities.simplicity}
+  ui_direction: ${capabilities.ui_direction}
+  ui_canvas: ${capabilities.ui_canvas}
+  html_report: ${capabilities.html_report}
+
+adapters:
+  primary: ${adapters.primary}
+  compatibility: [${adapters.compatibility.join(", ")}]
 
 evaluators:
   level1: []
@@ -89,131 +184,112 @@ evaluators:
 `;
 }
 
-function renderAgentsShim(opts: InitOptions): string {
-  return `<!-- ${SHIM_MARKER}: agents v${BASS_VERSION} — 이 파일은 얇은 참조 shim 이다. 규칙 원문을 여기에 복사하지 마라. -->
-# AGENTS.md — ${opts.name}
-
-이 프로젝트는 BASS를 AI 에이전트의 내부 실행 런타임으로 사용한다.
-사용자 인터페이스는 자연어 대화이며, 사용자가 BASS 명령이나 기록 파일을 직접 관리하게 하지 마라.
-
-## 에이전트 실행 계약
-
-1. 작업 시작 시 \`bass agent guide [task-id]\`를 내부적으로 실행하고 현재 계약을 읽는다.
-2. 저장소에서 확인할 수 있는 사실은 직접 조사한다. 사람에게는 제품·가치·위험 결정을 한 번에 하나씩 묻는다.
-3. task·상태·검증·critic·record는 에이전트가 관리한다. 내부 상태 전환을 승인 질문으로 노출하지 마라.
-4. 위험 승인 조건이 있으면 선택지·권장안·영향을 제시하고, 사용자의 명시적 결정만 \`bass approval risk\`로 기록한다.
-5. 구현 후 \`bass gate pre-review\`로 근거를 준비하고 결과를 한 번에 보여준다. 최종 승인을 기록한 뒤 \`bass task finalize\`를 실행한다.
-6. 재실행 시 이미 완료된 단계·결정·부작용을 재사용하고 중복 생성하지 마라.
-7. 기존 프로젝트의 지침·검증·디자인·이력을 원천으로 보존하고, BASS와 겹치는 부분만 최소 변경으로 통합한다.
-8. 파일 생성만으로 연결 완료를 주장하지 말고 실제 사용자 작업 하나로 검증·피드백 루프를 확인한다.
-${opts.withDesign ? "9. UI 작업은 `DESIGN.md`와 실제 렌더링을 조사하고, 기계 검사와 독립 Design Critic을 거친다.\n" : ""}
-## 원천
-
-- 동적 실행 안내: \`bass agent guide --json\`
-- 전체 행동 규칙: \`bass compose --role <role>\`
-- 프로젝트 설정: \`bass.yaml\` / 유효 설정: \`bass config explain\`
-`;
-}
-
-function renderCursorShim(opts: InitOptions): string {
-  return `---
-description: BASS workflow rules for this project
-alwaysApply: true
----
-
-<!-- ${SHIM_MARKER}: cursor v${BASS_VERSION} — 얇은 참조 shim. 규칙 원문을 복사하지 마라. -->
-
-이 프로젝트는 BASS를 AI 에이전트 내부 런타임으로 사용한다.
-사용자에게 CLI 실행이나 상태 파일 편집을 요구하지 말고 자연어 목적과 피드백만 받는다.
-
-- 동적 실행 계약: \`bass agent guide [task-id]\`
-- 행동 규칙: \`bass compose --role <role>\` (원문은 bass-platform prompt-library)
-- task·상태·검증·record는 에이전트가 내부 관리
-- 사람 결정은 정책이 요구하는 제품·가치·위험 판단에만 요청
-- 기존 프로젝트의 지침·검증·디자인·이력을 보존하고 BASS와 겹치는 부분만 통합
-- 파일 생성이 아니라 실제 사용자 작업 하나로 연결 적합성을 검증
-- 검토 전 \`bass gate pre-review\`, 명시적 승인 후 \`bass task finalize\`
-- 모델 선택: \`bass route\` 권고 사용, 모델명 하드코딩 금지
-${opts.withDesign ? "- UI 작업 전 루트 `DESIGN.md` 필독\n" : ""}
-AGENTS.md 와 이 파일의 내용이 다르면 드리프트다. \`bass doctor\` 로 검사하고 shim 을 재생성하라.
-`;
+export function renderAgentsBlock(): string {
+  return `BASS ${BASS_VERSION}: use \`bass agent guide --json\` before work.
+- Keep human ownership of product direction and risk decisions.
+- Inspect repository facts and implement the smallest accepted change.
+- Follow \`execution_plan\`; do not add checks, critics, or loops beyond it.
+- Run \`bass evaluate --task <id>\`; reuse unchanged passing evidence.
+- Keep handoff evidence in \`.bass/tasks/\` and \`.bass/records/\` only when needed.`;
 }
 
 function renderClaudeShim(): string {
-  return `<!-- ${SHIM_MARKER}: claude v${BASS_VERSION} — 얇은 참조 shim. 규칙 원문을 복사하지 마라. -->
-# CLAUDE.md
-
-이 프로젝트의 에이전트 규칙은 \`AGENTS.md\` 를 따른다. 그 파일을 먼저 읽어라.
-
-- 사용자는 자연어로만 협업한다. BASS CLI와 기록 파일은 에이전트가 내부 관리한다.
-- 시작 시 \`bass agent guide [task-id]\`를 읽고 위험에 비례한 실행 깊이를 선택한다.
-- 기존 프로젝트의 지침·검증·디자인·이력을 우선하며 두 번째 원천을 만들지 않는다.
-- 작업 게이트: \`bass gate pre-task <ID>\` / \`bass gate pre-review <ID>\` / \`bass task finalize <ID>\`
-- UI 작업이 있다면 루트 \`DESIGN.md\` 를 먼저 읽는다 (존재하는 경우).
-- 규칙 전문이 필요하면 \`bass compose --role <role>\` 을 실행한다.
-`;
+  return `Read the BASS managed block in \`AGENTS.md\`. Use \`bass agent guide --json\` as the dynamic execution contract. Do not copy the full BASS workflow here.`;
 }
 
-/** `bass doctor`: shim 존재·참조 유효성·드리프트(비대화) 검사 (Design §8) */
-export interface DoctorCheck {
-  id: string;
-  status: "pass" | "fail" | "warn";
-  detail?: string;
+function renderCursorShim(): string {
+  return `Read the BASS managed block in AGENTS.md and use \`bass agent guide --json\`.`;
 }
 
-const SHIM_MAX_LINES = 60;
+function updateGitignore(root: string, result: InitResult): void {
+  const relative = ".gitignore";
+  const absolute = path.join(root, relative);
+  const current = fs.existsSync(absolute) ? fs.readFileSync(absolute, "utf8") : "";
+  const lines = [".bass/cache/", ".bass/local.yaml"];
+  const missing = lines.filter((line) => !current.split(/\r?\n/).includes(line));
+  if (missing.length === 0) return;
+  const next = `${current.trimEnd()}${current.trim().length ? "\n" : ""}${missing.join("\n")}\n`;
+  fs.writeFileSync(absolute, next, "utf8");
+  (current ? result.updated : result.created).push(relative);
+}
+
+function yamlScalar(value: string): string {
+  return JSON.stringify(value);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 export function doctor(projectRoot: string, effective: Record<string, unknown>): DoctorCheck[] {
   const checks: DoctorCheck[] = [];
-
-  const requireFile = (rel: string, id: string): string | null => {
-    const abs = path.join(projectRoot, rel);
-    if (!fs.existsSync(abs)) {
-      checks.push({ id, status: "fail", detail: `${rel} missing — run \`bass init\`` });
+  const required = (relative: string, id: string): string | null => {
+    const absolute = path.join(projectRoot, relative);
+    if (!fs.existsSync(absolute)) {
+      checks.push({ id, status: "fail", detail: `${relative} missing; run bass setup` });
       return null;
     }
-    return fs.readFileSync(abs, "utf8");
+    return fs.readFileSync(absolute, "utf8");
   };
 
-  const bassYaml = requireFile("bass.yaml", "bass-yaml");
-  if (bassYaml) checks.push({ id: "bass-yaml", status: "pass" });
-
-  for (const [rel, id] of [
-    ["AGENTS.md", "shim-agents"],
-    [".cursor/rules/bass.mdc", "shim-cursor"],
-    ["CLAUDE.md", "shim-claude"],
-  ] as const) {
-    const content = requireFile(rel, id);
-    if (!content) continue;
-
-    if (!content.includes(SHIM_MARKER)) {
-      checks.push({
-        id,
-        status: "warn",
-        detail: `${rel} 에 shim 마커가 없다 — 수동 관리 파일이거나 드리프트일 수 있다`,
-      });
-      continue;
-    }
-    const lines = content.split("\n").length;
-    if (lines > SHIM_MAX_LINES) {
-      checks.push({
-        id,
-        status: "warn",
-        detail: `${rel} 이 ${lines}줄 — shim 이 비대해졌다. 원문 복사(드리프트) 징후. 참조로 되돌려라`,
-      });
-    } else {
-      checks.push({ id, status: "pass" });
-    }
-  }
-
-  if (Boolean(effective["design_profile"])) {
-    const designExists = fs.existsSync(path.join(projectRoot, "DESIGN.md"));
+  if (required("bass.yaml", "bass-yaml")) checks.push({ id: "bass-yaml", status: "pass" });
+  const agents = required("AGENTS.md", "agents-entrypoint");
+  if (agents) {
+    const startCount = agents.split(BASS_BLOCK_START).length - 1;
+    const endCount = agents.split(BASS_BLOCK_END).length - 1;
     checks.push({
-      id: "design-md",
-      status: designExists ? "pass" : "fail",
-      detail: designExists ? undefined : "design_profile 활성인데 DESIGN.md 없음",
+      id: "agents-managed-block",
+      status: startCount === 1 && endCount === 1 ? "pass" : "fail",
+      detail: startCount === 1 && endCount === 1 ? undefined : "expected exactly one BASS managed block",
     });
   }
 
+  const adapters = (effective["adapters"] ?? DEFAULT_ADAPTERS) as AdapterSelection;
+  if (adapters.primary === "claude" || adapters.compatibility?.includes("claude")) {
+    const claude = required("CLAUDE.md", "adapter-claude");
+    if (claude) checks.push({ id: "adapter-claude-managed-block", status: hasOneManagedBlock(claude) ? "pass" : "fail", detail: hasOneManagedBlock(claude) ? undefined : "CLAUDE.md BASS managed block missing or malformed" });
+  }
+  if (adapters.primary === "cursor" || adapters.compatibility?.includes("cursor")) {
+    const cursor = required(".cursor/rules/bass.mdc", "adapter-cursor");
+    if (cursor) checks.push({ id: "adapter-cursor-managed-block", status: hasOneManagedBlock(cursor) ? "pass" : "fail", detail: hasOneManagedBlock(cursor) ? undefined : "Cursor BASS managed block missing or malformed" });
+  }
+
+  if (Boolean(effective["design_profile"])) {
+    checks.push({
+      id: "design-md",
+      status: fs.existsSync(path.join(projectRoot, "DESIGN.md")) ? "pass" : "fail",
+      detail: fs.existsSync(path.join(projectRoot, "DESIGN.md")) ? undefined : "design profile selected but DESIGN.md is missing",
+    });
+  }
   return checks;
+}
+
+function hasOneManagedBlock(content: string): boolean {
+  return content.split(BASS_BLOCK_START).length === 2
+    && content.split(BASS_BLOCK_END).length === 2
+    && content.indexOf(BASS_BLOCK_START) < content.indexOf(BASS_BLOCK_END);
+}
+
+function managedMarkersMalformed(content: string): boolean {
+  const startCount = content.split(BASS_BLOCK_START).length - 1;
+  const endCount = content.split(BASS_BLOCK_END).length - 1;
+  return startCount !== endCount
+    || startCount > 1
+    || (startCount === 1 && content.indexOf(BASS_BLOCK_START) > content.indexOf(BASS_BLOCK_END));
+}
+
+function managedInstructionFiles(adapters: AdapterSelection): string[] {
+  const files = ["AGENTS.md"];
+  if (adapters.primary === "claude" || adapters.compatibility.includes("claude")) files.push("CLAUDE.md");
+  if (adapters.primary === "cursor" || adapters.compatibility.includes("cursor")) files.push(".cursor/rules/bass.mdc");
+  return files;
+}
+
+function configuredBassVersion(content: string): string | null {
+  try {
+    const raw = parse(content) as { bass?: { version?: unknown } };
+    return typeof raw?.bass?.version === "string" ? raw.bass.version : null;
+  } catch {
+    return null;
+  }
 }

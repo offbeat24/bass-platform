@@ -6,15 +6,15 @@ import { findProjectRoot, templatesDir } from "../paths.js";
 import { loadConfig, explainConfig, parseSetArgs, type LoadedConfig } from "../config/loader.js";
 import { loadRegistry, resolveAlias } from "../registry/registry.js";
 import { routeTask } from "../router/router.js";
-import { findTask, listTasks, checkSections, TASK_SECTIONS, transitionTask } from "../task/taskFile.js";
+import { findTask, listTasks, checkSections, TASK_SECTIONS, taskDirectory, transitionTask } from "../task/taskFile.js";
 import { preTaskGate, preReviewGate, preCompleteGate, formatGateReport } from "../workflow/gates.js";
 import { allowedTransitions } from "../workflow/stateMachine.js";
-import { planEvaluators, runEvaluators, formatEvaluatorResults } from "../evaluators/runner.js";
+import { planEvaluators, runEvaluators, formatEvaluatorResults, selectEvaluatorPlans } from "../evaluators/runner.js";
 import { validateFindingsFile, shouldStopIteration, findingsFileSchema } from "../critics/findings.js";
 import { composeInstructions } from "../compose/composer.js";
 import { runDesignChecks, addCorrection, loadCorrections, reviewCorrection } from "../design/designProfile.js";
-import { initProject, doctor } from "../project/init.js";
-import { createProject } from "../project/create.js";
+import { doctor } from "../project/init.js";
+import { applyCapabilityAssignments, promptCapabilities, setupProject } from "../project/setup.js";
 import { recordRiskApproval } from "../task/approvalRecord.js";
 import { recordFinalApproval } from "../task/runRecord.js";
 import { buildAgentGuide } from "../agent/guide.js";
@@ -22,6 +22,12 @@ import { findRequiredApprovals } from "../policy/policyEngine.js";
 import { parse } from "yaml";
 import type { ModelRole, WorkflowState } from "../types.js";
 import { BASS_VERSION } from "../version.js";
+import { buildExecutionPlan } from "../execution/planner.js";
+import { formatCapabilityStatuses, inspectCapabilities } from "../project/capabilities.js";
+import { formatUpgradePlan, upgradeProject } from "../project/upgrade.js";
+import { normalizeWorkflowState } from "../workflow/stateMachine.js";
+import { getRuntime, parseRuntimeTargets, runtimeCatalog } from "../runtime/catalog.js";
+import { recommendRuntimes } from "../runtime/recommendation.js";
 
 const program = new Command();
 program
@@ -38,62 +44,76 @@ function requireProject(): { projectRoot: string; config: LoadedConfig } {
   return { projectRoot, config: loadConfig({ projectRoot }) };
 }
 
-// ---------- create ----------
+function collect(value: string, previous: string[]): string[] {
+  return [...previous, value];
+}
+
+function profiles(value: string, design: boolean): string[] {
+  const selected = value.split(",").map((item) => item.trim()).filter(Boolean);
+  if (design && !selected.includes("web")) selected.push("web");
+  return selected;
+}
+
+function printSetup(result: ReturnType<typeof setupProject>): void {
+  console.log(`project: ${result.projectRoot} (${result.mode})`);
+  console.log("BASS runtime: host package only; target package.json unchanged");
+  for (const file of result.initialized.created) console.log(`created: ${file}`);
+  for (const file of result.initialized.updated) console.log(`updated: ${file}`);
+  for (const file of result.initialized.skipped) console.log(`preserved: ${file}`);
+  for (const file of result.initialized.conflicts) console.log(`conflict: ${file}`);
+  if (result.initialized.conflicts.length > 0) process.exitCode = 1;
+}
+
+async function runSetup(directory: string, opts: Record<string, unknown>): Promise<void> {
+  const projectRoot = path.resolve(directory);
+  const assignments = (opts["capability"] ?? []) as string[];
+  let capabilities = applyCapabilityAssignments(assignments);
+  if (!opts["nonInteractive"] && process.stdin.isTTY && process.stdout.isTTY) {
+    capabilities = await promptCapabilities(capabilities);
+  }
+  printSetup(setupProject({
+    projectRoot,
+    name: opts["name"] ? String(opts["name"]) : path.basename(projectRoot),
+    profiles: profiles(String(opts["profiles"] ?? "common"), Boolean(opts["design"])),
+    owner: String(opts["owner"] ?? "user"),
+    withDesign: Boolean(opts["design"]),
+    capabilities,
+  }));
+}
+
+// ---------- setup / 0.2 aliases ----------
+program
+  .command("setup [directory]")
+  .description("빈 폴더 생성과 기존 저장소 연결을 통합")
+  .option("--name <name>", "프로젝트 이름")
+  .option("--profiles <list>", "프로파일 목록", "common")
+  .option("--owner <owner>", "작업 소유자", "user")
+  .option("--design", "DESIGN.md 생성", false)
+  .option("--non-interactive", "대화형 capability 선택 생략", false)
+  .option("--capability <name=provider>", "capability 선택 (반복 가능)", collect, [])
+  .action(async (directory, opts) => runSetup(directory ? String(directory) : process.cwd(), opts));
+
 program
   .command("create <directory>")
-  .description("새 프로젝트 폴더를 만들고 로컬 BASS package 설치와 init을 한 번에 수행")
-  .option("--name <name>", "프로젝트 이름 (생략 시 대상 폴더 이름)")
-  .option("--profiles <list>", "프로파일 목록 (쉼표 구분)", "common")
+  .description("0.2 호환 alias; bass setup을 호출")
+  .option("--name <name>")
+  .option("--profiles <list>", "프로파일 목록", "common")
   .option("--owner <owner>", "작업 소유자", "user")
-  .option("--design", "Design Profile 활성화 (DESIGN.md 템플릿 생성)", false)
-  .option("--no-install", "로컬 BASS package pack/install 생략")
-  .action((directory, opts) => {
-    const destination = path.resolve(String(directory));
-    const profiles = String(opts.profiles).split(",").map((s: string) => s.trim());
-    if (opts.design && !profiles.includes("web")) {
-      profiles.push("web");
-    }
-    const result = createProject({
-      destination,
-      name: opts.name ? String(opts.name) : path.basename(destination),
-      profiles,
-      owner: String(opts.owner),
-      withDesign: Boolean(opts.design),
-      install: Boolean(opts.install),
-    });
-    console.log(`project: ${result.projectRoot}`);
-    if (result.packageArtifact) console.log(`package: ${result.packageArtifact}`);
-    console.log(`BASS package: ${result.packageInstalled ? "installed" : "skipped"}`);
-    for (const f of result.initialized.created) console.log(`created: ${f}`);
-    for (const f of result.initialized.skipped) console.log(`skipped (exists): ${f}`);
-  });
+  .option("--design", "DESIGN.md 생성", false)
+  .option("--non-interactive", "대화형 선택 생략", false)
+  .option("--capability <name=provider>", "capability 선택", collect, [])
+  .action(async (directory, opts) => runSetup(String(directory), opts));
 
-// ---------- init ----------
 program
   .command("init")
-  .description("프로젝트에 BASS 연결: bass.yaml + 에이전트 shim (Codex/Cursor/Claude) 생성")
-  .requiredOption("--name <name>", "프로젝트 이름")
-  .option("--profiles <list>", "프로파일 목록 (쉼표 구분)", "common")
+  .description("0.2 호환 alias; 현재 저장소에서 bass setup을 호출")
+  .option("--name <name>")
+  .option("--profiles <list>", "프로파일 목록", "common")
   .option("--owner <owner>", "작업 소유자", "user")
-  .option("--design", "Design Profile 활성화 (DESIGN.md 템플릿 생성)", false)
-  .option("--force", "기존 파일 덮어쓰기", false)
-  .action((opts) => {
-    const result = initProject({
-      projectRoot: process.cwd(),
-      name: opts.name,
-      profiles: String(opts.profiles).split(",").map((s: string) => s.trim()),
-      owner: opts.owner,
-      withDesign: Boolean(opts.design),
-      force: Boolean(opts.force),
-    });
-    for (const f of result.created) console.log(`created: ${f}`);
-    for (const f of result.skipped) console.log(`skipped (exists): ${f}`);
-    if (result.skipped.length > 0) {
-      console.log(
-        "integration required: preserve skipped files and merge only the BASS contract; do not rerun with --force by default",
-      );
-    }
-  });
+  .option("--design", "DESIGN.md 생성", false)
+  .option("--non-interactive", "대화형 선택 생략", false)
+  .option("--capability <name=provider>", "capability 선택", collect, [])
+  .action(async (opts) => runSetup(process.cwd(), opts));
 
 // ---------- config ----------
 const configCmd = program.command("config").description("계층형 설정");
@@ -164,7 +184,7 @@ taskCmd
   .option("--if-missing", "이미 존재하면 성공한 no-op 으로 처리", false)
   .action((taskId, opts) => {
     const { projectRoot, config } = requireProject();
-    const dest = path.join(projectRoot, "tasks", `${taskId}.md`);
+    const dest = path.join(taskDirectory(projectRoot), `${taskId}.md`);
     if (fs.existsSync(dest)) {
       if (opts.ifMissing) {
         console.log(`unchanged: ${dest}`);
@@ -222,7 +242,7 @@ taskCmd
   .action((taskId) => {
     const { projectRoot } = requireProject();
     const tasks = taskId ? [findTask(projectRoot, taskId)] : listTasks(projectRoot);
-    if (tasks.length === 0) console.log("no tasks found under tasks/");
+    if (tasks.length === 0) console.log("no tasks found under .bass/tasks/ or legacy tasks/");
     let failed = false;
     for (const t of tasks) {
       const missing = checkSections(t, TASK_SECTIONS).filter((c) => !c.present);
@@ -232,11 +252,11 @@ taskCmd
       if (missing.length > 0) {
         console.log(`  missing sections: ${missing.map((m) => m.section).join(", ")}`);
       }
-      if (status === "READY" || status === "PLANNED") {
+      if (status === "CAPTURED") {
         const empty = checkSections(t, ["Problem", "What we are shipping", "What we are not shipping", "Acceptance criteria"]).filter((c) => !c.nonEmpty);
         if (empty.length > 0) {
           failed = true;
-          console.log(`  READY 위반: 비어 있는 필수 섹션 — ${empty.map((e) => e.section).join(", ")}`);
+          console.log(`  CAPTURED 위반: 비어 있는 필수 섹션 — ${empty.map((e) => e.section).join(", ")}`);
         }
       }
     }
@@ -247,7 +267,7 @@ taskCmd
 const gateCmd = program.command("gate").description("인간 감독 게이트");
 gateCmd
   .command("pre-task <taskId>")
-  .description("작업 시작 가능 여부 검사 (READY 조건 + 승인 조건)")
+  .description("작업 시작 가능 여부 검사 (CAPTURED 계약 + 위험 승인)")
   .action((taskId) => {
     const { projectRoot, config } = requireProject();
     const task = findTask(projectRoot, taskId);
@@ -320,8 +340,8 @@ approvalCmd
   .action((taskId, opts) => {
     const { projectRoot } = requireProject();
     const task = findTask(projectRoot, taskId);
-    if (task.frontmatter.status !== "HUMAN_REVIEW") {
-      throw new Error(`Final approval requires HUMAN_REVIEW status (current: ${task.frontmatter.status})`);
+    if (normalizeWorkflowState(task.frontmatter.status) !== "REVIEW") {
+      throw new Error(`Final approval requires REVIEW status (current: ${task.frontmatter.status})`);
     }
     const result = recordFinalApproval(
       projectRoot,
@@ -358,17 +378,32 @@ agentCmd
       console.log(`  task: ${guide.task.id} [${guide.task.status}] depth=${guide.task.workflow_depth}`);
       for (const action of guide.task.suggested_next_actions) console.log(`  next: ${action}`);
     }
+    console.log(`  execution: ${guide.execution_plan.taskKind}/${guide.execution_plan.depth}; levels=${guide.execution_plan.verificationLevels.join(",")}; loops<=${guide.execution_plan.maxReworkLoops}`);
+    for (const lock of guide.execution_plan.scopeLock) console.log(`  scope lock: ${lock}`);
   });
 
 // ---------- evaluate ----------
 program
   .command("evaluate")
-  .description("프로젝트가 선언한 평가기(Level 1~3) 실행")
-  .option("--levels <list>", "실행할 레벨 (예: 1,2)", "1,2,3")
+  .description("ExecutionPlan에 따라 필요한 평가기만 실행")
+  .option("--task <taskId>", "작업 실행 계획 사용")
+  .option("--levels <list>", "디버깅/CI용 명시적 레벨 override")
   .action((opts) => {
     const { projectRoot, config } = requireProject();
-    const levels = String(opts.levels).split(",").map((s: string) => Number(s.trim())) as Array<1 | 2 | 3>;
-    const results = runEvaluators(planEvaluators(config.effective), projectRoot, { levels });
+    const task = opts.task ? findTask(projectRoot, String(opts.task)) : undefined;
+    const executionPlan = buildExecutionPlan(config, task);
+    const override = opts.levels
+      ? String(opts.levels).split(",").map((value: string) => Number(value.trim()))
+      : undefined;
+    if (override?.some((level: number) => ![1, 2, 3].includes(level))) throw new Error("--levels must contain only 1,2,3");
+    const allPlans = planEvaluators(config.effective);
+    const selected = override
+      ? allPlans
+      : selectEvaluatorPlans(allPlans, executionPlan, config.bassYaml.execution.verification);
+    const results = runEvaluators(selected, projectRoot, {
+      ...(override ? { levels: override as Array<1 | 2 | 3> } : {}),
+      reusePassing: true,
+    });
     console.log(formatEvaluatorResults(results));
     process.exit(results.some((r) => r.status === "fail" || r.status === "error" || r.status === "timeout") ? 1 : 0);
   });
@@ -429,6 +464,87 @@ critiqueCmd
   });
 
 // ---------- design ----------
+const runtimeCmd = program.command("runtime").description("일반 game runtime 추천·doctor·scaffold·install·verify");
+runtimeCmd
+  .command("list")
+  .description("내장 runtime adapter 목록")
+  .action(() => console.log(JSON.stringify(runtimeCatalog().map((adapter) => adapter.descriptor()), null, 2)));
+runtimeCmd
+  .command("recommend")
+  .description("검토 가능한 결정식으로 runtime 추천")
+  .option("--dimension <value>", "2d | 3d | either", "either")
+  .option("--targets <list>", "web,android,ios,macos", "web")
+  .option("--existing <list>", "기존 dependency 또는 runtime id", "")
+  .option("--team-ready <list>", "팀 준비가 확인된 runtime id", "")
+  .option("--deployment <value>", "web | native | hybrid", "web")
+  .action((opts) => {
+    if (!["2d", "3d", "either"].includes(opts.dimension)) throw new Error("--dimension must be 2d, 3d, or either");
+    if (!["web", "native", "hybrid"].includes(opts.deployment)) throw new Error("--deployment must be web, native, or hybrid");
+    const recommendations = recommendRuntimes(
+      {
+        dimension: opts.dimension,
+        targets: parseRuntimeTargets(opts.targets),
+        existingDependencies: String(opts.existing).split(",").map((item) => item.trim()).filter(Boolean),
+        teamReadyRuntimeIds: String(opts.teamReady).split(",").map((item) => item.trim()).filter(Boolean),
+        deployment: opts.deployment,
+      },
+      runtimeCatalog().map((adapter) => adapter.descriptor()),
+    );
+    console.log(JSON.stringify(recommendations, null, 2));
+  });
+runtimeCmd
+  .command("doctor <runtimeId>")
+  .option("--targets <list>", "검사 대상", "web")
+  .action((runtimeId, opts) => {
+    const { projectRoot } = requireProject();
+    const report = getRuntime(runtimeId).doctor({ projectRoot, targets: parseRuntimeTargets(opts.targets) });
+    console.log(JSON.stringify(report, null, 2));
+    process.exit(report.status === "fail" ? 1 : 0);
+  });
+runtimeCmd
+  .command("scaffold <runtimeId>")
+  .requiredOption("--destination <path>", "프로젝트 루트 아래 생성 경로")
+  .option("--targets <list>", "생성 대상", "web")
+  .option("--name <name>", "게임 프로젝트 이름", "bass-game")
+  .option("--confirm", "사용자가 runtime과 경로를 명시적으로 선택함", false)
+  .action((runtimeId, opts) => {
+    if (!opts.confirm) throw new Error("Scaffold requires explicit user selection; rerun with --confirm after approval.");
+    const { projectRoot } = requireProject();
+    const report = getRuntime(runtimeId).scaffold({ projectRoot, destination: opts.destination, targets: parseRuntimeTargets(opts.targets), projectName: opts.name });
+    console.log(JSON.stringify(report, null, 2));
+    process.exit(["conflict", "failed"].includes(report.status) ? 1 : 0);
+  });
+runtimeCmd
+  .command("install <runtimeId>")
+  .requiredOption("--path <path>", "runtime 프로젝트 경로")
+  .option("--confirm", "사용자가 설치를 명시적으로 승인함", false)
+  .action((runtimeId, opts) => {
+    if (!opts.confirm) throw new Error("Install requires explicit approval; rerun with --confirm.");
+    const { projectRoot } = requireProject();
+    const runtimeRoot = childPath(projectRoot, opts.path);
+    const report = getRuntime(runtimeId).install(runtimeRoot);
+    console.log(JSON.stringify(report, null, 2));
+    process.exit(report.status === "failed" ? 1 : 0);
+  });
+runtimeCmd
+  .command("verify <runtimeId>")
+  .requiredOption("--path <path>", "runtime 프로젝트 경로")
+  .option("--targets <list>", "검증 대상", "web")
+  .action((runtimeId, opts) => {
+    const { projectRoot } = requireProject();
+    const report = getRuntime(runtimeId).verify(childPath(projectRoot, opts.path), parseRuntimeTargets(opts.targets));
+    console.log(JSON.stringify(report, null, 2));
+    process.exit(report.status === "fail" ? 1 : 0);
+  });
+
+function childPath(root: string, candidate: string): string {
+  const resolved = path.resolve(root, candidate);
+  const relative = path.relative(root, resolved);
+  if (!relative || relative.startsWith("..") || path.isAbsolute(relative)) throw new Error(`Path must be inside project root: ${candidate}`);
+  return resolved;
+}
+
+// ---------- design ----------
 const designCmd = program.command("design").description("Design Profile 검사·교정 루프");
 designCmd
   .command("check")
@@ -477,9 +593,16 @@ correctionCmd
 // ---------- doctor ----------
 program
   .command("doctor")
-  .description("shim 존재·참조 유효성·드리프트 검사")
-  .action(() => {
+  .description("연결 상태와 선택 capability의 실제 호스트 상태 검사")
+  .option("--capabilities", "capability 상태만 자세히 표시", false)
+  .action((opts) => {
     const { projectRoot, config } = requireProject();
+    if (opts.capabilities) {
+      const statuses = inspectCapabilities(config.bassYaml);
+      console.log(formatCapabilityStatuses(statuses));
+      process.exit(statuses.some((status) => status.state === "missing" || status.state === "unauthenticated") ? 1 : 0);
+      return;
+    }
     const checks = doctor(projectRoot, config.effective);
     for (const c of checks) {
       console.log(`  [${c.status.toUpperCase()}] ${c.id}${c.detail ? ` — ${c.detail}` : ""}`);
@@ -487,8 +610,20 @@ program
     process.exit(checks.some((c) => c.status === "fail") ? 1 : 0);
   });
 
+program
+  .command("upgrade")
+  .description("0.2 저장소를 사용자 파일을 보존하며 0.3 계약으로 마이그레이션")
+  .option("--check", "읽기 전용 변경 계획 표시", false)
+  .option("--apply", "계획 적용", false)
+  .action((opts) => {
+    if (opts.check && opts.apply) throw new Error("Choose either --check or --apply");
+    const projectRoot = findProjectRoot();
+    if (!projectRoot) throw new Error("bass.yaml not found");
+    console.log(formatUpgradePlan(upgradeProject(projectRoot, Boolean(opts.apply))));
+  });
+
 try {
-  program.parse();
+  await program.parseAsync();
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);

@@ -4,7 +4,7 @@ import { z } from "zod";
 
 /**
  * run record: 작업 완료 판정의 근거 (COL run-report 의 KEEP 계승).
- * `records/<taskId>.json` 에 저장한다.
+ * `.bass/records/<taskId>.json` 에 저장한다. 0.2 records/ 는 읽기 호환한다.
  */
 export const runRecordSchema = z.object({
   task_id: z.string(),
@@ -73,11 +73,11 @@ export const runRecordSchema = z.object({
 export type RunRecord = z.infer<typeof runRecordSchema>;
 
 export function runRecordPath(projectRoot: string, taskId: string): string {
-  return path.join(projectRoot, "records", `${taskId}.json`);
+  return path.join(projectRoot, ".bass", "records", `${taskId}.json`);
 }
 
 export function loadRunRecord(projectRoot: string, taskId: string): RunRecord | null {
-  const file = runRecordPath(projectRoot, taskId);
+  const file = existingRunRecordPath(projectRoot, taskId);
   if (!fs.existsSync(file)) return null;
   const result = runRecordSchema.safeParse(JSON.parse(fs.readFileSync(file, "utf8")));
   if (!result.success) {
@@ -93,7 +93,7 @@ export function recordFinalApproval(
   approver: string,
   notes?: string,
 ): { record: RunRecord; changed: boolean; filePath: string } {
-  const filePath = runRecordPath(projectRoot, taskId);
+  const filePath = existingRunRecordPath(projectRoot, taskId);
   const record = loadRunRecord(projectRoot, taskId);
   if (!record) {
     throw new Error(`Run record not found: ${filePath}. Prepare verification evidence before human review.`);
@@ -123,4 +123,10 @@ export function recordFinalApproval(
   };
   fs.writeFileSync(filePath, `${JSON.stringify(updated, null, 2)}\n`, "utf8");
   return { record: updated, changed: true, filePath };
+}
+
+function existingRunRecordPath(projectRoot: string, taskId: string): string {
+  const current = runRecordPath(projectRoot, taskId);
+  const legacy = path.join(projectRoot, "records", `${taskId}.json`);
+  return fs.existsSync(current) || !fs.existsSync(legacy) ? current : legacy;
 }

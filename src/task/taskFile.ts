@@ -4,9 +4,10 @@ import { parse } from "yaml";
 import { z } from "zod";
 import type { WorkflowState } from "../types.js";
 import { assertTransition } from "../workflow/stateMachine.js";
+import { normalizeWorkflowState } from "../workflow/stateMachine.js";
 
 const WORKFLOW_STATES = [
-  "CAPTURED", "DISCOVERY", "SHAPED", "READY", "PLANNED", "IMPLEMENTING",
+  "CAPTURED", "ACTIVE", "REVIEW", "DISCOVERY", "SHAPED", "READY", "PLANNED", "IMPLEMENTING",
   "VERIFYING", "CRITIQUING", "HUMAN_REVIEW", "DONE",
   "BLOCKED", "NEEDS_DECISION", "NEEDS_EXPERT", "FAILED", "ROLLED_BACK", "CANCELLED",
 ] as const;
@@ -81,7 +82,11 @@ export function parseTaskFile(filePath: string): TaskFile {
     sections.set(h.name, body.slice(h.contentStart, end).trim());
   }
 
-  return { filePath, frontmatter: fmResult.data, sections };
+  return {
+    filePath,
+    frontmatter: { ...fmResult.data, status: normalizeWorkflowState(fmResult.data.status) },
+    sections,
+  };
 }
 
 export interface SectionCheck {
@@ -101,20 +106,32 @@ export function checkSections(task: TaskFile, required: readonly string[]): Sect
   });
 }
 
-/** tasks/ 디렉터리에서 모든 작업 파일을 읽는다. */
+export function taskDirectory(projectRoot: string): string {
+  return path.join(projectRoot, ".bass", "tasks");
+}
+
+function taskDirectories(projectRoot: string): string[] {
+  return [taskDirectory(projectRoot), path.join(projectRoot, "tasks")];
+}
+
+/** .bass/tasks 를 우선하고 0.2 tasks/ 를 읽기 호환한다. */
 export function listTasks(projectRoot: string): TaskFile[] {
-  const dir = path.join(projectRoot, "tasks");
-  if (!fs.existsSync(dir)) return [];
-  return fs
-    .readdirSync(dir)
-    .filter((f) => f.endsWith(".md"))
-    .map((f) => parseTaskFile(path.join(dir, f)));
+  const byId = new Map<string, TaskFile>();
+  for (const dir of taskDirectories(projectRoot)) {
+    if (!fs.existsSync(dir)) continue;
+    for (const file of fs.readdirSync(dir).filter((item) => item.endsWith(".md"))) {
+      const task = parseTaskFile(path.join(dir, file));
+      if (!byId.has(task.frontmatter.id)) byId.set(task.frontmatter.id, task);
+    }
+  }
+  return [...byId.values()];
 }
 
 export function findTask(projectRoot: string, taskId: string): TaskFile {
-  const dir = path.join(projectRoot, "tasks");
-  const direct = path.join(dir, `${taskId}.md`);
-  if (fs.existsSync(direct)) return parseTaskFile(direct);
+  const dir = taskDirectory(projectRoot);
+  for (const candidate of taskDirectories(projectRoot).map((item) => path.join(item, `${taskId}.md`))) {
+    if (fs.existsSync(candidate)) return parseTaskFile(candidate);
+  }
   const all = listTasks(projectRoot);
   const found = all.find((t) => t.frontmatter.id === taskId);
   if (!found) throw new Error(`Task "${taskId}" not found under ${dir}`);
@@ -139,12 +156,13 @@ export function transitionTask(
   to: WorkflowState,
 ): TaskTransitionResult {
   const task = findTask(projectRoot, taskId);
-  const from = task.frontmatter.status;
-  if (from === to) {
-    return { taskId, from, to, changed: false, filePath: task.filePath };
+  const from = normalizeWorkflowState(task.frontmatter.status);
+  const target = normalizeWorkflowState(to);
+  if (from === target) {
+    return { taskId, from, to: target, changed: false, filePath: task.filePath };
   }
 
-  assertTransition(from, to);
+  assertTransition(from, target);
   const raw = fs.readFileSync(task.filePath, "utf8");
   const fmMatch = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!fmMatch) throw new Error(`Task file has no YAML frontmatter: ${task.filePath}`);
@@ -152,12 +170,11 @@ export function transitionTask(
   if (!/^status:\s*\S+\s*$/m.test(frontmatter)) {
     throw new Error(`Task frontmatter has no status field: ${task.filePath}`);
   }
-  const updatedFrontmatter = frontmatter.replace(/^status:\s*\S+\s*$/m, `status: ${to}`);
+  const updatedFrontmatter = frontmatter.replace(/^status:\s*\S+\s*$/m, `status: ${target}`);
   fs.writeFileSync(task.filePath, raw.replace(frontmatter, updatedFrontmatter), "utf8");
-  return { taskId, from, to, changed: true, filePath: task.filePath };
+  return { taskId, from, to: target, changed: true, filePath: task.filePath };
 }
 
 export function countActiveTasks(projectRoot: string): number {
-  const ACTIVE: WorkflowState[] = ["PLANNED", "IMPLEMENTING", "VERIFYING", "CRITIQUING"];
-  return listTasks(projectRoot).filter((t) => ACTIVE.includes(t.frontmatter.status)).length;
+  return listTasks(projectRoot).filter((task) => normalizeWorkflowState(task.frontmatter.status) === "ACTIVE").length;
 }

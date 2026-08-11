@@ -47,7 +47,7 @@ describe("bass create (새 프로젝트 자동 연결)", () => {
         withDesign: false,
         install: false,
       }),
-    ).toThrow(/Use `bass init`/);
+    ).toThrow(/Use `bass setup`/);
     expect(fs.readFileSync(path.join(projectRoot, "keep.txt"), "utf8")).toBe("keep");
   });
 });
@@ -68,24 +68,20 @@ describe("bass init (shim 생성)", () => {
     expect(result.created).toContain("CLAUDE.md");
     expect(result.created).toContain("DESIGN.md");
 
-    // shim 은 얇아야 하고 마커를 가진다
-    for (const shim of ["AGENTS.md", ".cursor/rules/bass.mdc", "CLAUDE.md"]) {
-      const content = fs.readFileSync(path.join(root, shim), "utf8");
-      expect(content).toContain("bass-shim");
-      expect(content.split("\n").length).toBeLessThan(60);
-    }
+    const agents = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
+    expect(agents).toContain("bass:managed:start");
+    expect(Buffer.byteLength(agents, "utf8")).toBeLessThan(2048);
 
     // 생성된 bass.yaml 은 유효해야 한다
     const config = loadConfig({ projectRoot: root });
     expect(config.bassYaml.project.name).toBe("demo");
     expect(config.effective["design_profile"]).toBe(true);
     expect(config.bassYaml.bass.version).toBe(BASS_VERSION);
-    const agents = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
-    expect(agents).toContain(`v${BASS_VERSION}`);
-    expect(agents).toContain("기존 프로젝트의 지침·검증·디자인·이력을 원천으로 보존");
+    expect(agents).toContain(BASS_VERSION);
+    expect(agents).toContain("smallest accepted change");
   });
 
-  it("기존 파일은 --force 없이 건너뛴다", () => {
+  it("기존 AGENTS.md는 보존하고 관리 블록만 추가한다", () => {
     const root = tempDir();
     fs.writeFileSync(path.join(root, "AGENTS.md"), "custom", "utf8");
     const result = initProject({
@@ -95,8 +91,32 @@ describe("bass init (shim 생성)", () => {
       owner: "user",
       withDesign: false,
     });
-    expect(result.skipped).toContain("AGENTS.md");
-    expect(fs.readFileSync(path.join(root, "AGENTS.md"), "utf8")).toBe("custom");
+    expect(result.updated).toContain("AGENTS.md");
+    const agents = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
+    expect(agents).toContain("custom");
+    expect(agents).toContain("bass:managed:start");
+  });
+
+  it("기존 Claude/Cursor 지침도 보존하고 BASS 관리 블록만 추가한다", () => {
+    const root = tempDir();
+    fs.mkdirSync(path.join(root, ".cursor", "rules"), { recursive: true });
+    fs.writeFileSync(path.join(root, "CLAUDE.md"), "# Team Claude rule\n", "utf8");
+    fs.writeFileSync(path.join(root, ".cursor", "rules", "bass.mdc"), "---\nalwaysApply: true\n---\n\nTeam Cursor rule\n", "utf8");
+    initProject({ projectRoot: root, name: "demo", profiles: ["common"], owner: "user", withDesign: false });
+    expect(fs.readFileSync(path.join(root, "CLAUDE.md"), "utf8")).toContain("Team Claude rule");
+    expect(fs.readFileSync(path.join(root, "CLAUDE.md"), "utf8")).toContain("bass:managed:start");
+    expect(fs.readFileSync(path.join(root, ".cursor", "rules", "bass.mdc"), "utf8")).toContain("Team Cursor rule");
+    expect(fs.readFileSync(path.join(root, ".cursor", "rules", "bass.mdc"), "utf8")).toContain("bass:managed:start");
+  });
+
+  it("깨진 관리 marker는 사용자 파일을 덮지 않고 conflict로 중지한다", () => {
+    const root = tempDir();
+    const original = "# Team rule\n\n<!-- bass:managed:start -->\nunfinished\n";
+    fs.writeFileSync(path.join(root, "AGENTS.md"), original, "utf8");
+    const result = initProject({ projectRoot: root, name: "demo", profiles: ["common"], owner: "user", withDesign: false });
+    expect(result.conflicts).toContain("AGENTS.md");
+    expect(fs.readFileSync(path.join(root, "AGENTS.md"), "utf8")).toBe(original);
+    expect(fs.existsSync(path.join(root, "bass.yaml"))).toBe(false);
   });
 });
 
@@ -116,8 +136,8 @@ describe("bass doctor", () => {
     fs.writeFileSync(path.join(root, "AGENTS.md"), "규칙 전문 복사본...", "utf8");
     const config = loadConfig({ projectRoot: root });
     const checks = doctor(root, config.effective);
-    expect(checks.find((c) => c.id === "shim-claude")?.status).toBe("fail");
-    expect(checks.find((c) => c.id === "shim-agents")?.status).toBe("warn");
+    expect(checks.find((c) => c.id === "adapter-claude")?.status).toBe("fail");
+    expect(checks.find((c) => c.id === "agents-managed-block")?.status).toBe("fail");
   });
 
   it("design_profile 활성인데 DESIGN.md 없으면 실패", () => {

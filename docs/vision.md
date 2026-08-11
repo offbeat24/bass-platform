@@ -30,7 +30,7 @@ Human intent
 → Appropriate model selection
 → Constrained implementation
 → Mechanical verification
-→ Independent adversarial critique
+→ Risk-proportional relevant critique when needed
 → Human judgment and approval
 → Execution and observation
 → Learning fed back into tests, rules, documents, profiles, and design specs

@@ -1,15 +1,25 @@
 bass:
-  version: 0.2.1
-  profiles:
-    - common
-    - cli
+  version: 0.3.0
+  profiles: [common, cli]
 
 project:
   name: bass-platform
-  description: BASS 코어 런타임과 배포 가능한 CLI 패키지
+  description: Portable BASS CLI and team plugin runtime
 
-models:
-  worker: auto
+execution:
+  depth: adaptive
+  verification: affected
+
+capabilities:
+  specification: builtin
+  simplicity: ponytail
+  ui_direction: off
+  ui_canvas: off
+  html_report: bass
+
+adapters:
+  primary: codex
+  compatibility: [claude, cursor]
 
 workflow:
   max_active_tasks: 1
@@ -20,8 +30,14 @@ evaluators:
     - name: typecheck
       command: npm run typecheck
   level2:
-    - name: test
+    - name: tests
       command: npm test
     - name: build
       command: npm run build
-  level3: []
+  level3:
+    - name: package-smoke
+      command: npm run smoke:package
+      surfaces: [release]
+    - name: plugin-manifest
+      command: npm run validate:plugin
+      surfaces: [release]

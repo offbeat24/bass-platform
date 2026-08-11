@@ -1,137 +1,33 @@
-# 기존 프로젝트 연결 방법론
+# Adopting an existing repository
 
-이 문서는 BASS를 기존 프로젝트에 연결하는 AI 에이전트가 읽는 실행 가이드다.
-사람이 설치 체크리스트를 따라 하게 만드는 문서가 아니다.
+## Inspect first
 
-## 핵심 계약
+Record the repository's language, build system, existing agent instructions, CI commands, design source, generated files, and current handoff records. Reuse those facts; BASS must not become a second source of truth.
 
-BASS 연결은 별도의 대규모 마이그레이션이 아니라 하나의 작고 검토 가능한 작업이다.
-호스트 AI 에이전트가 기존 프로젝트를 조사하고, BASS는 그 에이전트가 사용할 감독
-계약과 멱등한 실행 도구를 제공한다.
-
-- 기존 프로젝트의 코드, 명령, 문서와 제품 의도가 우선이다.
-- BASS 코어를 프로젝트에 복사하지 않는다. 버전 있는 package와 얇은 프로젝트 설정만 연결한다.
-- 기존 규칙을 BASS 템플릿으로 교체하지 않는다. 겹치는 목적은 통합하고 프로젝트 고유 규칙은 유지한다.
-- 저장소에서 확인 가능한 사실은 AI가 조사한다.
-- 사람에게는 제품 방향, 충돌하는 운영 원칙, 위험 수용처럼 사람이 책임질 결정만 묻는다.
-- 이식 자체를 새로운 승인·문서·상태 의식으로 만들지 않는다.
-
-## 1. 먼저 조사한다
-
-AI는 변경 전에 다음 사실을 필요한 범위에서 직접 확인한다.
-
-- 언어, 프레임워크, package manager와 실행 환경
-- 현재 build, typecheck, lint, test, end-to-end, 배포 명령
-- CI, git hook, release와 rollback 방식
-- `AGENTS.md`, `CLAUDE.md`, Cursor rules 및 다른 AI 지침
-- 기존 task, issue, ADR, run report, evidence 또는 하네스
-- 인증, 권한, 개인정보, 결제, 데이터 변경과 배포 위험
-- UI 프로젝트라면 실제 렌더링, 디자인 토큰, 컴포넌트, `DESIGN.md`
-
-모든 항목을 위한 새 문서를 만들지 않는다. 실제 연결 선택에 필요한 사실만 요약한다.
-
-## 2. 연결 내용을 분류한다
-
-조사 결과를 내부적으로 다음처럼 구분한다.
-
-| 분류 | 처리 |
-|---|---|
-| 유지 | 프로젝트 고유 규칙, 제품 결정, 기존 검증 명령과 이력 |
-| 연결 | BASS package, `bass.yaml`, 필요한 profile, 얇은 agent shim |
-| 통합 | BASS와 목적이 겹치는 에이전트 지침, gate, evidence 규칙 |
-| 제안 | 프로젝트 사실만으로 결정할 수 없는 제품·위험·운영 선택 |
-| 제외 | 현재 프로젝트나 작업에 필요 없는 profile, 문서, evaluator |
-
-“가장 많이 쓰인 기존 방식”을 자동으로 정답으로 간주하지 않는다. 서로 모순되는 규칙은
-사실·선택지·권장안·영향을 정리해 사람에게 하나의 의미 있는 결정으로 제시한다.
-
-## 3. 최소 변경으로 연결한다
-
-AI가 내부적으로 package를 설치하고 `bass init`을 호출한다.
+## Connect
 
 ```bash
-npm install --save-dev ./tools/bass-platform-<version>.tgz
-npx --no-install bass init --name <project> --profiles <selected-profiles> [--design]
+bass setup /path/to/repo --non-interactive \
+  --capability specification=builtin \
+  --capability simplicity=ponytail
 ```
 
-다음 원칙을 지킨다.
+`setup` preserves existing files. It appends or refreshes only the marked block in `AGENTS.md`, creates Claude/Cursor shims only for selected adapters, and ignores `.bass/cache/` and `.bass/local.yaml`. A malformed marker is a conflict and stops integration without `--force`.
 
-- profile은 기술 스택 이름만 보고 고르지 말고 실제 작업·검증·제품 특성에 맞춘다.
-- 기존 `AGENTS.md`, `CLAUDE.md`, Cursor rule, `DESIGN.md`, `bass.yaml`은 덮어쓰지 않는다.
-- `bass init`이 기존 파일을 건너뛰면 `--force`로 재실행하지 않는다. 원문을 보존한
-  상태에서 BASS의 자연어 사용자 계약과 내부 실행 계약만 가장 작은 diff로 통합한다.
-- 기존 build와 test 명령 중 안정적으로 재실행 가능한 명령을 `bass.yaml` evaluator에 연결한다.
-- 이미 같은 목적을 수행하는 task, evidence, CI 또는 문서 체계가 있으면 두 번째
-  Single Source of Truth를 만들지 않는다.
-- 연결하지 않은 항목과 이유를 결과 보고에 밝힌다.
+For Python, Unity, Rust, or another non-Node repository, assert that no root `package.json` was created. Node 20 and npm belong to the person running BASS, not the target.
 
-### 현재 구조가 제품 범위를 제한하지 않게 한다
+## Verify adoption
 
-연결 시점에 프런트엔드만 있다고 해서 서버나 영속 데이터가 금지된 것으로 해석하지 않는다.
-사람이 백엔드, API, 데이터베이스, 인증, 저장·동기화를 제품 범위에 추가하면 그 작업에서
-`server` profile과 관련 evaluator를 함께 연결한다. UI도 있는 프로젝트는
-`common,web,server` 순서로 조합하면 Design Profile을 유지하면서 서버 discovery와
-migration/auth 위험 규칙을 적용할 수 있다.
-
-- API 계약과 버전·호환 정책을 기록한다.
-- 데이터 모델과 forward/rollback migration, 기존 데이터 보존을 검증한다.
-- 인증·권한·비밀정보 경계와 트랜잭션·무결성·멱등성을 검토한다.
-- 격리된 integration DB, 재현 가능한 seed, 복구와 관측 수단을 evaluator/CI에 연결한다.
-- 운영 DB 변경, 외부 서비스 생성과 배포는 명시적 승인 전 실행하지 않는다.
-
-## 4. 연결을 검증한다
-
-AI는 적절한 범위에서 다음을 확인한다.
+Run:
 
 ```bash
-npx --no-install bass --version
-npx --no-install bass doctor
-npx --no-install bass config explain
-npx --no-install bass agent guide
+bass doctor
+bass doctor --capabilities
+bass agent guide --json
 ```
 
-이 검사는 파일 존재만 확인하는 것으로 끝나지 않는다.
+Then execute one real, small user task. Adoption is complete when the plan selects proportionate checks, existing validation still works, user instructions are intact, and another teammate can continue from the minimal `.bass` evidence.
 
-- AI 도구가 저장소를 다시 열었을 때 자연어 사용자 계약을 발견할 수 있는가?
-- 기존 프로젝트 명령이 BASS evaluator와 충돌 없이 실행되는가?
-- 기존 규칙과 BASS 규칙 중 어느 것이 프로젝트 로컬 결정인지 명확한가?
-- BASS를 제거해도 제품 코드와 기존 이력이 보존되는가?
-- UI라면 `DESIGN.md`가 빈 템플릿이 아니라 실제 프로젝트 증거를 반영하는가?
+## Upgrade 0.2
 
-## 5. 실제 작업 하나로 적합성을 확인한다
-
-연결 성공을 파일 생성으로 판정하지 않는다. 사용자가 원래 필요로 하던 작고 실제적인
-작업 하나를 자연어로 수행한다.
-
-```text
-사용자 의도
-→ 프로젝트 조사
-→ 필요한 만큼만 명확화
-→ 최소 구현
-→ 기존 검증 + 관련 critic
-→ 결과와 근거를 한 번에 리뷰
-→ 피드백을 같은 작업의 첫 미완료 단계부터 반영
-```
-
-파일럿에서 발견한 불편은 다음 위치 중 가장 좁은 곳에 반영한다.
-
-1. 일회성 구현 문제면 현재 task
-2. 프로젝트에서 반복될 규칙이면 프로젝트 설정·테스트·지침
-3. 같은 유형의 여러 프로젝트에서 반복 확인된 경우에만 profile
-4. 프로젝트 유형과 무관한 반복 문제로 검증된 경우에만 BASS 코어
-
-한 번의 사례를 곧바로 전역 규칙으로 승격하지 않는다.
-
-## 6. 사람에게 보여줄 것
-
-연결 후 사람에게는 내부 명령 로그 대신 다음만 전달한다.
-
-- 어떤 기존 방식을 유지했는가
-- BASS가 어떤 부분에 연결됐는가
-- 충돌하거나 제외한 부분은 무엇인가
-- 실제 작업과 검증에서 무엇이 확인됐는가
-- 아직 사람이 판단해야 할 제품·위험 결정은 무엇인가
-- 되돌리려면 무엇을 제거하거나 복원하면 되는가
-
-연결 결과가 의도와 맞지 않으면 AI는 전체 초기화를 반복하지 않고 첫 불일치 지점부터
-수정한다.
+Use `bass upgrade --check` first. Only `--apply` changes files. Root `tasks/` and `records/` remain readable; new records go under `.bass/`. Do not rewrite old completion history merely to match the new four-state vocabulary.

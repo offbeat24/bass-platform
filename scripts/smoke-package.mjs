@@ -18,94 +18,73 @@ function run(command, args, cwd = root) {
   }).trim();
 }
 
+function setupArgs(target, profiles = "common") {
+  return ["setup", target, "--non-interactive", "--profiles", profiles, "--capability", "simplicity=builtin"];
+}
+
 try {
   const packed = JSON.parse(run("npm", ["pack", "--json", "--pack-destination", tempRoot]));
   const tarball = path.join(tempRoot, packed[0].filename);
   const packedPaths = packed[0].files.map((file) => file.path);
-  assert.ok(packedPaths.includes("dist/cli/main.js"));
-  assert.ok(packedPaths.includes("templates/task.md"));
-  for (const excludedPrefix of ["src/", "tests/", "examples/", "scripts/", "tasks/"]) {
+  for (const required of [
+    "dist/cli/main.js",
+    "profiles/game.yaml",
+    "plugins/bass/.codex-plugin/plugin.json",
+    "plugins/bass/.claude-plugin/plugin.json",
+    "plugins/bass/hooks/hooks.json",
+  ]) assert.ok(packedPaths.includes(required), `missing package file: ${required}`);
+  for (const excludedPrefix of ["src/", "tests/", "examples/", "tasks/"]) {
     assert.equal(packedPaths.some((file) => file.startsWith(excludedPrefix)), false);
   }
+
   const dependencyTarballs = Object.keys(packageJson.dependencies).map((dependency) => {
-    const dependencyPack = JSON.parse(
-      run("npm", [
-        "pack",
-        "--ignore-scripts",
-        "--json",
-        "--pack-destination",
-        tempRoot,
-        path.join(root, "node_modules", dependency),
-      ]),
-    );
+    const dependencyPack = JSON.parse(run("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", tempRoot, path.join(root, "node_modules", dependency)]));
     return path.join(tempRoot, dependencyPack[0].filename);
   });
-  const consumer = path.join(tempRoot, "consumer");
-  const demo = path.join(consumer, "demo");
-  fs.mkdirSync(demo, { recursive: true });
-  fs.writeFileSync(path.join(consumer, "package.json"), JSON.stringify({ private: true }), "utf8");
+  const host = path.join(tempRoot, "host");
+  fs.mkdirSync(host);
+  fs.writeFileSync(path.join(host, "package.json"), JSON.stringify({ private: true }), "utf8");
+  run("npm", ["install", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", tarball, ...dependencyTarballs], host);
+  const bass = path.join(host, "node_modules", ".bin", process.platform === "win32" ? "bass.cmd" : "bass");
+  assert.equal(run(bass, ["--version"], host), packageJson.version);
 
-  run(
-    "npm",
-    ["install", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", tarball, ...dependencyTarballs],
-    consumer,
-  );
-  const bassBin = path.join(consumer, "node_modules", ".bin", "bass");
+  const nodeRepo = path.join(tempRoot, "node-web");
+  fs.mkdirSync(nodeRepo);
+  const nodePackage = JSON.stringify({ name: "node-web", private: true, scripts: { test: "node --test" } }, null, 2);
+  fs.writeFileSync(path.join(nodeRepo, "package.json"), nodePackage, "utf8");
+  run(bass, setupArgs(nodeRepo, "common,web"), host);
+  assert.equal(fs.readFileSync(path.join(nodeRepo, "package.json"), "utf8"), nodePackage);
+  assert.ok(fs.existsSync(path.join(nodeRepo, "bass.yaml")));
 
-  assert.equal(run(bassBin, ["--version"], consumer), packageJson.version);
-  run(bassBin, ["init", "--name", "package-smoke", "--profiles", "common,cli"], demo);
-  const explanation = run(bassBin, ["config", "explain"], demo);
-  assert.match(explanation, /profiles: common, cli/);
-  const agentGuide = run(bassBin, ["agent", "guide"], demo);
-  assert.match(agentGuide, /user interface: natural-language/);
-  assert.match(agentGuide, /adoption into an existing repository as one proportional task/);
-  assert.match(
-    fs.readFileSync(path.join(demo, "AGENTS.md"), "utf8"),
-    /기존 프로젝트의 지침·검증·디자인·이력을 원천으로 보존/,
-  );
+  const pythonRepo = path.join(tempRoot, "python-repo");
+  fs.mkdirSync(pythonRepo);
+  fs.writeFileSync(path.join(pythonRepo, "pyproject.toml"), "[project]\nname='demo'\n", "utf8");
+  run(bass, setupArgs(pythonRepo), host);
+  assert.equal(fs.existsSync(path.join(pythonRepo, "package.json")), false);
 
-  const existingProject = path.join(consumer, "existing-project");
-  fs.mkdirSync(existingProject, { recursive: true });
-  fs.writeFileSync(path.join(existingProject, "AGENTS.md"), "# Existing project rules\n", "utf8");
-  const existingInit = run(
-    bassBin,
-    ["init", "--name", "existing-project", "--profiles", "common"],
-    existingProject,
-  );
-  assert.match(existingInit, /integration required: preserve skipped files/);
-  assert.equal(
-    fs.readFileSync(path.join(existingProject, "AGENTS.md"), "utf8"),
-    "# Existing project rules\n",
-  );
+  const unityRepo = path.join(tempRoot, "unity-repo");
+  fs.mkdirSync(path.join(unityRepo, "Assets"), { recursive: true });
+  run(bass, setupArgs(unityRepo, "common,game"), host);
+  run(bass, ["runtime", "scaffold", "unity", "--destination", "prototype", "--targets", "macos", "--confirm"], unityRepo);
+  assert.equal(fs.existsSync(path.join(unityRepo, "package.json")), false);
+  assert.equal(fs.existsSync(path.join(unityRepo, "prototype", "package.json")), false);
 
-  const createdProject = path.join(consumer, "created-project");
-  run(
-    bassBin,
-    ["create", createdProject, "--design"],
-    consumer,
-  );
-  const createdBassBin = path.join(createdProject, "node_modules", ".bin", "bass");
-  assert.ok(fs.existsSync(path.join(createdProject, "tools", `bass-platform-${packageJson.version}.tgz`)));
-  assert.equal(run(createdBassBin, ["--version"], createdProject), packageJson.version);
-  assert.match(run(createdBassBin, ["config", "explain"], createdProject), /profiles: common, web/);
-  assert.match(run(createdBassBin, ["doctor"], createdProject), /\[PASS\]/);
-  assert.match(run(createdBassBin, ["agent", "guide"], createdProject), /design spec: template/);
-  assert.match(
-    JSON.parse(fs.readFileSync(path.join(createdProject, "package.json"), "utf8")).devDependencies[
-      "bass-platform"
-    ],
-    /^file:tools\/bass-platform-/,
-  );
+  const legacy = path.join(tempRoot, "legacy");
+  fs.mkdirSync(legacy);
+  fs.writeFileSync(path.join(legacy, "bass.yaml"), "bass:\n  version: 0.2.1\n  profiles: [common]\nproject:\n  name: legacy\n", "utf8");
+  fs.writeFileSync(path.join(legacy, "AGENTS.md"), "# Keep me\n", "utf8");
+  const before = fs.readFileSync(path.join(legacy, "bass.yaml"), "utf8");
+  assert.match(run(bass, ["upgrade", "--check"], legacy), /No files changed/);
+  assert.equal(fs.readFileSync(path.join(legacy, "bass.yaml"), "utf8"), before);
+  run(bass, ["upgrade", "--apply"], legacy);
+  assert.match(fs.readFileSync(path.join(legacy, "bass.yaml"), "utf8"), new RegExp(`version: ${packageJson.version}`));
+  assert.match(fs.readFileSync(path.join(legacy, "AGENTS.md"), "utf8"), /# Keep me/);
 
-  const configFile = path.join(demo, "bass.yaml");
-  const config = fs.readFileSync(configFile, "utf8").replace(
-    `version: ${packageJson.version}`,
-    "version: 999.0.0",
-  );
-  fs.writeFileSync(configFile, config, "utf8");
-  const mismatch = spawnSync(bassBin, ["config", "explain"], { cwd: demo, encoding: "utf8" });
-  assert.notEqual(mismatch.status, 0);
-  assert.match(mismatch.stderr, /BASS version mismatch: project requires 999\.0\.0/);
+  const mismatch = fs.readFileSync(path.join(nodeRepo, "bass.yaml"), "utf8").replace(`version: ${packageJson.version}`, "version: 999.0.0");
+  fs.writeFileSync(path.join(nodeRepo, "bass.yaml"), mismatch, "utf8");
+  const failed = spawnSync(bass, ["config", "explain"], { cwd: nodeRepo, encoding: "utf8" });
+  assert.notEqual(failed.status, 0);
+  assert.match(failed.stderr, /Install @offbeat24\/bass@999\.0\.0/);
 
   console.log(`package smoke PASS: ${packageJson.name}@${packageJson.version}`);
 } finally {

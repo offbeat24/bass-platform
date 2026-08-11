@@ -1,0 +1,9 @@
+name: nan2026
+extends: game
+
+event_overlay:
+  concept_gate: true
+  time_limit_hours: 48
+  required_evidence: true
+  trace: true
+  session_lock: true

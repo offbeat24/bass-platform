@@ -5,9 +5,10 @@ import { checkSections, countActiveTasks, TASK_SECTIONS, type TaskFile } from ".
 import { loadRunRecord } from "../task/runRecord.js";
 import { findRequiredApprovals } from "../policy/policyEngine.js";
 import { loadRiskApprovals } from "../task/approvalRecord.js";
+import { normalizeWorkflowState } from "./stateMachine.js";
 
-/** READY 게이트에 필수인 섹션 (Core 프롬프트 §13 READY 조건) */
-const READY_SECTIONS = [
+/** CAPTURED 상태에서 ACTIVE로 들어가기 전에 필요한 최소 작업 계약. */
+const CAPTURED_SECTIONS = [
   "Problem",
   "What we are shipping",
   "What we are not shipping",
@@ -32,12 +33,12 @@ export function preTaskGate(task: TaskFile, ctx: GateContext): GateReport {
 
   checks.push({
     id: "status-ready",
-    description: "작업 상태가 READY 이후여야 한다",
-    status: ["READY", "PLANNED", "IMPLEMENTING"].includes(fm.status) ? "pass" : "fail",
+    description: "작업 상태가 CAPTURED 또는 ACTIVE여야 한다",
+    status: ["CAPTURED", "ACTIVE"].includes(normalizeWorkflowState(fm.status)) ? "pass" : "fail",
     detail: `current status: ${fm.status}`,
   });
 
-  for (const c of checkSections(task, READY_SECTIONS)) {
+  for (const c of checkSections(task, CAPTURED_SECTIONS)) {
     checks.push({
       id: `section:${c.section}`,
       description: `"${c.section}" 섹션 존재 및 내용`,
@@ -108,8 +109,8 @@ export function preReviewGate(task: TaskFile, ctx: GateContext): GateReport {
   );
   checks.unshift({
     id: "status-review-ready",
-    description: "인간 리뷰 준비는 CRITIQUING 또는 HUMAN_REVIEW 상태에서 가능하다",
-    status: ["CRITIQUING", "HUMAN_REVIEW"].includes(task.frontmatter.status) ? "pass" : "fail",
+    description: "인간 리뷰 준비는 ACTIVE 또는 REVIEW 상태에서 가능하다",
+    status: ["ACTIVE", "REVIEW"].includes(normalizeWorkflowState(task.frontmatter.status)) ? "pass" : "fail",
     detail: `current status: ${task.frontmatter.status}`,
   });
   return buildReport("pre-review", task.frontmatter.id, checks, []);
@@ -125,8 +126,8 @@ export function preCompleteGate(task: TaskFile, ctx: GateContext): GateReport {
 
   checks.push({
     id: "status-review",
-    description: "완료 처리는 HUMAN_REVIEW 상태에서만 가능하다",
-    status: fm.status === "HUMAN_REVIEW" ? "pass" : "fail",
+    description: "완료 처리는 REVIEW 상태에서만 가능하다",
+    status: normalizeWorkflowState(fm.status) === "REVIEW" ? "pass" : "fail",
     detail: `current status: ${fm.status}`,
   });
 
@@ -134,7 +135,7 @@ export function preCompleteGate(task: TaskFile, ctx: GateContext): GateReport {
   if (!record) {
     checks.push({
       id: "run-record",
-      description: `run record 존재 (records/${fm.id}.json)`,
+      description: `run record 존재 (.bass/records/${fm.id}.json)`,
       status: "fail",
       detail: "run record not found — 완료 근거 없이 DONE 처리할 수 없다",
     });
