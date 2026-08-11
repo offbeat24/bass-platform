@@ -23,7 +23,7 @@ assert.doesNotMatch(launcher, /findVersion\(process\.cwd\(\)\) \|\| "0\.3\.0"/);
 
 const skillsRoot = path.join(root, "plugins", "bass", "skills");
 for (const name of fs.readdirSync(skillsRoot)) {
-  const skill = fs.readFileSync(path.join(skillsRoot, name, "SKILL.md"), "utf8");
+  const skill = fs.readFileSync(path.join(skillsRoot, name, "SKILL.md"), "utf8").replaceAll("\r\n", "\n");
   assert.match(skill, new RegExp(`^---\\nname: ${name}\\ndescription: .+\\n---`, "s"));
   assert.doesNotMatch(skill, /\[TODO:/);
 }
