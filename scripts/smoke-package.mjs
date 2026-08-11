@@ -52,27 +52,28 @@ try {
   fs.mkdirSync(host);
   fs.writeFileSync(path.join(host, "package.json"), JSON.stringify({ private: true }), "utf8");
   runNpm(["install", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", tarball, ...dependencyTarballs], host);
-  const bass = path.join(host, "node_modules", ".bin", process.platform === "win32" ? "bass.cmd" : "bass");
-  assert.equal(run(bass, ["--version"], host), packageJson.version);
+  const bassCli = path.join(host, "node_modules", packageJson.name, packageJson.bin.bass);
+  const runBass = (args, cwd = host) => run(process.execPath, [bassCli, ...args], cwd);
+  assert.equal(runBass(["--version"]), packageJson.version);
 
   const nodeRepo = path.join(tempRoot, "node-web");
   fs.mkdirSync(nodeRepo);
   const nodePackage = JSON.stringify({ name: "node-web", private: true, scripts: { test: "node --test" } }, null, 2);
   fs.writeFileSync(path.join(nodeRepo, "package.json"), nodePackage, "utf8");
-  run(bass, setupArgs(nodeRepo, "common,web"), host);
+  runBass(setupArgs(nodeRepo, "common,web"));
   assert.equal(fs.readFileSync(path.join(nodeRepo, "package.json"), "utf8"), nodePackage);
   assert.ok(fs.existsSync(path.join(nodeRepo, "bass.yaml")));
 
   const pythonRepo = path.join(tempRoot, "python-repo");
   fs.mkdirSync(pythonRepo);
   fs.writeFileSync(path.join(pythonRepo, "pyproject.toml"), "[project]\nname='demo'\n", "utf8");
-  run(bass, setupArgs(pythonRepo), host);
+  runBass(setupArgs(pythonRepo));
   assert.equal(fs.existsSync(path.join(pythonRepo, "package.json")), false);
 
   const unityRepo = path.join(tempRoot, "unity-repo");
   fs.mkdirSync(path.join(unityRepo, "Assets"), { recursive: true });
-  run(bass, setupArgs(unityRepo, "common,game"), host);
-  run(bass, ["runtime", "scaffold", "unity", "--destination", "prototype", "--targets", "macos", "--confirm"], unityRepo);
+  runBass(setupArgs(unityRepo, "common,game"));
+  runBass(["runtime", "scaffold", "unity", "--destination", "prototype", "--targets", "macos", "--confirm"], unityRepo);
   assert.equal(fs.existsSync(path.join(unityRepo, "package.json")), false);
   assert.equal(fs.existsSync(path.join(unityRepo, "prototype", "package.json")), false);
 
@@ -81,15 +82,15 @@ try {
   fs.writeFileSync(path.join(legacy, "bass.yaml"), "bass:\n  version: 0.2.1\n  profiles: [common]\nproject:\n  name: legacy\n", "utf8");
   fs.writeFileSync(path.join(legacy, "AGENTS.md"), "# Keep me\n", "utf8");
   const before = fs.readFileSync(path.join(legacy, "bass.yaml"), "utf8");
-  assert.match(run(bass, ["upgrade", "--check"], legacy), /No files changed/);
+  assert.match(runBass(["upgrade", "--check"], legacy), /No files changed/);
   assert.equal(fs.readFileSync(path.join(legacy, "bass.yaml"), "utf8"), before);
-  run(bass, ["upgrade", "--apply"], legacy);
+  runBass(["upgrade", "--apply"], legacy);
   assert.match(fs.readFileSync(path.join(legacy, "bass.yaml"), "utf8"), new RegExp(`version: ${packageJson.version}`));
   assert.match(fs.readFileSync(path.join(legacy, "AGENTS.md"), "utf8"), /# Keep me/);
 
   const mismatch = fs.readFileSync(path.join(nodeRepo, "bass.yaml"), "utf8").replace(`version: ${packageJson.version}`, "version: 999.0.0");
   fs.writeFileSync(path.join(nodeRepo, "bass.yaml"), mismatch, "utf8");
-  const failed = spawnSync(bass, ["config", "explain"], { cwd: nodeRepo, encoding: "utf8" });
+  const failed = spawnSync(process.execPath, [bassCli, "config", "explain"], { cwd: nodeRepo, encoding: "utf8" });
   assert.notEqual(failed.status, 0);
   assert.match(failed.stderr, /Install @offbeat24\/bass@999\.0\.0/);
 
