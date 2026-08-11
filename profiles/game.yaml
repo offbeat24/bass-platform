@@ -1,0 +1,14 @@
+name: game
+extends: common
+
+defaults:
+  execution:
+    depth: standard
+    verification: affected
+
+runtime_selection:
+  criteria: [dimension, targets, existing_dependencies, team_readiness, deployment, license]
+  require_explicit_scaffold: true
+  require_explicit_install: true
+
+critics: [implementation, test, simplicity, design]

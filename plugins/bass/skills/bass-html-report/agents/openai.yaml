@@ -1,0 +1,4 @@
+interface:
+  display_name: "BASS HTML Report"
+  short_description: "Render a handoff report from existing BASS records."
+  default_prompt: "Generate the requested HTML report from the existing BASS run record."

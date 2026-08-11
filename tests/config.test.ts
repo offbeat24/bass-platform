@@ -73,7 +73,7 @@ describe("계층형 설정 병합", () => {
   it("프로젝트 요구 버전과 런타임 버전이 다르면 설치 방법을 포함한 오류", () => {
     const root = makeTempProject({ profiles: ["common"], version: "999.0.0" });
     expect(() => loadConfig({ projectRoot: root })).toThrow(
-      /BASS version mismatch: project requires 999\.0\.0.*Install bass-platform@999\.0\.0/,
+      /BASS version mismatch: project requires 999\.0\.0.*Install @offbeat24\/bass@999\.0\.0/,
     );
   });
 

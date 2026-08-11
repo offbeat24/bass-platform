@@ -5,6 +5,9 @@ import { findRequiredApprovals } from "../policy/policyEngine.js";
 import { loadRiskApprovals } from "../task/approvalRecord.js";
 import { allowedTransitions } from "../workflow/stateMachine.js";
 import type { TaskFile } from "../task/taskFile.js";
+import { buildExecutionPlan } from "../execution/planner.js";
+import { normalizeWorkflowState } from "../workflow/stateMachine.js";
+import type { ExecutionPlan } from "../types.js";
 
 export interface AgentGuide {
   contract: {
@@ -20,6 +23,7 @@ export interface AgentGuide {
     design_spec: "ready" | "missing" | "template";
   };
   operating_rules: string[];
+  execution_plan: ExecutionPlan;
   task?: {
     id: string;
     status: string;
@@ -60,21 +64,16 @@ export function buildAgentGuide(
       design_spec: designSpec,
     },
     operating_rules: [
-      "Do not ask the user to run BASS commands or edit BASS records.",
-      "Investigate repository facts directly; ask only for product, value, or risk decisions a human must own.",
-      "Treat workflow states as internal execution state, not as approval prompts.",
-      "Use risk-proportional depth and keep reversible low-risk work moving.",
-      "Record explicit human decisions before crossing a policy gate; never self-approve.",
-      "Make retries idempotent: reuse completed state, evidence, and decisions instead of duplicating them.",
-      "For UI work, inspect the rendered result and DESIGN.md before claiming visual completion.",
-      "Treat the current architecture as evidence, not a product boundary. When accepted scope adds backend APIs or persistent data, activate the server profile and extend API, integration, migration, security, and recovery verification in the same change.",
-      "Treat adoption into an existing repository as one proportional task, not as a separate ceremony.",
-      "Inspect and preserve repository-native instructions, validation, design, and history before choosing profiles or evaluators.",
-      "If BASS overlaps an existing system, integrate the smallest useful contract and do not create a second source of truth.",
-      "Validate adoption with one real user task and keep lessons project-local until repetition justifies promotion.",
-      "Use Ouroboros only for consequential ambiguity or high-risk semantic evaluation; import its result once into the BASS task.",
-      "Use Ponytail only within accepted scope; preserve requirements and safeguards, run cheap checks first, and do not repeat loops without new evidence.",
+      "Operate BASS internally; never ask the user to run commands or edit records.",
+      "Inspect repository facts yourself; ask only for product or risk decisions.",
+      "Implement the smallest accepted change and obey execution_plan.scopeLock.",
+      "Run each planned affected check once; reuse a passing result while its diff fingerprint is unchanged.",
+      "Retry only failed and directly affected checks, within maxReworkLoops.",
+      "Never self-approve risk or final product judgment.",
+      "Preserve repository-native instructions and avoid a second source of truth.",
+      "Load optional capability skills only when named in execution_plan.capabilityCalls.",
     ],
+    execution_plan: buildExecutionPlan(config, task),
   };
 
   if (task) {
@@ -85,8 +84,8 @@ export function buildAgentGuide(
       .map((approval) => approval.rule.id);
     guide.task = {
       id: task.frontmatter.id,
-      status: task.frontmatter.status,
-      workflow_depth: workflowDepth(config, task),
+      status: normalizeWorkflowState(task.frontmatter.status),
+      workflow_depth: guide.execution_plan.depth,
       allowed_transitions: allowedTransitions(task.frontmatter.status),
       unresolved_human_decisions: unresolved,
       suggested_next_actions: suggestedNextActions(task.frontmatter.status, unresolved, designProfile, designSpec),
@@ -94,11 +93,6 @@ export function buildAgentGuide(
   }
 
   return guide;
-}
-
-function workflowDepth(config: LoadedConfig, task: TaskFile): string {
-  const grill = (config.effective["grill"] ?? {}) as Record<string, unknown>;
-  return String(grill[task.frontmatter.risk.level] ?? "STANDARD").toUpperCase();
 }
 
 function suggestedNextActions(
@@ -114,23 +108,18 @@ function suggestedNextActions(
     ];
   }
 
+  const canonical = normalizeWorkflowState(status as TaskFile["frontmatter"]["status"]);
   const actions: Record<string, string[]> = {
-    CAPTURED: ["Inspect the repository and turn the natural-language request into a short task specification."],
-    DISCOVERY: ["Finish fact-finding, separate assumptions from decisions, and shape the smallest useful outcome."],
-    SHAPED: ["Confirm acceptance criteria and automatically prepare the task for implementation."],
-    READY: ["Run the pre-task gate and begin implementation when it passes."],
-    PLANNED: ["Begin the approved, scoped implementation."],
-    IMPLEMENTING: ["Implement within scope, then run declared evaluators."],
-    VERIFYING: ["Collect mechanical and rendered evidence; fix failures before critique."],
-    CRITIQUING: ["Run independent relevant critics, prepare the run record, then run the pre-review gate."],
-    HUMAN_REVIEW: ["Show the result, evidence, limitations, and product judgment to the user once."],
+    CAPTURED: ["Lock scope and acceptance criteria, then move to ACTIVE."],
+    ACTIVE: ["Implement the smallest change and run only the planned affected checks."],
+    REVIEW: ["Show the result, evidence, limitations, and product judgment once."],
     DONE: ["Do not repeat completed side effects. Start a new task only for a materially new request."],
     BLOCKED: ["Explain the concrete blocker and resume only from the first incomplete step."],
     NEEDS_DECISION: ["Ask one decision question with a recommendation and consequences."],
     NEEDS_EXPERT: ["Request named expert review; do not present the work as complete."],
     FAILED: ["Reuse prior evidence, diagnose the failure, and retry only the failed step."],
   };
-  const result = [...(actions[status] ?? ["Inspect the current state before choosing the next action."])];
+  const result = [...(actions[canonical] ?? ["Inspect the current state before choosing the next action."])];
   if (designProfile && designSpec !== "ready") {
     result.unshift(
       designSpec === "missing"

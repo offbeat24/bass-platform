@@ -1,0 +1,4 @@
+interface:
+  display_name: "BASS Game Runtime"
+  short_description: "Choose and operate a portable game runtime adapter."
+  default_prompt: "Recommend or operate the smallest suitable game runtime without installing until approved."

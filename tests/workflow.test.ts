@@ -9,28 +9,29 @@ import { recordFinalApproval } from "../src/task/runRecord.js";
 
 describe("워크플로 상태 머신", () => {
   it("정상 전이: 표준 경로를 따른다", () => {
-    expect(() => assertTransition("CAPTURED", "DISCOVERY")).not.toThrow();
-    expect(() => assertTransition("READY", "PLANNED")).not.toThrow();
-    expect(() => assertTransition("HUMAN_REVIEW", "DONE")).not.toThrow();
+    expect(() => assertTransition("CAPTURED", "ACTIVE")).not.toThrow();
+    expect(() => assertTransition("ACTIVE", "REVIEW")).not.toThrow();
+    expect(() => assertTransition("REVIEW", "DONE")).not.toThrow();
   });
 
   it("잘못된 전이: 단계 건너뛰기 거부", () => {
-    expect(() => assertTransition("CAPTURED", "IMPLEMENTING")).toThrow(/Invalid workflow transition/);
-    expect(() => assertTransition("READY", "DONE")).toThrow();
+    expect(() => assertTransition("CAPTURED", "REVIEW")).toThrow(/Invalid workflow transition/);
+    expect(() => assertTransition("ACTIVE", "DONE")).toThrow();
   });
 
-  it("검증·비판 단계에서 구현/발견 단계로 회귀 가능", () => {
-    expect(allowedTransitions("CRITIQUING")).toContain("IMPLEMENTING");
-    expect(allowedTransitions("HUMAN_REVIEW")).toContain("DISCOVERY");
+  it("0.2 검증·비판 상태를 ACTIVE로 해석하고 범위 재정의 시 CAPTURED로 회귀", () => {
+    expect(allowedTransitions("CRITIQUING")).toContain("REVIEW");
+    expect(allowedTransitions("CRITIQUING")).toContain("CAPTURED");
+    expect(allowedTransitions("HUMAN_REVIEW")).toContain("CAPTURED");
   });
 
   it("BLOCKED 에서 활성 단계로 복귀 가능", () => {
     expect(allowedTransitions("IMPLEMENTING")).toContain("BLOCKED");
-    expect(allowedTransitions("BLOCKED")).toContain("IMPLEMENTING");
+    expect(allowedTransitions("BLOCKED")).toContain("ACTIVE");
   });
 
   it("실패 후 재시도와 롤백", () => {
-    expect(allowedTransitions("FAILED")).toContain("IMPLEMENTING");
+    expect(allowedTransitions("FAILED")).toContain("ACTIVE");
     expect(allowedTransitions("FAILED")).toContain("ROLLED_BACK");
   });
 
@@ -55,8 +56,8 @@ describe("pre-task 게이트", () => {
     expect(report.passed).toBe(true);
   });
 
-  it("CAPTURED 상태면 실패", () => {
-    const { root, task, effective } = setup({ status: "CAPTURED" });
+  it("BLOCKED 상태면 실패", () => {
+    const { root, task, effective } = setup({ status: "BLOCKED" });
     const report = preTaskGate(task, { projectRoot: root, effective });
     expect(report.passed).toBe(false);
     expect(report.checks.find((c) => c.id === "status-ready")?.status).toBe("fail");
@@ -104,10 +105,10 @@ describe("pre-task 게이트", () => {
 describe("에이전트 내부 상태 전이", () => {
   it("정상 전이는 기록하고 같은 전이는 멱등 no-op", () => {
     const root = makeTempProject({});
-    writeTask(root, "T-150", { status: "READY" });
-    expect(transitionTask(root, "T-150", "PLANNED").changed).toBe(true);
-    expect(transitionTask(root, "T-150", "PLANNED").changed).toBe(false);
-    expect(parseTaskFile(`${root}/tasks/T-150.md`).frontmatter.status).toBe("PLANNED");
+    const file = writeTask(root, "T-150", { status: "CAPTURED" });
+    expect(transitionTask(root, "T-150", "ACTIVE").changed).toBe(true);
+    expect(transitionTask(root, "T-150", "ACTIVE").changed).toBe(false);
+    expect(parseTaskFile(file).frontmatter.status).toBe("ACTIVE");
   });
 });
 

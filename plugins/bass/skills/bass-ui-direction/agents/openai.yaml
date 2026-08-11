@@ -1,0 +1,4 @@
+interface:
+  display_name: "BASS UI Direction"
+  short_description: "Set a concise visual direction before major UI work."
+  default_prompt: "Define or inherit the UI direction before implementing this material UI change."

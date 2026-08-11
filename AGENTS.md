@@ -1,48 +1,14 @@
-# AGENTS.md — BASS repository
+# BASS repository
 
-이 저장소에서 사람의 기본 인터페이스는 자연어 대화다. 사람이 BASS의 task 상태,
-gate, approval JSON 또는 run record를 직접 관리하게 하지 마라.
+This repository builds the `@offbeat24/bass` CLI and the shared Codex/Claude plugin. Keep the TypeScript core host-neutral; adapters must remain thin. Do not publish packages, install plugins globally, or merge the NAN branch without explicit user approval. Preserve completed 0.2 task/record history in place.
 
-## 먼저 의도를 구분한다
+For changes, run the smallest affected checks. Before release work, run `npm run verify`, the Codex plugin validator, and `claude plugin validate .`. Keep CLI, Codex manifest, Claude manifest, and marketplace versions identical.
 
-사용자가 이 저장소를 clone한 뒤 작업을 요청하면 파일로 확인 가능한 사실을 조사하고
-다음 두 경우를 구분한다.
-
-1. **BASS 자체를 개발**하려는 경우: 이 저장소에서 작은 변경 단위로 작업하고
-   `npm ci`, `npm run build`, `npm run typecheck`, `npm test`,
-   `npm run smoke:package`를 필요한 범위에서 실행한다.
-2. **다른 프로젝트에 BASS를 적용**하려는 경우: 대상 프로젝트를 확인하고 이 저장소를
-   package 원천으로 사용한다. 대상이 기존 프로젝트면 `bass init`, 빈 신규 폴더면
-   `bass create`를 사용하되, 명령은 에이전트가 실행하고 사람에게는 생성·변경 범위를
-   먼저 설명한다.
-
-의도가 불명확하고 두 경로가 결과를 크게 바꿀 때만 한 번 질문한다. 그 외에는 저장소와
-사용자 요청에서 합리적으로 판단해 진행한다.
-
-## 기존 프로젝트에 연결할 때
-
-`docs/adopting-existing-project.md`를 먼저 읽고 다음을 지킨다.
-
-- BASS 연결을 별도 의식이나 대규모 마이그레이션으로 만들지 않는다.
-- 기존 기술 스택, 검증 명령, AI 지침, 디자인과 운영 규칙을 먼저 조사한다.
-- 조사한 사실로 profile과 evaluator를 선택하고, 사람에게 설정값을 고르게 하지 않는다.
-- 기존 파일은 프로젝트의 원천이다. `bass init`이 건너뛴 파일을 `--force`로 덮지 말고
-  BASS 계약만 작은 diff로 통합한다.
-- 이미 같은 목적의 하네스·문서·기록이 있으면 두 번째 원천을 만들지 않는다.
-- 파일 생성으로 이식 성공을 주장하지 않는다. 실제 작업 하나로 작업·검증·피드백 루프를 확인한다.
-- 현재 클라이언트나 서버 구조를 제품의 영구 경계로 간주하지 않는다. 범위에 백엔드·API·DB가 추가되면 server profile과 integration·migration·security 검증을 함께 연결한다.
-- 교훈은 먼저 프로젝트 로컬에 반영하고, 반복 검증된 경우에만 profile이나 BASS 코어로 승격한다.
-
-## 내부 운영 원칙
-
-- `npm run build` 후 `npm run bass -- agent guide [task-id]`로 동적 실행 계약을 확인한다.
-- task·상태·검증·critic·record는 에이전트가 관리한다.
-- 상태 전환을 사람 승인 단계처럼 노출하지 않는다.
-- 사람에게는 제품 방향, 가치, 되돌리기 어려운 위험처럼 사람이 책임져야 할 결정만 묻는다.
-- 승인 요청에는 사실, 선택지, 권장안, 이유, 미결정 시 영향을 포함한다.
-- 같은 명령을 재실행할 때 완료된 단계나 외부 부작용을 중복하지 않는다.
-- UI 작업은 `DESIGN.md`, 기존 코드, 실제 렌더링을 함께 확인한다.
-- Core와 Design 마스터 프롬프트의 의도에 어긋나는 형식적 문서나 승인 절차를 추가하지 않는다.
-
-상세 운영 가이드는 `docs/agent-operations.md`, 기존 프로젝트 연결은
-`docs/adopting-existing-project.md`를 따른다.
+<!-- bass:managed:start -->
+BASS 0.3.0: use `bass agent guide --json` before work.
+- Keep human ownership of product direction and risk decisions.
+- Inspect repository facts and implement the smallest accepted change.
+- Follow `execution_plan`; do not add checks, critics, or loops beyond it.
+- Run `bass evaluate --task <id>`; reuse unchanged passing evidence.
+- Keep handoff evidence in `.bass/tasks/` and `.bass/records/` only when needed.
+<!-- bass:managed:end -->

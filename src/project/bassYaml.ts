@@ -8,6 +8,15 @@ const evaluatorSchema = z.object({
   name: z.string(),
   command: z.string(),
   timeout_ms: z.number().int().positive().optional(),
+  surfaces: z.array(z.string()).optional(),
+});
+
+const capabilitySchema = z.object({
+  specification: z.enum(["ouroboros", "builtin", "off"]).default("builtin"),
+  simplicity: z.enum(["ponytail", "builtin", "off"]).default("ponytail"),
+  ui_direction: z.enum(["bass", "off"]).default("bass"),
+  ui_canvas: z.enum(["pen", "off"]).default("off"),
+  html_report: z.enum(["bass", "off"]).default("bass"),
 });
 
 export const bassYamlSchema = z.object({
@@ -19,6 +28,25 @@ export const bassYamlSchema = z.object({
     name: z.string(),
     description: z.string().optional(),
   }),
+  execution: z
+    .object({
+      depth: z.enum(["adaptive", "fast", "standard", "hardened"]).default("adaptive"),
+      verification: z.enum(["affected", "all"]).default("affected"),
+    })
+    .default({ depth: "adaptive", verification: "affected" }),
+  capabilities: capabilitySchema.default({
+    specification: "builtin",
+    simplicity: "ponytail",
+    ui_direction: "bass",
+    ui_canvas: "off",
+    html_report: "bass",
+  }),
+  adapters: z
+    .object({
+      primary: z.enum(["codex", "claude", "cursor"]).default("codex"),
+      compatibility: z.array(z.enum(["codex", "claude", "cursor"])).default(["claude", "cursor"]),
+    })
+    .default({ primary: "codex", compatibility: ["claude", "cursor"] }),
   models: z.record(z.string(), z.string()).optional(),
   workflow: z
     .object({
