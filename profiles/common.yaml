@@ -7,6 +7,7 @@ defaults:
     planner: reasoning-high
     worker: auto
     critic: reasoning-high
+    evaluator: fast-reliable
     summarizer: fast-reliable
     documentation: balanced
   workflow:

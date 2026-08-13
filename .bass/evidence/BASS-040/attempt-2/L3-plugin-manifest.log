@@ -1,0 +1,13 @@
+name: plugin-manifest
+level: 3
+command: npm run validate:plugin
+status: pass
+exit_code: 0
+duration_ms: 113
+
+--- output ---
+
+> @offbeat24/bass@0.4.0 validate:plugin
+> node scripts/validate-plugin.mjs
+
+plugin validation PASS: bass@0.4.0

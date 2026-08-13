@@ -1,19 +1,28 @@
-# External capability plugins
+# External harness providers and transplanted concepts
 
-BASS records provider selection; it does not copy or emulate an external plugin when that provider was selected.
+BASS keeps product intent, graph, loop, gates, and evidence authoritative. External tools are installed separately and called only when the project selects them, the ExecutionPlan permits the call, and doctor plus the host session confirm they are available.
 
-## Ouroboros
+| Provider | BASS role | Invocation boundary |
+|---|---|---|
+| Ponytail | simplicity capability | Fast `lite`; Standard/Hardened `full`; no duplicate BASS simplicity critic |
+| Ouroboros | specification capability | one seed/interview for consequential ambiguity; one Hardened semantic evaluation after machine checks |
+| Prime Agent | runner | `prime-agent:run`; keeps BASS task, scope, budgets, and evidence authoritative |
+| Graft | context provider | only after repeated large-repository exploration is recorded in the task |
+| OMC / Orca | workspace executor | only for separable Hardened work; obey DAG and literal owned paths |
+| Buzz | collaboration provider | consumes schema-versioned sanitized events; never determines task status |
 
-Use the actual plugin only for consequential specification ambiguity, likely large rework, or high-risk semantic evaluation. The execution plan permits at most one pre-implementation seed/interview and one post-mechanical semantic evaluation. Clear fix and delete tasks do not call it.
+Prime Agent is not bundled. Its persistent REPL, recursive agents, and continual harness remain its own runtime. `/refine` output enters `refinement_proposal` with `pending` status and must be reviewed before any shared prompt, memory, skill, or subagent definition changes.
 
-## Ponytail
+## Concepts implemented in BASS Core and skills
 
-The installed plugin's SessionStart, SubagentStart, and UserPromptSubmit behavior remains authoritative. BASS requests `lite` for Fast and `full` for Standard/Hardened. `ultra` requires an explicit user request. When Ponytail is selected, BASS removes its own simplicity critic from the plan.
-
-## Pen
-
-Use the local Pen MCP only after project selection and only for requested UI exploration. Do not automatically call a second Pen AI agent. Headless CLI use is limited to render/export. Store exploration files under `design/explorations/<task-id>.pen`; source code remains the product SSOT.
+- ECC, gstack, and Spec Kit: principles/clarification/specification/technical plan/task slicing become PRODUCT, TECH, DESIGN, optional feature spec, and BASS tasks. Their prompt suites are not copied.
+- Claude Loop: explicit `stop_when`, required evidence, attempt/turn/time/no-progress budgets, and repeated-failure blocking.
+- Prime Agent continual harness: evidence-backed, rollback-friendly refinement proposals without self-modifying the base prompt.
+- Herdr and cmux: observation through task status, last activity, attempts, evaluations, evidence, and usage. BASS adds no pane manager or dashboard.
+- OMC and Orca: multi-agent execution remains subordinate to BASS dependency and path ownership contracts.
 
 ## Doctor contract
 
-`bass doctor --capabilities` reports `actual-plugin`, `builtin`, `off`, `missing`, or `unauthenticated`, plus whether host session activation can be confirmed and whether a restart is needed. Global plugin hooks may affect more than one project, so project selection and host activation are deliberately separate fields.
+`bass doctor --capabilities` reports builtin, off, actual-plugin, missing, or unauthenticated plus installation, authentication, session activation, and restart status. An explicitly inactive provider is a failure. When activation cannot be detected, doctor warns and the host must confirm that the matching skill or command is loaded before invocation.
+
+BASS never auto-installs a provider, changes global hooks, or substitutes a builtin after a missing external selection.

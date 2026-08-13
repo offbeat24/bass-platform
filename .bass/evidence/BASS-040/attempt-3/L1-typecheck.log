@@ -1,0 +1,11 @@
+name: typecheck
+level: 1
+command: npm run typecheck
+status: pass
+exit_code: 0
+duration_ms: 198
+
+--- output ---
+
+> @offbeat24/bass@0.4.0 typecheck
+> tsc --noEmit

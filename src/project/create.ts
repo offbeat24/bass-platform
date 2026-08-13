@@ -4,7 +4,7 @@ import { initProject, type InitOptions, type InitResult } from "./init.js";
 
 export interface CreateProjectOptions extends Omit<InitOptions, "projectRoot" | "force"> {
   destination: string;
-  /** 0.2 compatibility only. BASS 0.3 never installs into the target repository. */
+  /** Compatibility only. BASS 0.4 never installs into the target repository. */
   install?: boolean;
 }
 

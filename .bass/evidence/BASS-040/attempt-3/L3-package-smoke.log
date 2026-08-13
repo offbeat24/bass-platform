@@ -1,0 +1,13 @@
+name: package-smoke
+level: 3
+command: npm run smoke:package
+status: pass
+exit_code: 0
+duration_ms: 3966
+
+--- output ---
+
+> @offbeat24/bass@0.4.0 smoke:package
+> node scripts/smoke-package.mjs
+
+package smoke PASS: @offbeat24/bass@0.4.0

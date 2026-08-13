@@ -57,7 +57,12 @@ export function eventLogPath(projectRoot: string): string {
 }
 
 export function appendEvent(projectRoot: string, event: NewBassEvent): BassEvent {
-  const parsed = bassEventSchema.parse({ schema_version: 1, at: event.at ?? new Date().toISOString(), ...event });
+  const parsed = bassEventSchema.parse({
+    schema_version: 1,
+    at: event.at ?? new Date().toISOString(),
+    ...event,
+    summary: redactEventSecrets(event.summary),
+  });
   const file = eventLogPath(projectRoot);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   if (fs.existsSync(file)) {
@@ -254,7 +259,7 @@ function holdTask(projectRoot: string, taskId: string, state: "NEEDS_DECISION" |
 function consecutiveNoProgress(events: BassEvent[]): number {
   let count = 0;
   for (const event of [...events].reverse()) {
-    if (event.kind === "evidence.recorded") break;
+    if (event.kind === "evidence.recorded" && !isRoutineEvidence(event)) break;
     if (event.kind !== "attempt.completed") continue;
     if (event.status !== "no-progress") break;
     count++;
@@ -265,12 +270,16 @@ function consecutiveNoProgress(events: BassEvent[]): number {
 function consecutiveSameFailure(events: BassEvent[], failureFingerprint: string): number {
   let count = 0;
   for (const event of [...events].reverse()) {
-    if (event.kind === "evidence.recorded") break;
+    if (event.kind === "evidence.recorded" && !isRoutineEvidence(event)) break;
     if (event.kind !== "attempt.completed") continue;
     if (event.status !== "fail" || event.failure_fingerprint !== failureFingerprint) break;
     count++;
   }
   return count;
+}
+
+function isRoutineEvidence(event: BassEvent): boolean {
+  return event.kind === "evidence.recorded" && event.name?.startsWith("evaluation-log:") === true;
 }
 
 function fingerprint(value: string): string {
@@ -279,4 +288,10 @@ function fingerprint(value: string): string {
 
 function oneLine(value: string): string {
   return value.replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 500);
+}
+
+function redactEventSecrets(value: string): string {
+  return value
+    .replace(/((?:api[_-]?key|access[_-]?token|auth[_-]?token|password|authorization)\s*[:=]\s*)([^\s]+)/gi, "$1***masked***")
+    .replace(/\b(?:sk-[a-z0-9_-]{8,}|gh[pousr]_[a-z0-9]{8,})\b/gi, "***masked***");
 }

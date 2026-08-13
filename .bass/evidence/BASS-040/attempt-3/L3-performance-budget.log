@@ -1,0 +1,27 @@
+name: performance-budget
+level: 3
+command: npm run benchmark:performance
+status: pass
+exit_code: 0
+duration_ms: 136
+
+--- output ---
+
+> @offbeat24/bass@0.4.0 benchmark:performance
+> node scripts/benchmark-performance.mjs
+
+{
+  "source_commit": "97b8ab6",
+  "context_chars": {
+    "baseline": 9160,
+    "current": 3374,
+    "reduction_percent": 63.2
+  },
+  "evaluator_critic_calls": {
+    "baseline": 8,
+    "fast": 1,
+    "fast_reduction_percent": 87.5,
+    "standard_worst_case": 4,
+    "standard_reduction_percent": 50
+  }
+}

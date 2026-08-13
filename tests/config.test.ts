@@ -9,6 +9,7 @@ describe("계층형 설정 병합", () => {
     const config = loadConfig({ projectRoot: root });
     const models = config.effective["models"] as Record<string, string>;
     expect(models["discovery"]).toBe("reasoning-high");
+    expect(models["evaluator"]).toBe("fast-reliable");
     expect(config.bassYaml.project.name).toBe("test-project");
   });
 

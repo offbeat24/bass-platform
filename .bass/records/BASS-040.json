@@ -1,0 +1,377 @@
+{
+  "record_version": 1,
+  "task_id": "BASS-040",
+  "summary_of_changes": "Expanded BASS into a portable Product-to-Ship Harness with product shaping artifacts, selective context, task graphs, bounded attempts, checksum-backed evidence, optional provider contracts, model roles, and read-only event/status observation.",
+  "why": "The 0.3 runtime needed one authoritative, portable contract from idea shaping through implementation, verification, iteration, evidence, documentation, and human review without copying external harnesses or adding a console.",
+  "files_changed": [
+    ".claude-plugin/marketplace.json",
+    ".gitignore",
+    "AGENTS.md",
+    "DESIGN.md",
+    "PRODUCT.md",
+    "README.md",
+    "TECH.md",
+    "bass.yaml",
+    "docs/adopting-existing-project.md",
+    "docs/agent-harness-plugins.md",
+    "docs/agent-operations.md",
+    "docs/architecture.md",
+    "docs/configuration.md",
+    "docs/evaluation.md",
+    "docs/model-routing.md",
+    "docs/principles.md",
+    "docs/workflows.md",
+    "package-lock.json",
+    "package.json",
+    "plugins/bass/.claude-plugin/plugin.json",
+    "plugins/bass/.codex-plugin/plugin.json",
+    "plugins/bass/hooks/session-start.cjs",
+    "plugins/bass/scripts/bass-launcher.cjs",
+    "plugins/bass/skills/bass-setup/SKILL.md",
+    "plugins/bass/skills/bass-shape/SKILL.md",
+    "plugins/bass/skills/bass-shape/agents/openai.yaml",
+    "plugins/bass/skills/bass-work/SKILL.md",
+    "profiles/common.yaml",
+    "prompt-library/base/behavior.md",
+    "prompt-library/critics/architecture.md",
+    "prompt-library/critics/design.md",
+    "prompt-library/critics/discovery.md",
+    "prompt-library/critics/implementation.md",
+    "prompt-library/critics/security.md",
+    "prompt-library/critics/simplicity.md",
+    "prompt-library/critics/test.md",
+    "prompt-library/roles/discovery.md",
+    "prompt-library/roles/evaluator.md",
+    "prompt-library/roles/planner.md",
+    "prompt-library/roles/worker.md",
+    "scripts/smoke-package.mjs",
+    "specs/product-to-ship-harness.md",
+    "src/agent/guide.ts",
+    "src/cli/main.ts",
+    "src/compose/composer.ts",
+    "src/compose/context.ts",
+    "src/config/loader.ts",
+    "src/evaluators/runner.ts",
+    "src/execution/planner.ts",
+    "src/project/bassYaml.ts",
+    "src/project/capabilities.ts",
+    "src/project/create.ts",
+    "src/project/init.ts",
+    "src/project/setup.ts",
+    "src/project/upgrade.ts",
+    "src/task/events.ts",
+    "src/task/runRecord.ts",
+    "src/task/status.ts",
+    "src/task/taskFile.ts",
+    "src/task/taskGraph.ts",
+    "src/types.ts",
+    "src/workflow/gates.ts",
+    "templates/PRODUCT.md",
+    "templates/TECH.md",
+    "templates/spec.md",
+    "templates/task.md",
+    "tests/agent.test.ts",
+    "tests/config.test.ts",
+    "tests/context.test.ts",
+    "tests/evaluators.test.ts",
+    "tests/events.test.ts",
+    "tests/execution.test.ts",
+    "tests/helpers.ts",
+    "tests/plugin.test.ts",
+    "tests/project.test.ts",
+    "tests/router.test.ts",
+    "tests/runRecord.test.ts",
+    "tests/setup-upgrade.test.ts",
+    "tests/status.test.ts",
+    "tests/taskGraph.test.ts",
+    "tests/workflow.test.ts"
+  ],
+  "models_used": [
+    {
+      "role": "worker",
+      "alias": "auto",
+      "followed_recommendation": true
+    },
+    {
+      "role": "critic",
+      "alias": "host-current",
+      "followed_recommendation": false,
+      "reason": "The current Codex host performed both reviews; a role-specific reasoning-high selection was not exposed to BASS."
+    }
+  ],
+  "verification": {
+    "evaluations_run": [
+      { "name": "typecheck", "level": 1, "status": "pass" },
+      { "name": "tests", "level": 2, "status": "pass" },
+      { "name": "build", "level": 2, "status": "pass" },
+      { "name": "package-smoke", "level": 3, "status": "pass" },
+      { "name": "plugin-manifest", "level": 3, "status": "pass" },
+      { "name": "performance-budget", "level": 3, "status": "pass" },
+      { "name": "claude-plugin-validation", "level": 3, "status": "pass" }
+    ],
+    "not_verified": [
+      "Optional Prime Agent, Graft, OMC, Orca, and Buzz providers were not selected, installed, or invoked end to end.",
+      "The 0.5 adoption threshold of three project types, twenty tasks, and five repeated loops has not yet been accumulated."
+    ]
+  },
+  "critic_findings": {
+    "total": 4,
+    "open_high_or_medium": 0,
+    "report_path": ".bass/evidence/BASS-040/critic-review.md"
+  },
+  "known_limitations": [
+    "Host token, cached-token, tool-call, and cost counters were not exposed to BASS and remain unknown.",
+    "External provider activation is declarative and doctor-checked; provider execution remains the responsibility of an installed host skill.",
+    "No web console or TUI is included in 0.4.0."
+  ],
+  "out_of_scope_findings": [],
+  "docs_updated": {
+    "needed": true,
+    "updated": [
+      "README.md",
+      "PRODUCT.md",
+      "TECH.md",
+      "DESIGN.md",
+      "specs/product-to-ship-harness.md",
+      "docs/adopting-existing-project.md",
+      "docs/agent-harness-plugins.md",
+      "docs/agent-operations.md",
+      "docs/architecture.md",
+      "docs/configuration.md",
+      "docs/evaluation.md",
+      "docs/model-routing.md",
+      "docs/principles.md",
+      "docs/workflows.md"
+    ]
+  },
+  "lessons": {
+    "recorded": true,
+      "candidates": [
+        "Routine machine evidence must not reset same-failure or no-progress detection.",
+        "Actual scope checks should represent a rename as both the deleted source and added destination.",
+        "Checksum-backed evidence must be intentionally tracked and emitted in a diff-clean text form."
+    ]
+  },
+  "rollback": {
+    "method": "Revert the three local BASS 0.4 commits in reverse order. No remote branch, tag, package, or installed provider state exists."
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "pass",
+      "started_at": "2026-08-13T10:06:31.372Z",
+      "completed_at": "2026-08-13T10:27:04.828Z"
+    },
+    {
+      "attempt": 2,
+      "parent_attempt": 1,
+      "status": "pass",
+      "started_at": "2026-08-13T10:31:53.975Z",
+      "completed_at": "2026-08-13T10:32:47.866Z"
+    },
+    {
+      "attempt": 3,
+      "parent_attempt": 2,
+      "status": "pass",
+      "started_at": "2026-08-13T10:34:30.060Z",
+      "completed_at": "2026-08-13T10:36:22.231Z"
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "typecheck",
+      "path": ".bass/evidence/BASS-040/attempt-3/L1-typecheck.log",
+      "sha256": "21383c192d9b49f49f324a164353c71f57a18ea841fd644e2be874f1a2f728e8",
+      "produced_by": "bass evaluate --task BASS-040",
+      "at": "2026-08-13T10:35:22.902Z"
+    },
+    {
+      "kind": "test-output",
+      "path": ".bass/evidence/BASS-040/attempt-3/L2-tests.log",
+      "sha256": "666cabcb8e3837e7a907264e3139c5f58de56c2e505dd01a0a4d3765b57bd826",
+      "produced_by": "bass evaluate --task BASS-040",
+      "at": "2026-08-13T10:35:22.903Z"
+    },
+    {
+      "kind": "build-output",
+      "path": ".bass/evidence/BASS-040/attempt-3/L2-build.log",
+      "sha256": "c399c5c8cccd95ebb3b1fdb6ca435f25c01731ef893af385431e598688ec3c83",
+      "produced_by": "bass evaluate --task BASS-040",
+      "at": "2026-08-13T10:35:22.903Z"
+    },
+    {
+      "kind": "package-smoke",
+      "path": ".bass/evidence/BASS-040/attempt-3/L3-package-smoke.log",
+      "sha256": "89bc5a61805edcc80c5700ec11e145b4d94b09579e29a5ed78f42d69a08a172f",
+      "produced_by": "bass evaluate --task BASS-040",
+      "at": "2026-08-13T10:35:22.903Z"
+    },
+    {
+      "kind": "plugin-validation",
+      "path": ".bass/evidence/BASS-040/attempt-3/L3-plugin-manifest.log",
+      "sha256": "91e6002bf9952957b008b3295313795365db1682df6e39c4800b3b034170eab0",
+      "produced_by": "bass evaluate --task BASS-040",
+      "at": "2026-08-13T10:35:22.904Z"
+    },
+    {
+      "kind": "performance-budget",
+      "path": ".bass/evidence/BASS-040/attempt-3/L3-performance-budget.log",
+      "sha256": "6f288f7ad7996699b45757dc3b9e4b8ed956656b5464f3cc5ec370ba72487911",
+      "produced_by": "bass evaluate --task BASS-040",
+      "at": "2026-08-13T10:35:22.904Z"
+    },
+    {
+      "kind": "verify-summary",
+      "path": ".bass/evidence/BASS-040/verify.log",
+      "sha256": "ee8680715f22ceaebfc2c954e5790016db98248a9d0b4d6341b3980942b1e27a",
+      "produced_by": "npm run verify",
+      "at": "2026-08-13T10:36:17.214Z"
+    },
+    {
+      "kind": "claude-plugin-validation",
+      "path": ".bass/evidence/BASS-040/claude-plugin-validation.log",
+      "sha256": "36f80cb4b7bf2463195e063aed8173e71f7f56d2d28284d571fdaa5f2bed6339",
+      "produced_by": "claude plugin validate .",
+      "at": "2026-08-13T10:36:17.813Z"
+    },
+    {
+      "kind": "critic-review",
+      "path": ".bass/evidence/BASS-040/critic-review.md",
+      "sha256": "1086b5376f07bdc4adbce9b4013cbdeff6a743bcab7fed8657e686c456e178a6",
+      "produced_by": "BASS architecture and security review",
+      "at": "2026-08-13T10:36:18.400Z"
+    }
+  ],
+  "context": {
+    "sources": [
+      {
+        "path": "PRODUCT.md",
+        "sha256": "edb30f1501941bd1c00154624722f3e71087191010b793229bd82f56261f479a",
+        "chars": 173
+      },
+      {
+        "path": "TECH.md",
+        "sha256": "610fa13f6a5181e6b6e496dc13ab42b5e277fe4def26dc710e308aac272b6b10",
+        "chars": 561
+      },
+      {
+        "path": "DESIGN.md",
+        "sha256": "7a4b11beecf616fb26384df44acd3c757c4f48cde0970764343487f61f65354e",
+        "chars": 456
+      },
+      {
+        "path": "specs/product-to-ship-harness.md",
+        "sha256": "3ee6b1728548f7677ad4b1aaa0d49c80da326b86786b2a63e82e2b8d73df0eeb",
+        "chars": 1457
+      }
+    ],
+    "total_chars": 2647,
+    "omitted": []
+  },
+  "usage": {
+    "turns": "unknown",
+    "attempts": 3,
+    "input_tokens": "unknown",
+    "output_tokens": "unknown",
+    "cached_input_tokens": "unknown",
+    "evaluator_tokens": "unknown",
+    "tool_calls": "unknown",
+    "subagents": 0,
+    "estimated_cost": "unknown"
+  },
+  "scope": {
+    "actual_files": [
+      ".claude-plugin/marketplace.json",
+      ".gitignore",
+      "AGENTS.md",
+      "DESIGN.md",
+      "PRODUCT.md",
+      "README.md",
+      "TECH.md",
+      "bass.yaml",
+      "docs/adopting-existing-project.md",
+      "docs/agent-harness-plugins.md",
+      "docs/agent-operations.md",
+      "docs/architecture.md",
+      "docs/configuration.md",
+      "docs/evaluation.md",
+      "docs/model-routing.md",
+      "docs/principles.md",
+      "docs/workflows.md",
+      "package-lock.json",
+      "package.json",
+      "plugins/bass/.claude-plugin/plugin.json",
+      "plugins/bass/.codex-plugin/plugin.json",
+      "plugins/bass/hooks/session-start.cjs",
+      "plugins/bass/scripts/bass-launcher.cjs",
+      "plugins/bass/skills/bass-setup/SKILL.md",
+      "plugins/bass/skills/bass-shape/SKILL.md",
+      "plugins/bass/skills/bass-shape/agents/openai.yaml",
+      "plugins/bass/skills/bass-work/SKILL.md",
+      "profiles/common.yaml",
+      "prompt-library/base/behavior.md",
+      "prompt-library/critics/architecture.md",
+      "prompt-library/critics/design.md",
+      "prompt-library/critics/discovery.md",
+      "prompt-library/critics/implementation.md",
+      "prompt-library/critics/security.md",
+      "prompt-library/critics/simplicity.md",
+      "prompt-library/critics/test.md",
+      "prompt-library/roles/discovery.md",
+      "prompt-library/roles/evaluator.md",
+      "prompt-library/roles/planner.md",
+      "prompt-library/roles/worker.md",
+      "scripts/smoke-package.mjs",
+      "specs/product-to-ship-harness.md",
+      "src/agent/guide.ts",
+      "src/cli/main.ts",
+      "src/compose/composer.ts",
+      "src/compose/context.ts",
+      "src/config/loader.ts",
+      "src/evaluators/runner.ts",
+      "src/execution/planner.ts",
+      "src/project/bassYaml.ts",
+      "src/project/capabilities.ts",
+      "src/project/create.ts",
+      "src/project/init.ts",
+      "src/project/setup.ts",
+      "src/project/upgrade.ts",
+      "src/task/events.ts",
+      "src/task/runRecord.ts",
+      "src/task/status.ts",
+      "src/task/taskFile.ts",
+      "src/task/taskGraph.ts",
+      "src/types.ts",
+      "src/workflow/gates.ts",
+      "templates/PRODUCT.md",
+      "templates/TECH.md",
+      "templates/spec.md",
+      "templates/task.md",
+      "tests/agent.test.ts",
+      "tests/config.test.ts",
+      "tests/context.test.ts",
+      "tests/evaluators.test.ts",
+      "tests/events.test.ts",
+      "tests/execution.test.ts",
+      "tests/helpers.ts",
+      "tests/plugin.test.ts",
+      "tests/project.test.ts",
+      "tests/router.test.ts",
+      "tests/runRecord.test.ts",
+      "tests/setup-upgrade.test.ts",
+      "tests/status.test.ts",
+      "tests/taskGraph.test.ts",
+      "tests/workflow.test.ts"
+    ],
+    "outside_allowed": [],
+    "forbidden_touched": []
+  },
+  "refinement_proposal": {
+    "summary": "Evaluate a read-only web console only after the 0.5 adoption threshold and event-schema stability criteria are met.",
+    "proposed_changes": [
+      "Collect evidence from at least three project types, twenty tasks, five loops, parallel work, and team feedback.",
+      "If the event contract remains stable, design a read-only consumer without moving task state authority out of BASS files."
+    ],
+    "status": "pending"
+  }
+}

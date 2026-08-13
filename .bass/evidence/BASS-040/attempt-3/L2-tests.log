@@ -1,0 +1,20 @@
+name: tests
+level: 2
+command: npm test
+status: pass
+exit_code: 0
+duration_ms: 1305
+
+--- output ---
+
+> @offbeat24/bass@0.4.0 test
+> vitest run
+
+
+ RUN  v4.1.10 /Users/okestro/croquis/deck/BASS/bass-platform
+
+
+ Test Files  19 passed (19)
+      Tests  156 passed (156)
+   Start at  19:35:17
+   Duration  1.05s (transform 714ms, setup 0ms, import 2.16s, tests 2.67s, environment 1ms)

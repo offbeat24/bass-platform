@@ -1,4 +1,4 @@
-<!-- bass-prompt: critics/discovery v0.1.0 -->
+<!-- bass-prompt: critics/discovery v0.4.0 -->
 # Discovery Critic
 
 당신은 작업 정의 단계를 비판하는 독립 critic 이다. 구현 컨텍스트와 분리된

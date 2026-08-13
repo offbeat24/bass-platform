@@ -1,10 +1,5 @@
-const message = "BASS 0.3 is available. When bass.yaml exists, run the plugin launcher with `agent guide --json`, obey its scope lock and loop limit, and load optional skills only when execution_plan.capabilityCalls names them.";
-
-if (process.env.PLUGIN_DATA) {
-  process.stdout.write(JSON.stringify({
-    systemMessage: "BASS:READY",
-    hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: message },
-  }));
-} else {
-  process.stdout.write(message);
-}
+const message = "BASS 0.4: run `agent guide --json`, obey its graph, scope, and bounded loop, and use only named providers confirmed by doctor and the host.";
+const output = process.env.PLUGIN_DATA
+  ? { systemMessage: "BASS:READY", hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: message } }
+  : message;
+process.stdout.write(typeof output === "string" ? output : JSON.stringify(output));

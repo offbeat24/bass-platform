@@ -88,15 +88,28 @@ describe("ExecutionPlan", () => {
     expect(plan.parallel.maxAgents).toBe(1);
   });
 
-  it("Hardened 작업도 owned_paths가 있어야만 기본 최대 2개 병렬 실행을 허용한다", () => {
+  it("Hardened의 독립 task 두 개가 분리된 owned_paths를 가질 때만 최대 2개를 허용한다", () => {
     const root = makeTempProject({ profiles: ["common"] });
     const task = parseTaskFile(writeTask(root, "API-307", {
       riskLevel: "high",
       coordination: { owned_paths: ["src/api"] },
     }));
+    writeTask(root, "API-310", {
+      riskLevel: "high",
+      coordination: { owned_paths: ["tests/api"] },
+    });
     const plan = buildExecutionPlan(loadConfig({ projectRoot: root }), task);
     expect(plan.depth).toBe("hardened");
     expect(plan.parallel.maxAgents).toBe(2);
+  });
+
+  it("분리된 partner task가 없는 Hardened 작업은 owned_paths가 있어도 단일 에이전트다", () => {
+    const root = makeTempProject({ profiles: ["common"] });
+    const task = parseTaskFile(writeTask(root, "API-311", {
+      riskLevel: "high",
+      coordination: { owned_paths: ["src/api"] },
+    }));
+    expect(buildExecutionPlan(loadConfig({ projectRoot: root }), task).parallel.maxAgents).toBe(1);
   });
 
   it("UI Direction, Pen, HTML report는 작업이 명시적으로 요청한 경우에만 로드한다", () => {
@@ -112,6 +125,39 @@ describe("ExecutionPlan", () => {
       "pen:mcp",
       "bass:html-report",
     ]);
+  });
+
+  it("외부 runner와 provider는 선택·조건이 모두 맞을 때만 호출 계획에 나타난다", () => {
+    const root = makeTempProject({
+      extraYaml: `adapters:\n  primary: codex\n  compatibility: [claude]\n  runner: prime-agent\n  context_provider: graft\n  workspace_executor: omc\n  collaboration_provider: buzz\n`,
+    });
+    const task = parseTaskFile(writeTask(root, "API-308", {
+      riskLevel: "high",
+      capabilities: ["large-repo-context"],
+      coordination: { owned_paths: ["src/api"] },
+    }));
+    writeTask(root, "API-312", {
+      riskLevel: "high",
+      coordination: { owned_paths: ["tests/api"] },
+    });
+    const plan = buildExecutionPlan(loadConfig({ projectRoot: root }), task);
+    expect(plan.providers).toEqual({ runner: "prime-agent", context: "graft", workspace: "omc", collaboration: "buzz" });
+    expect(plan.capabilityCalls).toEqual(expect.arrayContaining([
+      "prime-agent:run",
+      "graft:context",
+      "omc:workspace",
+      "buzz:events",
+    ]));
+  });
+
+  it("Graft와 workspace executor는 반복 대형 탐색·분리된 Hardened ownership 없이는 호출하지 않는다", () => {
+    const root = makeTempProject({
+      extraYaml: `adapters:\n  primary: codex\n  compatibility: []\n  runner: host\n  context_provider: graft\n  workspace_executor: orca\n  collaboration_provider: events\n`,
+    });
+    const task = parseTaskFile(writeTask(root, "API-309", { riskLevel: "high" }));
+    const plan = buildExecutionPlan(loadConfig({ projectRoot: root }), task);
+    expect(plan.capabilityCalls).not.toContain("graft:context");
+    expect(plan.capabilityCalls).not.toContain("orca:workspace");
   });
 });
 

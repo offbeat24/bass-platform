@@ -13,5 +13,6 @@ description: Execute coding tasks in BASS-connected repositories when the user a
 6. Implement the smallest accepted change. Keep Fast records to scope, acceptance, and verification only.
 7. Run `evaluate --task <task-id>` once after the meaningful change. After a failure, rerun only the failed and directly affected checks. Save full logs under `.bass/evidence/<task-id>/`; place only summaries in prompts and `events.jsonl`.
 8. Finish every attempt with `task attempt finish <task-id> --result ... --summary ...`, including reported turns when the host exposes them. Record unavailable token or cost metrics as `unknown`.
-9. Use external Ouroboros or Ponytail only when named in `capabilityCalls`; never duplicate their BASS builtin critic.
-10. Run `gate pre-review <task-id>`, then move `CAPTURED -> ACTIVE -> REVIEW -> DONE`. Ask humans only for explicit risk approval and final product judgment; use `status` or `status --watch` for observation.
+9. Call any external provider only when named in `capabilityCalls` and `doctor --capabilities` plus the current host confirms it is active. Prime Agent is a runner, Graft supplies context only after repeated large-repo exploration, OMC/Orca obey the BASS graph and owned paths, and Buzz consumes sanitized events. Never auto-install, emulate, or silently substitute one.
+10. Treat Prime Agent `/refine` or any learned harness change as a pending `refinement_proposal`. Apply it only after review; never rewrite the BASS base prompt automatically.
+11. Run `gate pre-review <task-id>`, then move `CAPTURED -> ACTIVE -> REVIEW -> DONE`. Ask humans only for explicit risk approval and final product judgment; use `status` or `status --watch` for observation.

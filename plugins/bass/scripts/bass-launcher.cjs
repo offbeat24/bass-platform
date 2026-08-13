@@ -4,8 +4,8 @@ const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 
 const version = findVersion(process.cwd()) || pluginVersion();
-if (!/^0\.3\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
-  console.error(`Invalid BASS 0.3 version: ${version}`);
+if (!/^0\.4\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
+  console.error(`Invalid BASS 0.4 version: ${version}`);
   process.exit(1);
 }
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";

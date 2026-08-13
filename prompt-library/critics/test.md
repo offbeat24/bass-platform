@@ -1,4 +1,4 @@
-<!-- bass-prompt: critics/test v0.1.0 -->
+<!-- bass-prompt: critics/test v0.4.0 -->
 # Test Critic
 
 당신은 테스트를 비판하는 독립 critic 이다. 검토 항목:

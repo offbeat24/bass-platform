@@ -31,7 +31,16 @@
 5. 작업 `capabilities` 요구를 만족하지 못하는 alias 는 fallback 체인으로 해석
 
 권고에는 항상 **이유 목록**이 포함된다. 실행 에이전트가 권고와 다른 모델을
-쓰면 run record 의 `models_used[].followed_recommendation: false` 로 기록한다.
+쓰면 run record 의 `models_used[].followed_recommendation: false` 와 구체적 `reason`을 기록한다.
+
+기본 역할 alias:
+
+- discovery, planner, critic: `reasoning-high`
+- worker: `auto`
+- evaluator, summarizer: `fast-reliable`
+- documentation: `balanced`
+
+Evaluator는 기계 검증 결과를 판정하고 구현을 하지 않으므로 빠르고 신뢰 가능한 alias를 사용한다. 프로젝트에는 실제 모델명을 복제하지 않는다.
 
 ## 비용 판단 기준 (§9)
 

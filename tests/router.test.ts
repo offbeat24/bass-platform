@@ -8,6 +8,7 @@ const DEFAULT_MODELS = {
   planner: "reasoning-high",
   worker: "auto",
   critic: "reasoning-high",
+  evaluator: "fast-reliable",
   summarizer: "fast-reliable",
   documentation: "balanced",
 };
@@ -73,5 +74,12 @@ describe("위험·capability 기반 라우터", () => {
     const rec = routeTask(parseTaskFile(file), "worker", DEFAULT_MODELS);
     // fast-reliable 은 deep-reasoning 이 없고 fallback 도 없어 해석 실패가 기록된다
     expect(rec.resolved === null || rec.resolved.capabilities.includes("deep-reasoning")).toBe(true);
+  });
+
+  it("evaluator 역할은 기본 fast-reliable alias를 사용한다", () => {
+    const root = makeTempProject({});
+    const file = writeTask(root, "T-008", { riskLevel: "high" });
+    const rec = routeTask(parseTaskFile(file), "evaluator", DEFAULT_MODELS);
+    expect(rec.recommendedAlias).toBe("fast-reliable");
   });
 });

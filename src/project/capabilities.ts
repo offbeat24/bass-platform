@@ -7,7 +7,7 @@ import type { BassYaml } from "./bassYaml.js";
 export type CapabilityState = "actual-plugin" | "builtin" | "off" | "missing" | "unauthenticated";
 
 export interface CapabilityStatus {
-  capability: keyof BassYaml["capabilities"];
+  capability: string;
   selected: string;
   state: CapabilityState;
   installed: boolean;
@@ -56,8 +56,44 @@ export function inspectCapabilities(config: BassYaml, options: CapabilityInspect
   );
 }
 
+export function inspectProviders(config: BassYaml, options: CapabilityInspectionOptions = {}): CapabilityStatus[] {
+  const builtins = new Set(["host", "bass", "events"]);
+  const adapters: Array<[string, string]> = [
+    ["runner", config.adapters.runner],
+    ["context_provider", config.adapters.context_provider],
+    ["workspace_executor", config.adapters.workspace_executor],
+    ["collaboration_provider", config.adapters.collaboration_provider],
+  ];
+  const active = options.active ?? envSet("BASS_ACTIVE_CAPABILITIES");
+  return [
+    ...inspectCapabilities(config, options),
+    ...adapters.map(([capability, selected]) => {
+      if (builtins.has(selected)) {
+        return status(capability, selected, "builtin", true, true, true, false, "provided by BASS or the active host");
+      }
+      const installed = providerInstalled(selected, options);
+      const sessionActive = active.size > 0 ? active.has(selected) : null;
+      if (!installed) {
+        return status(capability, selected, "missing", false, null, false, false, `${selected} is selected but not installed`);
+      }
+      return status(
+        capability,
+        selected,
+        "actual-plugin",
+        true,
+        true,
+        sessionActive,
+        sessionActive !== true,
+        sessionActive === true
+          ? `${selected} is active in this host session`
+          : `${selected} is installed; host session activation must be confirmed before invocation`,
+      );
+    }),
+  ];
+}
+
 function status(
-  capability: keyof BassYaml["capabilities"],
+  capability: string,
   selected: string,
   state: CapabilityState,
   installed: boolean,
@@ -70,12 +106,23 @@ function status(
 }
 
 function providerInstalled(provider: string, options: CapabilityInspectionOptions): boolean {
-  if ((options.commandAvailable ?? commandAvailable)(provider)) return true;
+  const commands: Record<string, string[]> = {
+    "prime-agent": ["prime-agent"],
+    graft: ["graft"],
+    omc: ["omc"],
+    orca: ["orca"],
+    buzz: ["buzz"],
+  };
+  if ((commands[provider] ?? [provider]).some((command) => (options.commandAvailable ?? commandAvailable)(command))) return true;
   const home = options.homeDir ?? os.homedir();
-  const roots = [
-    path.join(home, ".codex", "plugins", "cache", provider),
-    path.join(home, ".claude", "plugins", "cache", provider),
-  ];
+  const cacheNames: Record<string, string[]> = {
+    omc: ["omc", "oh-my-claudecode"],
+    "prime-agent": ["prime-agent"],
+  };
+  const roots = (cacheNames[provider] ?? [provider]).flatMap((name) => [
+    path.join(home, ".codex", "plugins", "cache", name),
+    path.join(home, ".claude", "plugins", "cache", name),
+  ]);
   return roots.some((root) => fs.existsSync(root));
 }
 

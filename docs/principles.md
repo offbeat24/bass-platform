@@ -11,3 +11,6 @@
 | Plugins are real capabilities | selected provider must be installed; no silent fallback |
 | Handoff stays small | short AGENTS block and depth-proportional `.bass` records |
 | Existing repositories stay authoritative | marker-only integration and no target runtime dependency |
+| Loops stop for a reason | explicit success, attempt, turn, time, no-progress, and repeated-failure conditions |
+| Observation is not control | task/record are authoritative; sanitized events are activity only |
+| Refinement is reviewable | evidence-backed proposal; no automatic base-prompt mutation |

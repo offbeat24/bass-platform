@@ -4,22 +4,33 @@
 CAPTURED → ACTIVE → REVIEW → DONE
 ```
 
-Additional recovery states remain: `BLOCKED`, `NEEDS_DECISION`, `NEEDS_EXPERT`, `FAILED`, `ROLLED_BACK`, `CANCELLED`.
+Recovery states are `BLOCKED`, `NEEDS_DECISION`, `NEEDS_EXPERT`, `FAILED`, `ROLLED_BACK`, and `CANCELLED`. Old 0.2 states normalize to the four-stage path.
 
-These states are internal recovery markers, not approval prompts. New task files live in `.bass/tasks/`; old root `tasks/` remain readable. `bass task transition` is idempotent and old 0.2 states normalize to the four-stage path.
+## Shape and capture
 
-## CAPTURED
+Start with PRODUCT, TECH, and DESIGN. Use `specs/<feature>.md` only for a large cross-surface outcome. A task must state shipping and excluded scope, acceptance, relevant context, allowed/forbidden paths, rollback, dependencies, ownership, stop conditions, and required evidence.
 
-The task has repository facts, accepted scope and exclusions, acceptance criteria, affected surfaces, risk, and a verification intent. `pre-task` checks required evidence and explicit high-risk decisions before entering ACTIVE.
+`bass task graph` blocks missing dependencies, cycles, and independent owned-path overlap before work starts.
 
-## ACTIVE
+## Active bounded loop
 
-The agent implements within `ExecutionPlan.scopeLock`, runs `bass evaluate --task <id>` once, and uses no more critics or rework loops than planned. Failures rerun only the failed and directly affected checks.
+```text
+attempt start
+→ smallest implementation
+→ cheapest affected machine checks
+→ relevant critic only when planned
+→ attempt finish
+→ stop, retry failed/affected work, or hold for decision/expert
+```
 
-## REVIEW
+Fast/Standard/Hardened default to 4/8/12 turns, 1/2/3 attempts, and 15/30/60 minutes. A passed attempt does not waive acceptance or evidence gates. Repeated identical failure without new evidence, consecutive no progress, or any exhausted budget stops additional execution.
 
-`pre-review` checks the run record, planned evaluation evidence, unresolved findings, rollback, docs, and one final UI render record where applicable. The human reviews product meaning and remaining risk once.
+Full logs live under `.bass/evidence/<task-id>/`. Events contain one-line summaries only. Host token metrics are recorded when available and otherwise remain `unknown`.
 
-## DONE
+## Review and done
 
-`bass approval final` records the human judgment when required. `bass task finalize` verifies the `.bass/records/<id>.json` evidence and transitions REVIEW to DONE. Repeating finalize is a successful no-op.
+`pre-review` validates the Run Record, final passing attempt, evidence checksums, context freshness, actual scope, model deviations, docs, rollback, critics, and material UI evidence. It does not manufacture final human approval.
+
+After the human accepts product meaning and remaining risk, `bass approval final` records the decision and `bass task finalize` transitions REVIEW to DONE. Repeating finalize is a no-op.
+
+Product feedback after REVIEW becomes a new or recaptured task with a newly bounded loop; events from the previous loop remain history rather than prompt context.

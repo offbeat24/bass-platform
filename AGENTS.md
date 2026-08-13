@@ -5,10 +5,11 @@ This repository builds the `@offbeat24/bass` CLI and the shared Codex/Claude plu
 For changes, run the smallest affected checks. Before release work, run `npm run verify`, the Codex plugin validator, and `claude plugin validate .`. Keep CLI, Codex manifest, Claude manifest, and marketplace versions identical.
 
 <!-- bass:managed:start -->
-BASS 0.3.0: use `bass agent guide --json` before work.
-- Keep human ownership of product direction and risk decisions.
-- Inspect repository facts and implement the smallest accepted change.
-- Follow `execution_plan`; do not add checks, critics, or loops beyond it.
-- Run `bass evaluate --task <id>`; reuse unchanged passing evidence.
-- Keep handoff evidence in `.bass/tasks/` and `.bass/records/` only when needed.
+BASS 0.4.0: use `bass agent guide --json` before work.
+- Humans own product direction, risk, and final judgment.
+- Inspect facts; implement the smallest accepted change.
+- Obey the task graph, scope, bounded loop, and `capabilityCalls`.
+- Use named providers only after doctor and host confirmation.
+- Run affected checks once; reuse unchanged passing evidence.
+- Load selected product context only; keep full logs in task evidence.
 <!-- bass:managed:end -->

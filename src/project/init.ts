@@ -19,6 +19,10 @@ export const DEFAULT_CAPABILITIES: CapabilitySelection = {
 export const DEFAULT_ADAPTERS: AdapterSelection = {
   primary: "codex",
   compatibility: ["claude", "cursor"],
+  runner: "host",
+  context_provider: "bass",
+  workspace_executor: "host",
+  collaboration_provider: "events",
 };
 
 export interface InitOptions {
@@ -187,6 +191,10 @@ capabilities:
 adapters:
   primary: ${adapters.primary}
   compatibility: [${adapters.compatibility.join(", ")}]
+  runner: ${adapters.runner}
+  context_provider: ${adapters.context_provider}
+  workspace_executor: ${adapters.workspace_executor}
+  collaboration_provider: ${adapters.collaboration_provider}
 
 evaluators:
   level1: []
@@ -197,12 +205,12 @@ evaluators:
 
 export function renderAgentsBlock(): string {
   return `BASS ${BASS_VERSION}: use \`bass agent guide --json\` before work.
-- Keep human ownership of product direction and risk decisions.
-- Inspect repository facts and implement the smallest accepted change.
-- Follow \`execution_plan\`; do not add checks, critics, or loops beyond it.
-- Run \`bass evaluate --task <id>\`; reuse unchanged passing evidence.
-- Load only task-relevant PRODUCT.md, TECH.md, and DESIGN.md sections.
-- Keep handoff evidence in \`.bass/tasks/\` and \`.bass/records/\` only when needed.`;
+- Humans own product direction, risk, and final judgment.
+- Inspect facts; implement the smallest accepted change.
+- Obey the task graph, scope, bounded loop, and \`capabilityCalls\`.
+- Use named providers only after doctor and host confirmation.
+- Run affected checks once; reuse unchanged passing evidence.
+- Load selected product context only; keep full logs in task evidence.`;
 }
 
 function renderClaudeShim(): string {
@@ -217,7 +225,7 @@ function updateGitignore(root: string, result: InitResult): void {
   const relative = ".gitignore";
   const absolute = path.join(root, relative);
   const current = fs.existsSync(absolute) ? fs.readFileSync(absolute, "utf8") : "";
-  const lines = [".bass/cache/", ".bass/local.yaml"];
+  const lines = [".bass/cache/", ".bass/local.yaml", "!.bass/evidence/**/*.log"];
   const missing = lines.filter((line) => !current.split(/\r?\n/).includes(line));
   if (missing.length === 0) return;
   const next = `${current.trimEnd()}${current.trim().length ? "\n" : ""}${missing.join("\n")}\n`;

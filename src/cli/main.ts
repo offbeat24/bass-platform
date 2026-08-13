@@ -14,7 +14,7 @@ import { validateFindingsFile, shouldStopIteration, findingsFileSchema } from ".
 import { composeInstructions } from "../compose/composer.js";
 import { runDesignChecks, addCorrection, loadCorrections, reviewCorrection } from "../design/designProfile.js";
 import { doctor } from "../project/init.js";
-import { applyCapabilityAssignments, promptCapabilities, setupProject } from "../project/setup.js";
+import { applyAdapterAssignments, applyCapabilityAssignments, promptCapabilities, setupProject } from "../project/setup.js";
 import { recordRiskApproval } from "../task/approvalRecord.js";
 import { recordFinalApproval } from "../task/runRecord.js";
 import { buildAgentGuide } from "../agent/guide.js";
@@ -23,14 +23,14 @@ import { parse } from "yaml";
 import type { ModelRole, WorkflowState } from "../types.js";
 import { BASS_VERSION } from "../version.js";
 import { buildExecutionPlan } from "../execution/planner.js";
-import { formatCapabilityStatuses, inspectCapabilities } from "../project/capabilities.js";
+import { formatCapabilityStatuses, inspectProviders } from "../project/capabilities.js";
 import { formatUpgradePlan, upgradeProject } from "../project/upgrade.js";
 import { normalizeWorkflowState } from "../workflow/stateMachine.js";
 import { getRuntime, parseRuntimeTargets, runtimeCatalog } from "../runtime/catalog.js";
 import { recommendRuntimes } from "../runtime/recommendation.js";
 import { buildTaskGraph, formatTaskGraph } from "../task/taskGraph.js";
 import { appendEvent, currentAttempt, EVENT_KINDS, EVENT_STATUSES, finishAttempt, readEvents, startAttempt } from "../task/events.js";
-import { buildProjectStatus, formatProjectStatus } from "../task/status.js";
+import { buildProjectStatus, formatProjectStatus, watchProjectStatus } from "../task/status.js";
 
 const program = new Command();
 program
@@ -70,7 +70,9 @@ function printSetup(result: ReturnType<typeof setupProject>): void {
 async function runSetup(directory: string, opts: Record<string, unknown>): Promise<void> {
   const projectRoot = path.resolve(directory);
   const assignments = (opts["capability"] ?? []) as string[];
+  const adapterAssignments = (opts["adapter"] ?? []) as string[];
   let capabilities = applyCapabilityAssignments(assignments);
+  const adapters = applyAdapterAssignments(adapterAssignments);
   if (!opts["nonInteractive"] && process.stdin.isTTY && process.stdout.isTTY) {
     capabilities = await promptCapabilities(capabilities);
   }
@@ -81,6 +83,7 @@ async function runSetup(directory: string, opts: Record<string, unknown>): Promi
     owner: String(opts["owner"] ?? "user"),
     withDesign: Boolean(opts["design"]),
     capabilities,
+    adapters,
   }));
 }
 
@@ -94,6 +97,7 @@ program
   .option("--design", "web 프로파일과 디자인 검증 활성화", false)
   .option("--non-interactive", "대화형 capability 선택 생략", false)
   .option("--capability <name=provider>", "capability 선택 (반복 가능)", collect, [])
+  .option("--adapter <name=provider>", "runner/context/workspace/collaboration provider 선택", collect, [])
   .action(async (directory, opts) => runSetup(directory ? String(directory) : process.cwd(), opts));
 
 program
@@ -105,6 +109,7 @@ program
   .option("--design", "web 프로파일과 디자인 검증 활성화", false)
   .option("--non-interactive", "대화형 선택 생략", false)
   .option("--capability <name=provider>", "capability 선택", collect, [])
+  .option("--adapter <name=provider>", "harness provider 선택", collect, [])
   .action(async (directory, opts) => runSetup(String(directory), opts));
 
 program
@@ -116,6 +121,7 @@ program
   .option("--design", "web 프로파일과 디자인 검증 활성화", false)
   .option("--non-interactive", "대화형 선택 생략", false)
   .option("--capability <name=provider>", "capability 선택", collect, [])
+  .option("--adapter <name=provider>", "harness provider 선택", collect, [])
   .action(async (opts) => runSetup(process.cwd(), opts));
 
 // ---------- config ----------
@@ -169,7 +175,7 @@ program
 program
   .command("route <taskId>")
   .description("위험·capability 기반 모델 라우팅 권고")
-  .option("--role <role>", "discovery|planner|worker|critic|summarizer|documentation", "worker")
+  .option("--role <role>", "discovery|planner|worker|critic|evaluator|summarizer|documentation", "worker")
   .action((taskId, opts) => {
     const { projectRoot, config } = requireProject();
     const task = findTask(projectRoot, taskId);
@@ -327,29 +333,18 @@ program
   .option("--watch", "변경된 상태를 1초 간격으로 출력", false)
   .action(async (opts) => {
     const { projectRoot, config } = requireProject();
-    const print = (): string => {
-      const status = buildProjectStatus(projectRoot, config);
-      const output = opts.json ? JSON.stringify(status) : formatProjectStatus(status);
-      console.log(output);
-      return JSON.stringify({ ...status, generated_at: "" });
-    };
-    let previous = print();
-    if (!opts.watch) return;
-    await new Promise<void>((resolve) => {
-      const timer = setInterval(() => {
-        const status = buildProjectStatus(projectRoot, config);
-        const fingerprint = JSON.stringify({ ...status, generated_at: "" });
-        if (fingerprint === previous) return;
-        previous = fingerprint;
-        console.log(opts.json ? JSON.stringify(status) : formatProjectStatus(status));
-      }, 1_000);
-      const stop = (): void => {
-        clearInterval(timer);
-        process.off("SIGINT", stop);
-        resolve();
-      };
-      process.once("SIGINT", stop);
-    });
+    const read = (): ReturnType<typeof buildProjectStatus> => buildProjectStatus(projectRoot, config);
+    const emit = (status: ReturnType<typeof buildProjectStatus>): void =>
+      console.log(opts.json ? JSON.stringify(status) : formatProjectStatus(status));
+    if (!opts.watch) {
+      emit(read());
+      return;
+    }
+    const controller = new AbortController();
+    const stop = (): void => controller.abort();
+    process.once("SIGINT", stop);
+    await watchProjectStatus(read, emit, { signal: controller.signal });
+    process.off("SIGINT", stop);
   });
 taskCmd
   .command("validate [taskId]")
@@ -516,12 +511,15 @@ program
     const selected = override
       ? allPlans
       : selectEvaluatorPlans(allPlans, executionPlan, config.bassYaml.execution.verification);
+    const attempt = task ? currentAttempt(readEvents(projectRoot).events, task.frontmatter.id) : null;
     const results = runEvaluators(selected, projectRoot, {
       ...(override ? { levels: override as Array<1 | 2 | 3> } : {}),
       reusePassing: true,
+      ...(task ? {
+        evidenceDir: path.join(projectRoot, ".bass", "evidence", task.frontmatter.id, `attempt-${attempt ?? "untracked"}`),
+      } : {}),
     });
     if (task) {
-      const attempt = currentAttempt(readEvents(projectRoot).events, task.frontmatter.id);
       for (const result of results) {
         appendEvent(projectRoot, {
           task_id: task.frontmatter.id,
@@ -532,6 +530,16 @@ program
           summary: `${result.name} ${result.status}`,
           duration_ms: result.durationMs,
         });
+        if (result.evidencePath) {
+          appendEvent(projectRoot, {
+            task_id: task.frontmatter.id,
+            ...(attempt ? { attempt } : {}),
+            kind: "evidence.recorded",
+            status: "pass",
+            name: `evaluation-log:${result.name}`,
+            summary: `evaluation log recorded: ${result.evidencePath}`,
+          });
+        }
       }
     }
     console.log(formatEvaluatorResults(results));
@@ -728,21 +736,36 @@ program
   .action((opts) => {
     const { projectRoot, config } = requireProject();
     if (opts.capabilities) {
-      const statuses = inspectCapabilities(config.bassYaml);
+      const statuses = inspectProviders(config.bassYaml);
       console.log(formatCapabilityStatuses(statuses));
-      process.exit(statuses.some((status) => status.state === "missing" || status.state === "unauthenticated") ? 1 : 0);
+      process.exit(providerFailed(statuses) ? 1 : 0);
       return;
     }
     const checks = doctor(projectRoot, config.effective);
     for (const c of checks) {
       console.log(`  [${c.status.toUpperCase()}] ${c.id}${c.detail ? ` — ${c.detail}` : ""}`);
     }
-    process.exit(checks.some((c) => c.status === "fail") ? 1 : 0);
+    const providers = inspectProviders(config.bassYaml).filter((status) => status.state !== "builtin" && status.state !== "off");
+    for (const provider of providers) {
+      const state = provider.state === "missing" || provider.state === "unauthenticated" || provider.sessionActive === false
+        ? "FAIL"
+        : provider.sessionActive === null
+          ? "WARN"
+          : "PASS";
+      console.log(`  [${state}] provider:${provider.capability} — ${provider.detail}`);
+    }
+    process.exit(checks.some((c) => c.status === "fail") || providerFailed(providers) ? 1 : 0);
   });
+
+function providerFailed(statuses: ReturnType<typeof inspectProviders>): boolean {
+  return statuses.some((status) =>
+    status.state === "missing" || status.state === "unauthenticated" || status.sessionActive === false,
+  );
+}
 
 program
   .command("upgrade")
-  .description("0.2 저장소를 사용자 파일을 보존하며 0.3 계약으로 마이그레이션")
+  .description("이전 저장소를 사용자 파일을 보존하며 0.4 계약으로 마이그레이션")
   .option("--check", "읽기 전용 변경 계획 표시", false)
   .option("--apply", "계획 적용", false)
   .action((opts) => {

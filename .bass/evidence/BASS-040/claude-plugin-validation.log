@@ -1,0 +1,4 @@
+command: claude plugin validate .
+status: pass
+target: .claude-plugin/marketplace.json
+result: Validation passed

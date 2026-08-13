@@ -68,8 +68,19 @@ export const bassYamlSchema = z.object({
     .object({
       primary: z.enum(["codex", "claude", "cursor"]).default("codex"),
       compatibility: z.array(z.enum(["codex", "claude", "cursor"])).default(["claude", "cursor"]),
+      runner: z.enum(["host", "prime-agent"]).default("host"),
+      context_provider: z.enum(["bass", "graft"]).default("bass"),
+      workspace_executor: z.enum(["host", "omc", "orca"]).default("host"),
+      collaboration_provider: z.enum(["events", "buzz"]).default("events"),
     })
-    .default({ primary: "codex", compatibility: ["claude", "cursor"] }),
+    .default({
+      primary: "codex",
+      compatibility: ["claude", "cursor"],
+      runner: "host",
+      context_provider: "bass",
+      workspace_executor: "host",
+      collaboration_provider: "events",
+    }),
   models: z.record(z.string(), z.string()).optional(),
   workflow: z
     .object({

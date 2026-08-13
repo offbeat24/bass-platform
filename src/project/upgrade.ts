@@ -28,12 +28,16 @@ export function upgradeProject(projectRoot: string, apply = false): UpgradePlan 
   const changes: string[] = [];
   const removals: string[] = [];
   const conflicts: string[] = [];
+  const existingAdapters = (raw["adapters"] as Record<string, unknown> | undefined) ?? {};
 
   if (fromVersion !== BASS_VERSION) changes.push(`bass.version: ${fromVersion} -> ${BASS_VERSION}`);
   if (!raw["execution"]) changes.push("add adaptive execution policy");
   if (!raw["context"]) changes.push("add selective context budget");
   if (!raw["capabilities"]) changes.push("add explicit capability selections");
   if (!raw["adapters"]) changes.push("add Codex primary and Claude/Cursor compatibility adapters");
+  else if (["runner", "context_provider", "workspace_executor", "collaboration_provider"].some((key) => existingAdapters[key] === undefined)) {
+    changes.push("add explicit runner, context, workspace, and collaboration provider defaults");
+  }
   for (const artifact of ["PRODUCT.md", "TECH.md", "DESIGN.md"]) {
     if (!fs.existsSync(path.join(projectRoot, artifact))) changes.push(`create missing ${artifact} template`);
   }
@@ -69,7 +73,7 @@ export function upgradeProject(projectRoot: string, apply = false): UpgradePlan 
     },
     context: raw["context"] ?? { max_chars: 12_000 },
     capabilities: raw["capabilities"] ?? DEFAULT_CAPABILITIES,
-    adapters: raw["adapters"] ?? DEFAULT_ADAPTERS,
+    adapters: { ...DEFAULT_ADAPTERS, ...existingAdapters },
   };
   const parsed = bassYamlSchema.safeParse(next);
   if (!parsed.success) {

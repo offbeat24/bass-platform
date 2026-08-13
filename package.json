@@ -1,6 +1,6 @@
 {
   "name": "@offbeat24/bass",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "BASS - Behavior Architecture & System Supervisor. A runtime for human-supervised AI software engineering.",
   "type": "module",
   "bin": {

@@ -9,7 +9,7 @@ const root = path.resolve(import.meta.dirname, "..");
 const plugin = path.join(root, "plugins", "bass");
 
 describe("team plugin", () => {
-  it("CLI, Codex plugin, Claude plugin, 두 marketplace 버전이 0.3.0으로 일치한다", () => {
+  it("CLI, Codex plugin, Claude plugin, 두 marketplace 버전이 0.4.0으로 일치한다", () => {
     const codex = JSON.parse(fs.readFileSync(path.join(plugin, ".codex-plugin", "plugin.json"), "utf8"));
     const claude = JSON.parse(fs.readFileSync(path.join(plugin, ".claude-plugin", "plugin.json"), "utf8"));
     const claudeMarket = JSON.parse(fs.readFileSync(path.join(root, ".claude-plugin", "marketplace.json"), "utf8"));
@@ -29,7 +29,7 @@ describe("team plugin", () => {
 
   it("같은 diff의 scope 위반은 한 번만 경고한다", () => {
     const project = fs.mkdtempSync(path.join(os.tmpdir(), "bass-hook-"));
-    fs.writeFileSync(path.join(project, "bass.yaml"), "bass:\n  version: 0.3.0\n", "utf8");
+    fs.writeFileSync(path.join(project, "bass.yaml"), `bass:\n  version: ${BASS_VERSION}\n`, "utf8");
     fs.mkdirSync(path.join(project, ".bass", "tasks"), { recursive: true });
     fs.writeFileSync(path.join(project, ".bass", "tasks", "T-1.md"), "---\nstatus: ACTIVE\n---\n\n## Allowed scope\n\nsrc/\n\n## Forbidden scope\n\ndocs/\n", "utf8");
     fs.mkdirSync(path.join(project, "docs"));

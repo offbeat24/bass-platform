@@ -14,6 +14,7 @@ const BUILT_IN_DEFAULTS: Record<string, unknown> = {
     planner: "reasoning-high",
     worker: "auto",
     critic: "reasoning-high",
+    evaluator: "fast-reliable",
     summarizer: "fast-reliable",
     documentation: "balanced",
   },
@@ -66,6 +67,7 @@ export interface LoadConfigOptions {
 }
 
 export interface LoadedConfig {
+  projectRoot: string;
   bassYaml: BassYaml;
   layers: ConfigLayer[];
   effective: Record<string, unknown>;
@@ -108,7 +110,7 @@ export function loadConfig(opts: LoadConfigOptions): LoadedConfig {
     layers.push({ name: "override", source: "runtime --set", values: opts.runtimeOverrides });
   }
 
-  return { bassYaml, layers, effective: mergeLayers(layers) };
+  return { projectRoot: path.resolve(opts.projectRoot), bassYaml, layers, effective: mergeLayers(layers) };
 }
 
 /** `bass config explain` 용: 키별 최종값·출처·override 이력 (비밀 마스킹 포함) */

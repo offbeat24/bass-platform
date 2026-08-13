@@ -1,3 +1,7 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
 import { describe, it, expect } from "vitest";
 import { planEvaluators, runEvaluators } from "../src/evaluators/runner.js";
 
@@ -52,5 +56,36 @@ describe("Evaluator 러너", () => {
     ];
     const results = runEvaluators(plans, process.cwd(), { levels: [1] });
     expect(results.map((r) => r.name)).toEqual(["l1"]);
+  });
+
+  it("task evaluator의 전체 출력을 prompt 밖 evidence 파일에 보존한다", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "bass-evidence-"));
+    const evidenceDir = path.join(root, ".bass", "evidence", "EVAL-1", "attempt-1");
+    const results = runEvaluators([
+      { level: 1 as const, specs: [{ name: "full-output", command: "printf 'line one\\nline two\\nAPI_KEY=secret-value\\n'" }] },
+    ], root, { evidenceDir });
+    expect(results[0]?.evidencePath).toBe(".bass/evidence/EVAL-1/attempt-1/L1-full-output.log");
+    const evidence = fs.readFileSync(path.join(root, results[0]!.evidencePath!), "utf8");
+    expect(evidence).toContain("status: pass");
+    expect(evidence).toContain("line one\nline two");
+    expect(evidence).toContain("API_KEY=***masked***");
+    expect(evidence).not.toContain("secret-value");
+    expect(evidence.endsWith("\n")).toBe(true);
+    expect(evidence.endsWith("\n\n")).toBe(false);
+  });
+
+  it("재사용된 pass는 기존 전문 evidence를 skip 요약으로 덮어쓰지 않는다", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "bass-reuse-evidence-"));
+    expect(spawnSync("git", ["init", "-q"], { cwd: root }).status).toBe(0);
+    const evidenceDir = path.join(root, ".bass", "evidence", "EVAL-2", "attempt-1");
+    const plans = [{ level: 1 as const, specs: [{ name: "reuse", command: "printf 'original full output\\n'" }] }];
+    const first = runEvaluators(plans, root, { reusePassing: true, evidenceDir });
+    expect(first[0]?.status).toBe("pass");
+    const second = runEvaluators(plans, root, { reusePassing: true, evidenceDir });
+    expect(second[0]?.status).toBe("skipped");
+    const evidence = fs.readFileSync(path.join(root, second[0]!.evidencePath!), "utf8");
+    expect(evidence).toContain("status: pass");
+    expect(evidence).toContain("original full output");
+    expect(evidence).not.toContain("status: skipped");
   });
 });

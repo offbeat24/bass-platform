@@ -3,7 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadConfig } from "../src/config/loader.js";
 import { appendEvent } from "../src/task/events.js";
-import { buildProjectStatus, formatProjectStatus } from "../src/task/status.js";
+import { buildProjectStatus, formatProjectStatus, watchProjectStatus } from "../src/task/status.js";
 import { makeTempProject, writeRunRecord, writeTask } from "./helpers.js";
 
 describe("project status", () => {
@@ -47,5 +47,25 @@ describe("project status", () => {
     const status = buildProjectStatus(root, loadConfig({ projectRoot: root }));
     expect(status.tasks[0]?.attempts).toBe(1);
     expect(status.tasks[0]?.current_attempt).toBe(2);
+  });
+
+  it("watch는 변경된 snapshot만 방출하고 abort 시 종료한다", async () => {
+    const root = makeTempProject({});
+    writeTask(root, "STATUS-104", { status: "ACTIVE" });
+    const config = loadConfig({ projectRoot: root });
+    const output: ReturnType<typeof buildProjectStatus>[] = [];
+    const controller = new AbortController();
+    const watching = watchProjectStatus(
+      () => buildProjectStatus(root, config),
+      (status) => output.push(status),
+      { intervalMs: 5, signal: controller.signal },
+    );
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    appendEvent(root, { task_id: "STATUS-104", kind: "task.started", status: "running", summary: "watch update" });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    controller.abort();
+    await watching;
+    expect(output).toHaveLength(2);
+    expect(output[1]?.tasks[0]?.last_activity).not.toBeNull();
   });
 });

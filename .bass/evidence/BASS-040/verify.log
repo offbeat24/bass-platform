@@ -1,0 +1,13 @@
+command: npm run verify
+status: pass
+package: @offbeat24/bass@0.4.0
+
+typecheck: pass
+tests: 19 files passed, 156 tests passed
+build: pass
+package_smoke: @offbeat24/bass@0.4.0 pass
+plugin_validation: bass@0.4.0 pass
+performance_budget:
+  context_chars: 3374/9160 (63.2% reduction)
+  fast_calls: 1/8 (87.5% reduction)
+  standard_worst_case_calls: 4/8 (50% reduction)

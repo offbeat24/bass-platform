@@ -82,6 +82,12 @@ describe("bass init (shim 생성)", () => {
     expect(config.bassYaml.project.name).toBe("demo");
     expect(config.effective["design_profile"]).toBe(true);
     expect(config.bassYaml.bass.version).toBe(BASS_VERSION);
+    expect(config.bassYaml.adapters).toMatchObject({
+      runner: "host",
+      context_provider: "bass",
+      workspace_executor: "host",
+      collaboration_provider: "events",
+    });
     expect(agents).toContain(BASS_VERSION);
     expect(agents).toContain("smallest accepted change");
   });
@@ -185,7 +191,7 @@ describe("bass compose (지침 조합)", () => {
     expect(composed).toContain("section: task: T-001");
     expect(composed).toContain("auth-and-permissions");
     expect(composed).toContain("DESIGN.md");
-    expect(composed).toContain("Ouroboros·Ponytail 산출물은 근거");
+    expect(composed).toContain("Call an external provider only when `capabilityCalls` names it");
     expect(composed).toContain("Ponytail은 승인된 범위에만 적용한다");
     // 출처 추적
     expect(composed).toContain("source:");

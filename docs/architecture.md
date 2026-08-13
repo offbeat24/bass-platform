@@ -1,48 +1,47 @@
-# BASS 0.3 Architecture
+# BASS 0.4 Architecture
 
-## Boundaries
+## Boundary
 
-BASS has one TypeScript core and two thin host adapters. Codex is the reference host; Claude and Cursor do not fork planning, policy, state, runtime, or evaluator logic.
+BASS는 하나의 TypeScript Core와 얇은 호스트 skills/hooks로 구성된다. Codex·Claude·Cursor·Prime Agent는 실행 주체이고, BASS가 제품 명세·Task Graph·게이트·evidence의 단일 기준이다.
 
 ```text
-Codex / Claude / Cursor
-        │ thin skills, hooks, entrypoint files
+Codex / Claude / Cursor / optional Prime Agent
+        │ thin host skills; approved provider calls only
         ▼
-@offbeat24/bass@exact-version on the user host
-        │
-        ├─ setup / doctor / upgrade
-        ├─ ExecutionPlan / four-state workflow
-        ├─ affected evaluator + diff cache
-        └─ generic game runtime adapters
-        │
+@offbeat24/bass@exact-version
+        ├─ shape: PRODUCT / TECH / DESIGN / optional spec
+        ├─ plan: DAG / owned paths / ExecutionPlan
+        ├─ loop: attempts / budgets / stop conditions
+        ├─ verify: affected evaluators / critics / evidence
+        └─ observe: status / events.jsonl
         ▼
-bass.yaml + <=2KB AGENTS block + minimal .bass records
+repository contract + human product judgment
 ```
 
-The plugin launcher reads `bass.yaml` and uses `npm exec --package=@offbeat24/bass@<version>`. npm cache and credentials remain on the host; the target repository receives no BASS dependency.
+The plugin launcher reads `bass.yaml` and uses `npm exec --package=@offbeat24/bass@<version>`. The target repository receives no BASS runtime dependency.
+
+## Authoritative state
+
+- `PRODUCT.md`, `TECH.md`, `DESIGN.md`: product intent and accepted direction.
+- `specs/`: only large cross-surface features.
+- `.bass/tasks/`: scope, dependencies, ownership, acceptance, and loop contract.
+- `.bass/records/`: attempt lineage, verification, evidence checksums, scope, context, usage, and pending refinement proposals.
+- `.bass/events.jsonl`: sanitized append-only activity, never the source of current task truth.
+
+`bass status` derives current state from task files and Run Records. Events add last activity, current open attempt, and warnings. A malformed final JSONL row is ignored without discarding earlier valid events.
 
 ## ExecutionPlan
 
-`buildExecutionPlan` derives a bounded plan from task kind, risk, changed surfaces, selected capabilities, profile, and evaluator metadata. The plan is a ceiling: a host may do less when evidence makes a step unnecessary, but it must not silently add critics, plugins, or loops.
+`buildExecutionPlan` derives a ceiling from task kind, risk, changed surfaces, loop overrides, selected providers, profile, and evaluator metadata. It includes model-independent role guidance, bounded budgets, provider calls, and parallel capacity.
 
-The evaluator selects levels by depth, filters surface-tagged L2/L3 checks, deduplicates commands, and caches passing results under `.bass/cache/evaluations.json`. The cache key includes the command, Git HEAD, and relevant changed-file contents.
+The default is one active worker. Parallel capacity appears only for Hardened tasks with literal owned paths; the graph rejects cycles, missing dependencies, and overlapping independent ownership.
 
-## State compatibility
+## External providers
 
-New writes use `CAPTURED`, `ACTIVE`, `REVIEW`, `DONE`. Readers normalize:
+BASS records four optional adapter slots: runner, context provider, workspace executor, and collaboration provider. Provider code and prompt suites stay outside BASS. A call requires both an `ExecutionPlan.capabilityCalls` entry and an installed, host-active provider; missing selection never falls back silently.
 
-- `DISCOVERY`, `SHAPED`, `READY`, `PLANNED` → `CAPTURED`
-- `IMPLEMENTING`, `VERIFYING`, `CRITIQUING` → `ACTIVE`
-- `HUMAN_REVIEW` → `REVIEW`
+Prime Agent refinement is represented only as a pending Run Record proposal. The immutable BASS base prompt and shared skills change through normal review and versioning.
 
-Hold, failure, rollback, cancellation, and explicit human risk/final decisions remain available.
+## Observation boundary
 
-## Plugin loading
-
-SessionStart injects only a short entrypoint. Skills are discovered by description and loaded only for setup, work, material UI direction, final HTML reports, or game runtime tasks. The scope hook compares changed files with the active task and stores one warning fingerprint in gitignored cache.
-
-External plugins are never reimplemented. BASS plans their bounded invocation and `doctor --capabilities` separates project selection, installation, authentication, session activation, and restart need.
-
-## Game separation
-
-`src/runtime` owns generic contracts, recommendation, catalog, cross-platform doctor, scaffold/install/verify, and checksum-safe managed files. `profiles/game.yaml` exposes them to ordinary projects. `src/nan` and `profiles/nan2026.yaml` contain only event policy; generic runtime modules must never import the NAN overlay.
+`bass status --watch` polls once per second using Node built-ins and prints only changed snapshots. There is no 0.4 dashboard, daemon, TUI, transcript store, or remote control plane. Buzz may consume the event contract but does not own workflow state.

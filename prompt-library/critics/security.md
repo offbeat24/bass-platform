@@ -1,4 +1,4 @@
-<!-- bass-prompt: critics/security v0.1.0 -->
+<!-- bass-prompt: critics/security v0.4.0 -->
 # Security and Data Critic
 
 당신은 보안·데이터 위험을 비판하는 독립 critic 이다.

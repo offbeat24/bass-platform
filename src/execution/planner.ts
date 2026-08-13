@@ -1,6 +1,8 @@
 import type { LoadedConfig } from "../config/loader.js";
 import type { ExecutionDepth, ExecutionPlan, TaskKind } from "../types.js";
 import type { TaskFile } from "../task/taskFile.js";
+import { listTasks } from "../task/taskFile.js";
+import { buildTaskGraph } from "../task/taskGraph.js";
 
 const TASK_KINDS = new Set<TaskKind>(["explore", "delete", "fix", "feature", "refactor", "release"]);
 
@@ -25,6 +27,8 @@ export function buildExecutionPlan(config: LoadedConfig, task?: TaskFile): Execu
     .filter((critic) => !(capabilities.simplicity === "ponytail" && critic === "simplicity"))
     .slice(0, criticLimit);
   const loop = loopBudget(config, task, depth);
+  const maxAgents = parallelAgentLimit(config, task, depth);
+  const adapters = config.bassYaml.adapters;
 
   return {
     taskKind,
@@ -33,15 +37,75 @@ export function buildExecutionPlan(config: LoadedConfig, task?: TaskFile): Execu
     scopeLock,
     verificationLevels,
     critics,
-    capabilityCalls: capabilityCalls(config, task, depth, changedSurfaces),
+    capabilityCalls: [
+      ...capabilityCalls(config, task, depth, changedSurfaces),
+      ...providerCalls(config, task, maxAgents),
+    ],
+    providers: {
+      runner: adapters.runner,
+      context: adapters.context_provider,
+      workspace: adapters.workspace_executor,
+      collaboration: adapters.collaboration_provider,
+    },
     loop,
     parallel: {
-      maxAgents: depth === "hardened" && (task?.frontmatter.coordination.owned_paths.length ?? 0) > 0
-        ? config.bassYaml.execution.parallel.max_agents
-        : 1,
+      maxAgents,
     },
     maxReworkLoops: Math.max(0, loop.maxAttempts - 1),
   };
+}
+
+function parallelAgentLimit(
+  config: LoadedConfig,
+  task: TaskFile | undefined,
+  depth: ExecutionDepth,
+): number {
+  if (depth !== "hardened" || !task?.frontmatter.coordination.owned_paths.length) return 1;
+  const tasks = listTasks(config.projectRoot);
+  const graph = buildTaskGraph(tasks);
+  if (!graph.valid) return 1;
+  const byId = new Map(tasks.map((candidate) => [candidate.frontmatter.id, candidate]));
+  const independent = graph.nodes.filter((node) =>
+    node.id !== task.frontmatter.id
+    && ["CAPTURED", "ACTIVE"].includes(node.status)
+    && node.blockedBy.length === 0
+    && node.ownedPaths.length > 0
+    && !dependsTransitively(task.frontmatter.id, node.id, byId)
+    && !dependsTransitively(node.id, task.frontmatter.id, byId),
+  );
+  return independent.length === 0
+    ? 1
+    : Math.min(config.bassYaml.execution.parallel.max_agents, independent.length + 1);
+}
+
+function dependsTransitively(
+  taskId: string,
+  targetId: string,
+  byId: Map<string, TaskFile>,
+  seen = new Set<string>(),
+): boolean {
+  if (seen.has(taskId)) return false;
+  seen.add(taskId);
+  const dependencies = byId.get(taskId)?.frontmatter.coordination.depends_on ?? [];
+  return dependencies.includes(targetId)
+    || dependencies.some((dependency) => dependsTransitively(dependency, targetId, byId, seen));
+}
+
+function providerCalls(config: LoadedConfig, task: TaskFile | undefined, maxAgents: number): string[] {
+  const adapters = config.bassYaml.adapters;
+  const requested = new Set((task?.frontmatter.capabilities ?? []).map((item) => item.toLowerCase()));
+  const reasons = (task?.frontmatter.risk.reasons ?? []).join(" ").toLowerCase();
+  const calls: string[] = [];
+  if (adapters.runner === "prime-agent") calls.push("prime-agent:run");
+  const repeatedLargeRepoExploration = requested.has("graft")
+    || requested.has("large-repo-context")
+    || /repeated[- ]large[- ]repo[- ]exploration/.test(reasons);
+  if (adapters.context_provider === "graft" && repeatedLargeRepoExploration) calls.push("graft:context");
+  if (adapters.workspace_executor !== "host" && maxAgents > 1) {
+    calls.push(`${adapters.workspace_executor}:workspace`);
+  }
+  if (adapters.collaboration_provider === "buzz") calls.push("buzz:events");
+  return calls;
 }
 
 function loopBudget(

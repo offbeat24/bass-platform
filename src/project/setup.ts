@@ -70,6 +70,27 @@ export function applyCapabilityAssignments(
   return next;
 }
 
+export function applyAdapterAssignments(
+  assignments: string[],
+  base: AdapterSelection = DEFAULT_ADAPTERS,
+): AdapterSelection {
+  const next = { ...base, compatibility: [...base.compatibility] };
+  const allowed: Record<string, string[]> = {
+    runner: ["host", "prime-agent"],
+    context_provider: ["bass", "graft"],
+    workspace_executor: ["host", "omc", "orca"],
+    collaboration_provider: ["events", "buzz"],
+  };
+  for (const assignment of assignments) {
+    const [name, provider, extra] = assignment.split("=");
+    if (!name || !provider || extra !== undefined || !allowed[name]?.includes(provider)) {
+      throw new Error(`Invalid adapter "${assignment}". Expected name=provider.`);
+    }
+    (next as Record<string, unknown>)[name] = provider;
+  }
+  return next;
+}
+
 export async function promptCapabilities(base: CapabilitySelection = DEFAULT_CAPABILITIES): Promise<CapabilitySelection> {
   const rl = createInterface({ input: stdin, output: stdout });
   try {

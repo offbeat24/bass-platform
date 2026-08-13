@@ -29,6 +29,33 @@ export interface ProjectStatus {
   warnings: string[];
 }
 
+export async function watchProjectStatus(
+  read: () => ProjectStatus,
+  emit: (status: ProjectStatus) => void,
+  options: { intervalMs?: number; signal?: AbortSignal } = {},
+): Promise<void> {
+  let previous = "";
+  const publish = (): void => {
+    const status = read();
+    const fingerprint = JSON.stringify({ ...status, generated_at: "" });
+    if (fingerprint === previous) return;
+    previous = fingerprint;
+    emit(status);
+  };
+  publish();
+  if (options.signal?.aborted) return;
+  await new Promise<void>((resolve) => {
+    const timer = setInterval(publish, options.intervalMs ?? 1_000);
+    const stop = (): void => {
+      clearInterval(timer);
+      options.signal?.removeEventListener("abort", stop);
+      resolve();
+    };
+    options.signal?.addEventListener("abort", stop, { once: true });
+    if (options.signal?.aborted) stop();
+  });
+}
+
 export function buildProjectStatus(
   projectRoot: string,
   config: LoadedConfig,

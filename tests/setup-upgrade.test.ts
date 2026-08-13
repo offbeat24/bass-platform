@@ -2,16 +2,31 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { setupProject } from "../src/project/setup.js";
+import { applyAdapterAssignments, setupProject } from "../src/project/setup.js";
 import { upgradeProject } from "../src/project/upgrade.js";
 import { loadConfig } from "../src/config/loader.js";
-import { inspectCapabilities } from "../src/project/capabilities.js";
+import { inspectCapabilities, inspectProviders } from "../src/project/capabilities.js";
 import { listTasks } from "../src/task/taskFile.js";
 import { BASS_VERSION } from "../src/version.js";
 
 function temp(): string { return fs.mkdtempSync(path.join(os.tmpdir(), "bass-03-")); }
 
 describe("bass setup", () => {
+  it("외부 harness provider는 명시적 adapter assignment로만 선택한다", () => {
+    expect(applyAdapterAssignments([
+      "runner=prime-agent",
+      "context_provider=graft",
+      "workspace_executor=omc",
+      "collaboration_provider=buzz",
+    ])).toMatchObject({
+      runner: "prime-agent",
+      context_provider: "graft",
+      workspace_executor: "omc",
+      collaboration_provider: "buzz",
+    });
+    expect(() => applyAdapterAssignments(["runner=unknown"])).toThrow(/Invalid adapter/);
+  });
+
   it("Python 저장소를 보존하고 package.json 없이 연결한다", () => {
     const root = temp();
     fs.writeFileSync(path.join(root, "pyproject.toml"), "[project]\nname='demo'\n", "utf8");
@@ -37,7 +52,9 @@ describe("bass setup", () => {
     expect(setupProject({ projectRoot: root }).mode).toBe("create");
     expect(fs.existsSync(path.join(root, "bass.yaml"))).toBe(true);
     expect(fs.existsSync(path.join(root, ".bass", "tasks"))).toBe(true);
-    expect(fs.readFileSync(path.join(root, ".gitignore"), "utf8")).toContain(".bass/local.yaml");
+    const gitignore = fs.readFileSync(path.join(root, ".gitignore"), "utf8");
+    expect(gitignore).toContain(".bass/local.yaml");
+    expect(gitignore).toContain("!.bass/evidence/**/*.log");
   });
 
   it("구버전 bass.yaml은 setup에서 덮지 않고 upgrade 대상으로 중지한다", () => {
@@ -51,7 +68,7 @@ describe("bass setup", () => {
   });
 });
 
-describe("0.2 upgrade", () => {
+describe("legacy upgrade", () => {
   function fixture(): string {
     const root = temp();
     fs.writeFileSync(path.join(root, "bass.yaml"), `bass:\n  version: 0.2.1\n  profiles: [common]\nproject:\n  name: legacy\n`, "utf8");
@@ -79,6 +96,27 @@ describe("0.2 upgrade", () => {
     upgradeProject(root, true);
     expect(fs.readFileSync(path.join(root, "AGENTS.md"), "utf8")).toBe(after);
   });
+
+  it("0.3 설정을 보존하면서 0.4 loop와 provider 기본값만 보강한다", () => {
+    const root = temp();
+    fs.writeFileSync(path.join(root, "bass.yaml"), `bass:\n  version: 0.3.0\n  profiles: [common]\nproject:\n  name: v03\nexecution:\n  depth: fast\n  verification: all\nadapters:\n  primary: claude\n  compatibility: [codex]\n`, "utf8");
+    upgradeProject(root, true);
+    const config = loadConfig({ projectRoot: root }).bassYaml;
+    expect(config.execution).toMatchObject({
+      depth: "fast",
+      verification: "all",
+      loop: { no_progress_limit: 1 },
+      parallel: { max_agents: 2 },
+    });
+    expect(config.adapters).toMatchObject({
+      primary: "claude",
+      compatibility: ["codex"],
+      runner: "host",
+      context_provider: "bass",
+      workspace_executor: "host",
+      collaboration_provider: "events",
+    });
+  });
 });
 
 describe("capability doctor states", () => {
@@ -98,5 +136,29 @@ describe("capability doctor states", () => {
     expect(states.find((item) => item.selected === "bass")?.state).toBe("builtin");
     expect(states.find((item) => item.selected === "pen")?.state).toBe("unauthenticated");
     expect(states.find((item) => item.selected === "off")?.state).toBe("off");
+  });
+
+  it("Prime Agent와 workspace/collaboration provider의 실제 설치·활성을 따로 검사한다", () => {
+    const root = temp();
+    setupProject({
+      projectRoot: root,
+      adapters: applyAdapterAssignments([
+        "runner=prime-agent",
+        "context_provider=graft",
+        "workspace_executor=omc",
+        "collaboration_provider=buzz",
+      ]),
+      capabilities: { specification: "builtin", simplicity: "builtin", ui_direction: "off", ui_canvas: "off", html_report: "off" },
+    });
+    const config = loadConfig({ projectRoot: root }).bassYaml;
+    const installed = new Set(["prime-agent", "graft", "omc"]);
+    const states = inspectProviders(config, {
+      commandAvailable: (command) => installed.has(command),
+      active: new Set(["prime-agent", "omc"]),
+    });
+    expect(states.find((item) => item.capability === "runner")).toMatchObject({ state: "actual-plugin", sessionActive: true });
+    expect(states.find((item) => item.capability === "context_provider")).toMatchObject({ state: "actual-plugin", sessionActive: false });
+    expect(states.find((item) => item.capability === "workspace_executor")).toMatchObject({ state: "actual-plugin", sessionActive: true });
+    expect(states.find((item) => item.capability === "collaboration_provider")?.state).toBe("missing");
   });
 });

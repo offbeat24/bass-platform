@@ -394,12 +394,12 @@ function samePaths(left: string[], right: string[]): boolean {
 }
 
 function gitChangedFiles(projectRoot: string): string[] | null {
-  const result = spawnSync("git", ["status", "--porcelain=v1", "-z"], { cwd: projectRoot, encoding: "utf8" });
+  const result = spawnSync("git", ["status", "--porcelain=v1", "-z", "--untracked-files=all", "--no-renames"], { cwd: projectRoot, encoding: "utf8" });
   if (result.status !== 0) return null;
   return result.stdout
     .split("\0")
     .filter(Boolean)
-    .map((line) => line.slice(3).split(" -> ").at(-1) ?? "")
+    .map((line) => line.slice(3))
     .filter(Boolean)
     .map(normalizePath)
     .sort();

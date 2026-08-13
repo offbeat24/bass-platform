@@ -1,5 +1,5 @@
 bass:
-  version: 0.3.0
+  version: 0.4.0
   profiles: [common, cli]
 
 project:
@@ -9,6 +9,13 @@ project:
 execution:
   depth: adaptive
   verification: affected
+  loop:
+    no_progress_limit: 1
+  parallel:
+    max_agents: 2
+
+context:
+  max_chars: 12000
 
 capabilities:
   specification: builtin
@@ -20,6 +27,10 @@ capabilities:
 adapters:
   primary: codex
   compatibility: [claude, cursor]
+  runner: host
+  context_provider: bass
+  workspace_executor: host
+  collaboration_provider: events
 
 workflow:
   max_active_tasks: 1
@@ -40,4 +51,7 @@ evaluators:
       surfaces: [release]
     - name: plugin-manifest
       command: npm run validate:plugin
+      surfaces: [release]
+    - name: performance-budget
+      command: npm run benchmark:performance
       surfaces: [release]

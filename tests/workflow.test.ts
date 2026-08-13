@@ -307,6 +307,36 @@ describe("pre-complete 게이트", () => {
     expect(check?.detail).toContain("unrecorded git change: src/unrecorded.ts");
   });
 
+  it("완전히 새 중첩 디렉터리도 접힌 폴더명이 아닌 실제 파일 단위로 비교", () => {
+    const { root, task, effective } = setup();
+    fs.mkdirSync(path.join(root, "src"), { recursive: true });
+    fs.writeFileSync(path.join(root, "src", "a.ts"), "export {};\n", "utf8");
+    expect(spawnSync("git", ["init", "-q"], { cwd: root }).status).toBe(0);
+    expect(spawnSync("git", ["add", "."], { cwd: root }).status).toBe(0);
+    expect(spawnSync("git", ["-c", "user.name=BASS", "-c", "user.email=bass@example.invalid", "commit", "-qm", "baseline"], { cwd: root }).status).toBe(0);
+    fs.mkdirSync(path.join(root, "new-dir", "nested"), { recursive: true });
+    fs.writeFileSync(path.join(root, "new-dir", "nested", "file.ts"), "export {};\n", "utf8");
+    writeRunRecord(root, "T-200");
+    const check = preCompleteGate(task, { projectRoot: root, effective }).checks.find((item) => item.id === "scope-diff");
+    expect(check?.detail).toContain("unrecorded git change: new-dir/nested/file.ts");
+  });
+
+  it("rename은 원본 삭제와 대상 추가를 모두 실제 변경 범위로 검사", () => {
+    const { root, task, effective } = setup();
+    fs.mkdirSync(path.join(root, "src"), { recursive: true });
+    fs.writeFileSync(path.join(root, "src", "old.ts"), "export const renamed = true;\n", "utf8");
+    expect(spawnSync("git", ["init", "-q"], { cwd: root }).status).toBe(0);
+    expect(spawnSync("git", ["add", "."], { cwd: root }).status).toBe(0);
+    expect(spawnSync("git", ["-c", "user.name=BASS", "-c", "user.email=bass@example.invalid", "commit", "-qm", "baseline"], { cwd: root }).status).toBe(0);
+    expect(spawnSync("git", ["mv", "src/old.ts", "src/new.ts"], { cwd: root }).status).toBe(0);
+    writeRunRecord(root, "T-200", {
+      files_changed: ["src/new.ts", "src/old.ts"],
+      scope: { actual_files: ["src/new.ts", "src/old.ts"], outside_allowed: [], forbidden_touched: [] },
+    });
+    const check = preCompleteGate(task, { projectRoot: root, effective }).checks.find((item) => item.id === "scope-diff");
+    expect(check?.status).toBe("pass");
+  });
+
   it("모델 권고를 따르지 않았으면 구체적 이유를 요구", () => {
     const { root, task, effective } = setup();
     writeRunRecord(root, "T-200", {

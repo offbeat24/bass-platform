@@ -34,6 +34,12 @@ export interface ExecutionPlan {
   verificationLevels: Array<1 | 2 | 3>;
   critics: string[];
   capabilityCalls: string[];
+  providers: {
+    runner: string;
+    context: string;
+    workspace: string;
+    collaboration: string;
+  };
   loop: {
     maxTurns: number;
     maxAttempts: number;
@@ -54,6 +60,7 @@ export type ModelRole =
   | "planner"
   | "worker"
   | "critic"
+  | "evaluator"
   | "summarizer"
   | "documentation";
 
@@ -113,6 +120,7 @@ export interface EvaluatorResult {
   exitCode: number | null;
   durationMs: number;
   outputTail: string;
+  evidencePath?: string;
 }
 
 export type Severity = "high" | "medium" | "low" | "note";

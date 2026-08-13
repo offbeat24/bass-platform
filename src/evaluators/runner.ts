@@ -47,7 +47,7 @@ export function selectEvaluatorPlans(
 export function runEvaluators(
   plans: EvaluatorPlan[],
   cwd: string,
-  opts: { levels?: Array<1 | 2 | 3>; reusePassing?: boolean } = {},
+  opts: { levels?: Array<1 | 2 | 3>; reusePassing?: boolean; evidenceDir?: string } = {},
 ): EvaluatorResult[] {
   const results: EvaluatorResult[] = [];
   const changed = opts.reusePassing ? changedFiles(cwd) : null;
@@ -62,7 +62,7 @@ export function runEvaluators(
       seen.add(key);
       const fingerprint = canReuse ? evaluatorFingerprint(spec, cwd, changed!) : "";
       if (canReuse && cache[key]?.status === "pass" && cache[key]?.fingerprint === fingerprint) {
-        results.push({
+        const reused: EvaluatorResult = {
           name: spec.name,
           level: plan.level,
           command: spec.command,
@@ -70,10 +70,21 @@ export function runEvaluators(
           exitCode: 0,
           durationMs: 0,
           outputTail: "reused passing result for unchanged diff fingerprint",
-        });
+        };
+        if (opts.evidenceDir) {
+          const existing = evaluatorEvidenceFile(cwd, opts.evidenceDir, reused);
+          results.push(fs.existsSync(existing)
+            ? { ...reused, evidencePath: relativeEvidencePath(cwd, existing) }
+            : persistEvaluatorEvidence(cwd, opts.evidenceDir, reused, reused.outputTail));
+        } else {
+          results.push(reused);
+        }
         continue;
       }
-      const result = runOne(spec, plan.level, cwd);
+      const execution = runOne(spec, plan.level, cwd);
+      const result = opts.evidenceDir
+        ? persistEvaluatorEvidence(cwd, opts.evidenceDir, execution.result, execution.fullOutput)
+        : execution.result;
       results.push(result);
       if (canReuse) {
         if (result.status === "pass") cache[key] = { status: "pass", fingerprint, at: new Date().toISOString() };
@@ -114,13 +125,14 @@ function saveCache(cwd: string, cache: EvaluationCache): void {
 }
 
 function changedFiles(cwd: string): string[] | null {
-  const result = spawnSync("git", ["status", "--porcelain=v1", "-z"], { cwd, encoding: "utf8" });
+  const result = spawnSync("git", ["status", "--porcelain=v1", "-z", "--untracked-files=all", "--no-renames"], { cwd, encoding: "utf8" });
   if (result.status !== 0) return null;
   return result.stdout
     .split("\0")
     .filter(Boolean)
-    .map((line) => line.slice(3).split(" -> ").at(-1) ?? "")
+    .map((line) => line.slice(3))
     .filter(Boolean)
+    .filter((file) => !file.replace(/\\/g, "/").startsWith(".bass/"))
     .sort();
 }
 
@@ -149,7 +161,11 @@ function surfaceForFile(file: string): string {
   return normalized.split("/")[0] ?? normalized;
 }
 
-function runOne(spec: EvaluatorSpec, level: 1 | 2 | 3, cwd: string): EvaluatorResult {
+function runOne(
+  spec: EvaluatorSpec,
+  level: 1 | 2 | 3,
+  cwd: string,
+): { result: EvaluatorResult; fullOutput: string } {
   const started = Date.now();
   const timeout = spec.timeout_ms ?? DEFAULT_TIMEOUT_MS;
   try {
@@ -165,10 +181,10 @@ function runOne(spec: EvaluatorSpec, level: 1 | 2 | 3, cwd: string): EvaluatorRe
     const outputTail = output.slice(-OUTPUT_TAIL_CHARS);
 
     if (proc.error && (proc.error as NodeJS.ErrnoException).code === "ETIMEDOUT") {
-      return { name: spec.name, level, command: spec.command, status: "timeout", exitCode: null, durationMs, outputTail };
+      return { result: { name: spec.name, level, command: spec.command, status: "timeout", exitCode: null, durationMs, outputTail }, fullOutput: output };
     }
     if (proc.error) {
-      return {
+      return { result: {
         name: spec.name,
         level,
         command: spec.command,
@@ -176,9 +192,9 @@ function runOne(spec: EvaluatorSpec, level: 1 | 2 | 3, cwd: string): EvaluatorRe
         exitCode: null,
         durationMs,
         outputTail: proc.error.message,
-      };
+      }, fullOutput: `${output}${output && !output.endsWith("\n") ? "\n" : ""}${proc.error.message}` };
     }
-    return {
+    return { result: {
       name: spec.name,
       level,
       command: spec.command,
@@ -186,18 +202,57 @@ function runOne(spec: EvaluatorSpec, level: 1 | 2 | 3, cwd: string): EvaluatorRe
       exitCode: proc.status,
       durationMs,
       outputTail,
-    };
+    }, fullOutput: output };
   } catch (err) {
-    return {
+    const message = (err as Error).message;
+    return { result: {
       name: spec.name,
       level,
       command: spec.command,
       status: "error",
       exitCode: null,
       durationMs: Date.now() - started,
-      outputTail: (err as Error).message,
-    };
+      outputTail: message,
+    }, fullOutput: message };
   }
+}
+
+function persistEvaluatorEvidence(
+  cwd: string,
+  evidenceDir: string,
+  result: EvaluatorResult,
+  fullOutput: string,
+): EvaluatorResult {
+  fs.mkdirSync(evidenceDir, { recursive: true });
+  const file = evaluatorEvidenceFile(cwd, evidenceDir, result);
+  const content = redactEvidenceSecrets([
+    `name: ${result.name}`,
+    `level: ${result.level}`,
+    `command: ${result.command}`,
+    `status: ${result.status}`,
+    `exit_code: ${result.exitCode ?? "null"}`,
+    `duration_ms: ${result.durationMs}`,
+    "",
+    "--- output ---",
+    fullOutput.trimEnd(),
+  ].join("\n"));
+  fs.writeFileSync(file, `${content.trimEnd()}\n`, "utf8");
+  return { ...result, evidencePath: relativeEvidencePath(cwd, file) };
+}
+
+function evaluatorEvidenceFile(cwd: string, evidenceDir: string, result: EvaluatorResult): string {
+  const safeName = result.name.replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "") || "evaluation";
+  return path.resolve(cwd, evidenceDir, `L${result.level}-${safeName}.log`);
+}
+
+function relativeEvidencePath(cwd: string, file: string): string {
+  return path.relative(cwd, file).split(path.sep).join("/");
+}
+
+function redactEvidenceSecrets(value: string): string {
+  return value
+    .replace(/((?:api[_-]?key|access[_-]?token|auth[_-]?token|password|authorization)\s*[:=]\s*)([^\s]+)/gi, "$1***masked***")
+    .replace(/\b(?:sk-[a-z0-9_-]{8,}|gh[pousr]_[a-z0-9]{8,})\b/gi, "***masked***");
 }
 
 export function formatEvaluatorResults(results: EvaluatorResult[]): string {
@@ -211,6 +266,7 @@ export function formatEvaluatorResults(results: EvaluatorResult[]): string {
       const tail = r.outputTail.trim().split("\n").slice(-10).join("\n    ");
       lines.push(`    ${tail}`);
     }
+    if (r.evidencePath) lines.push(`    evidence: ${r.evidencePath}`);
   }
   const failed = results.filter((r) => r.status !== "pass" && r.status !== "skipped");
   lines.push(failed.length === 0 ? "  => ALL PASS" : `  => ${failed.length} FAILING`);

@@ -74,7 +74,7 @@ export function buildAgentGuide(
       "Do not continue after repeated failure without new evidence, no-progress, or an exhausted attempt, turn, or time budget.",
       "Never self-approve risk or final product judgment.",
       "Preserve repository-native instructions and avoid a second source of truth.",
-      "Load optional capability skills only when named in execution_plan.capabilityCalls.",
+      "Invoke an external provider only when execution_plan.capabilityCalls names it and doctor plus the host session confirm it is installed and active; never auto-install or emulate it.",
     ],
     execution_plan: buildExecutionPlan(config, task),
   };

@@ -17,6 +17,18 @@ describe("BASS event log", () => {
     expect(result.warnings).toEqual(["truncated final event line 2 ignored"]);
   });
 
+  it("이벤트 summary의 일반적인 비밀 값은 저장 전에 마스킹한다", () => {
+    const root = makeTempProject({});
+    const event = appendEvent(root, {
+      task_id: "EVENT-109",
+      kind: "evidence.recorded",
+      status: "pass",
+      summary: "API_KEY=secret-value authorization: Bearer-token",
+    });
+    expect(event.summary).toBe("API_KEY=***masked*** authorization: ***masked***");
+    expect(fs.readFileSync(path.join(root, ".bass", "events.jsonl"), "utf8")).not.toContain("secret-value");
+  });
+
   it("열린 시도 start는 멱등하고 Fast 실패는 시도 예산에서 NEEDS_EXPERT로 전환한다", () => {
     const { root, task, plan } = activeTask("EVENT-102", "low");
     expect(startAttempt({ projectRoot: root, task, plan }).changed).toBe(true);
@@ -45,6 +57,30 @@ describe("BASS event log", () => {
     const result = finishAttempt({ projectRoot: root, task: parseTaskFile(task.filePath), plan, result: "fail", summary: "same", failureFingerprint: "same-failure" });
     expect(result.blocked).toBe(false);
     expect(parseTaskFile(task.filePath).frontmatter.status).toBe("ACTIVE");
+  });
+
+  it("자동 evaluator log는 새 진단 evidence로 보지 않아 동일 실패를 차단한다", () => {
+    const { root, task, plan } = activeTask("EVENT-108", "medium", { max_attempts: 3 });
+    startAttempt({ projectRoot: root, task, plan });
+    finishAttempt({ projectRoot: root, task, plan, result: "fail", summary: "same", failureFingerprint: "same-failure" });
+    startAttempt({ projectRoot: root, task: parseTaskFile(task.filePath), plan });
+    appendEvent(root, {
+      task_id: task.frontmatter.id,
+      attempt: 2,
+      kind: "evidence.recorded",
+      status: "pass",
+      name: "evaluation-log:test",
+      summary: "routine evaluator output recorded",
+    });
+    const result = finishAttempt({
+      projectRoot: root,
+      task: parseTaskFile(task.filePath),
+      plan,
+      result: "fail",
+      summary: "same",
+      failureFingerprint: "same-failure",
+    });
+    expect(result.reason).toBe("same failure repeated without new evidence");
   });
 
   it("보고된 누적 턴이 상한을 넘으면 추가 루프를 차단한다", () => {
