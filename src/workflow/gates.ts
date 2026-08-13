@@ -1,11 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { GateCheck, GateReport } from "../types.js";
-import { checkSections, countActiveTasks, TASK_SECTIONS, type TaskFile } from "../task/taskFile.js";
-import { loadRunRecord } from "../task/runRecord.js";
+import { spawnSync } from "node:child_process";
+import type { ExecutionPlan, GateCheck, GateReport } from "../types.js";
+import { checkSections, countActiveTasks, listTasks, TASK_SECTIONS, type TaskFile } from "../task/taskFile.js";
+import { loadRunRecord, verifyContextSources, verifyEvidenceEntries } from "../task/runRecord.js";
 import { findRequiredApprovals } from "../policy/policyEngine.js";
 import { loadRiskApprovals } from "../task/approvalRecord.js";
 import { normalizeWorkflowState } from "./stateMachine.js";
+import { buildTaskGraph } from "../task/taskGraph.js";
+import { inferChangedSurfaces } from "../execution/planner.js";
+import { readEvents } from "../task/events.js";
 
 /** CAPTURED 상태에서 ACTIVE로 들어가기 전에 필요한 최소 작업 계약. */
 const CAPTURED_SECTIONS = [
@@ -21,6 +25,7 @@ const CAPTURED_SECTIONS = [
 export interface GateContext {
   projectRoot: string;
   effective: Record<string, unknown>;
+  executionPlan?: ExecutionPlan;
 }
 
 /**
@@ -58,13 +63,28 @@ export function preTaskGate(task: TaskFile, ctx: GateContext): GateReport {
     }
   }
 
+  const graph = buildTaskGraph(listTasks(ctx.projectRoot));
+  const graphIssues = graph.issues.filter((issue) => issue.taskIds.includes(fm.id));
+  const graphNode = graph.nodes.find((node) => node.id === fm.id);
+  checks.push({
+    id: "task-graph",
+    description: "task dependency와 owned path 계약이 유효하다",
+    status: graphIssues.length === 0 && (graphNode?.blockedBy.length ?? 0) === 0 ? "pass" : "fail",
+    detail: graphIssues.length > 0
+      ? graphIssues.map((issue) => issue.detail).join("; ")
+      : graphNode?.blockedBy.length
+        ? `blocked by: ${graphNode.blockedBy.join(", ")}`
+        : undefined,
+  });
+
   const workflow = (ctx.effective["workflow"] ?? {}) as Record<string, unknown>;
-  const maxActive = Number(workflow["max_active_tasks"] ?? 1);
+  const maxActive = ctx.executionPlan?.parallel.maxAgents ?? Number(workflow["max_active_tasks"] ?? 1);
   const active = countActiveTasks(ctx.projectRoot);
+  const alreadyActive = normalizeWorkflowState(fm.status) === "ACTIVE";
   checks.push({
     id: "active-task-limit",
     description: `동시 활성 작업 수 제한 (max ${maxActive})`,
-    status: active <= maxActive ? "pass" : "fail",
+    status: (alreadyActive ? active <= maxActive : active < maxActive) ? "pass" : "fail",
     detail: `active tasks: ${active}`,
   });
 
@@ -143,7 +163,7 @@ export function preCompleteGate(task: TaskFile, ctx: GateContext): GateReport {
   }
   checks.push({ id: "run-record", description: "run record 존재 및 스키마 유효", status: "pass" });
 
-  const failed = record.verification.evaluations_run.filter((e) => e.status === "fail" || e.status === "error");
+  const failed = record.verification.evaluations_run.filter((e) => e.status === "fail" || e.status === "error" || e.status === "timeout");
   checks.push({
     id: "evaluations",
     description: "요구된 검증 통과",
@@ -155,6 +175,74 @@ export function preCompleteGate(task: TaskFile, ctx: GateContext): GateReport {
           ? `failing: ${failed.map((f) => f.name).join(", ")}`
           : undefined,
   });
+
+  if (record.record_version >= 1) {
+    const evidenceIssues = verifyEvidenceEntries(ctx.projectRoot, fm.id, record.evidence);
+    const requiredEvidence = fm.loop.required_evidence;
+    const missingEvidence = requiredEvidence.filter((kind) => !record.evidence.some((entry) => entry.kind === kind));
+    checks.push({
+      id: "evidence-manifest",
+      description: "evidence 경로와 SHA-256이 유효하고 필수 종류가 존재한다",
+      status: evidenceIssues.length === 0 && missingEvidence.length === 0 ? "pass" : "fail",
+      detail: [...evidenceIssues, ...missingEvidence.map((kind) => `missing kind: ${kind}`)].join("; ") || undefined,
+    });
+
+    const contextIssues = verifyContextSources(ctx.projectRoot, record.context.sources);
+    checks.push({
+      id: "context-freshness",
+      description: "사용한 컨텍스트가 실행 후 변경되지 않았다",
+      status: contextIssues.length === 0 ? "pass" : "fail",
+      detail: contextIssues.join("; ") || undefined,
+    });
+
+    const scope = evaluateScope(task, record.files_changed, record.scope.actual_files, gitChangedFiles(ctx.projectRoot));
+    checks.push({
+      id: "scope-diff",
+      description: "실제 변경이 run record와 Allowed/Forbidden scope에 일치한다",
+      status: scope.issues.length === 0
+        && record.scope.outside_allowed.length === 0
+        && record.scope.forbidden_touched.length === 0
+        ? "pass"
+        : "fail",
+      detail: [
+        ...scope.issues,
+        ...record.scope.outside_allowed.map((file) => `recorded outside allowed: ${file}`),
+        ...record.scope.forbidden_touched.map((file) => `recorded forbidden: ${file}`),
+      ].join("; ") || undefined,
+    });
+
+    const eventAttempts = readEvents(ctx.projectRoot).events.filter(
+      (event) => event.task_id === fm.id && event.kind === "attempt.started",
+    ).length;
+    const attemptsMatch = eventAttempts === 0 || eventAttempts === record.attempts.length;
+    const latestAttempt = record.attempts.at(-1);
+    const maxAttempts = ctx.executionPlan?.loop.maxAttempts ?? fm.loop.max_attempts ?? Number.POSITIVE_INFINITY;
+    checks.push({
+      id: "attempt-lineage",
+      description: "시도 이력과 최종 결과가 일관되고 예산 이내다",
+      status: record.attempts.length > 0
+        && attemptsMatch
+        && record.attempts.length <= maxAttempts
+        && latestAttempt?.status === "pass"
+        ? "pass"
+        : "fail",
+      detail: !attemptsMatch
+        ? `events=${eventAttempts}, record=${record.attempts.length}`
+        : latestAttempt && latestAttempt.status !== "pass"
+          ? `latest attempt status: ${latestAttempt.status}`
+          : undefined,
+    });
+
+    const missingModelReasons = record.models_used.filter(
+      (model) => model.followed_recommendation === false && !model.reason?.trim(),
+    );
+    checks.push({
+      id: "model-deviation-reasons",
+      description: "모델 라우팅 권고를 벗어난 경우 이유가 기록됨",
+      status: missingModelReasons.length === 0 ? "pass" : "fail",
+      detail: missingModelReasons.map((model) => model.role).join(", ") || undefined,
+    });
+  }
 
   if (record.verification.not_verified.length > 0) {
     checks.push({
@@ -198,9 +286,29 @@ export function preCompleteGate(task: TaskFile, ctx: GateContext): GateReport {
     status: record.rollback.method.trim().length > 0 ? "pass" : "fail",
   });
 
-  // Design Profile 활성 시: 렌더링 검증 여부 기록 강제 (검증 자체가 아니라 "기록"을 강제)
+  // Material UI는 실제 렌더링·viewport·console·evidence를 요구한다.
   const designProfile = Boolean(ctx.effective["design_profile"]);
-  if (designProfile) {
+  const materialUi = inferChangedSurfaces(task).includes("ui");
+  if (record.record_version >= 1 && materialUi) {
+    const design = record.design;
+    const evidencePaths = new Set(record.evidence.map((entry) => entry.path));
+    const missingPaths = design?.evidence_paths.filter((evidencePath) => !evidencePaths.has(evidencePath)) ?? [];
+    const valid = Boolean(
+      design?.rendered_verification
+      && design.evidence_paths.length > 0
+      && design.viewports.length > 0
+      && design.console_errors === 0
+      && missingPaths.length === 0,
+    );
+    checks.push({
+      id: "design-rendered-verification",
+      description: "material UI의 screenshot, viewport, console evidence가 유효하다",
+      status: valid ? "pass" : "fail",
+      detail: valid
+        ? `${design!.viewports.join(", ")}; evidence=${design!.evidence_paths.length}; console_errors=0`
+        : `rendered=${design?.rendered_verification ?? false}; evidence=${design?.evidence_paths.length ?? 0}; viewports=${design?.viewports.length ?? 0}; console_errors=${design?.console_errors ?? "missing"}${missingPaths.length ? `; unlisted=${missingPaths.join(",")}` : ""}`,
+    });
+  } else if (record.record_version === 0 && designProfile) {
     checks.push({
       id: "design-rendered-verification",
       description: "렌더링 검증 수행 여부가 기록됨 (Design 프롬프트 §12)",
@@ -232,6 +340,69 @@ export function preCompleteGate(task: TaskFile, ctx: GateContext): GateReport {
   });
 
   return buildReport("pre-complete", fm.id, checks, []);
+}
+
+function evaluateScope(
+  task: TaskFile,
+  recordedFiles: string[],
+  actualFiles: string[],
+  gitFiles: string[] | null,
+): { issues: string[] } {
+  const allowed = scopePaths(task.sections.get("Allowed scope") ?? "");
+  const forbidden = scopePaths(task.sections.get("Forbidden scope") ?? "");
+  const recorded = uniquePaths(recordedFiles);
+  const actual = uniquePaths(actualFiles);
+  const issues: string[] = [];
+  if (allowed.length === 0) issues.push("Allowed scope has no literal project-relative paths");
+  if (!samePaths(recorded, actual)) issues.push(`files_changed and scope.actual_files differ`);
+  for (const file of actual) {
+    if (allowed.length > 0 && !allowed.some((scope) => pathMatches(file, scope))) issues.push(`outside allowed scope: ${file}`);
+    if (forbidden.some((scope) => pathMatches(file, scope))) issues.push(`forbidden scope touched: ${file}`);
+  }
+  if (gitFiles && gitFiles.length > 0) {
+    for (const file of gitFiles.filter((item) => !item.startsWith(".bass/"))) {
+      if (!actual.includes(file)) issues.push(`unrecorded git change: ${file}`);
+    }
+  }
+  return { issues };
+}
+
+function scopePaths(value: string): string[] {
+  return value
+    .split(/[\r\n,]/)
+    .map((line) => line.trim().replace(/^[-*]\s*/, "").replace(/^`|`$/g, ""))
+    .filter((line) => line.length > 0 && !path.isAbsolute(line) && !line.replace(/\\/g, "/").split("/").includes(".."))
+    .filter((line) => line.startsWith(".") || line.includes("/") || /\.[a-z0-9]{1,8}$/i.test(line))
+    .map(normalizePath);
+}
+
+function pathMatches(file: string, scope: string): boolean {
+  return scope === "" || file === scope || file.startsWith(`${scope}/`);
+}
+
+function uniquePaths(values: string[]): string[] {
+  return [...new Set(values.map(normalizePath).filter(Boolean))].sort();
+}
+
+function normalizePath(value: string): string {
+  const normalized = value.replace(/\\/g, "/").replace(/^\.\//, "").replace(/\/+$/, "");
+  return normalized === "." ? "" : normalized;
+}
+
+function samePaths(left: string[], right: string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function gitChangedFiles(projectRoot: string): string[] | null {
+  const result = spawnSync("git", ["status", "--porcelain=v1", "-z"], { cwd: projectRoot, encoding: "utf8" });
+  if (result.status !== 0) return null;
+  return result.stdout
+    .split("\0")
+    .filter(Boolean)
+    .map((line) => line.slice(3).split(" -> ").at(-1) ?? "")
+    .filter(Boolean)
+    .map(normalizePath)
+    .sort();
 }
 
 function buildReport(

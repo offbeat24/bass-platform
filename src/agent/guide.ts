@@ -67,8 +67,11 @@ export function buildAgentGuide(
       "Operate BASS internally; never ask the user to run commands or edit records.",
       "Inspect repository facts yourself; ask only for product or risk decisions.",
       "Implement the smallest accepted change and obey execution_plan.scopeLock.",
+      "Wrap implementation and verification in task attempt start/finish; stop at execution_plan.loop limits or stopWhen conditions.",
       "Run each planned affected check once; reuse a passing result while its diff fingerprint is unchanged.",
       "Retry only failed and directly affected checks, within maxReworkLoops.",
+      "Store full logs as evidence files; put only summaries and necessary excerpts in prompts and events.",
+      "Do not continue after repeated failure without new evidence, no-progress, or an exhausted attempt, turn, or time budget.",
       "Never self-approve risk or final product judgment.",
       "Preserve repository-native instructions and avoid a second source of truth.",
       "Load optional capability skills only when named in execution_plan.capabilityCalls.",
@@ -111,7 +114,7 @@ function suggestedNextActions(
   const canonical = normalizeWorkflowState(status as TaskFile["frontmatter"]["status"]);
   const actions: Record<string, string[]> = {
     CAPTURED: ["Lock scope and acceptance criteria, then move to ACTIVE."],
-    ACTIVE: ["Implement the smallest change and run only the planned affected checks."],
+    ACTIVE: ["Start one bounded attempt, implement the smallest change, and run only the planned affected checks."],
     REVIEW: ["Show the result, evidence, limitations, and product judgment once."],
     DONE: ["Do not repeat completed side effects. Start a new task only for a materially new request."],
     BLOCKED: ["Explain the concrete blocker and resume only from the first incomplete step."],

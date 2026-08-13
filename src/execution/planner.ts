@@ -24,6 +24,7 @@ export function buildExecutionPlan(config: LoadedConfig, task?: TaskFile): Execu
   const critics = relevantCritics(configuredCritics, changedSurfaces)
     .filter((critic) => !(capabilities.simplicity === "ponytail" && critic === "simplicity"))
     .slice(0, criticLimit);
+  const loop = loopBudget(config, task, depth);
 
   return {
     taskKind,
@@ -33,7 +34,37 @@ export function buildExecutionPlan(config: LoadedConfig, task?: TaskFile): Execu
     verificationLevels,
     critics,
     capabilityCalls: capabilityCalls(config, task, depth, changedSurfaces),
-    maxReworkLoops: depth === "hardened" ? 2 : 1,
+    loop,
+    parallel: {
+      maxAgents: depth === "hardened" && (task?.frontmatter.coordination.owned_paths.length ?? 0) > 0
+        ? config.bassYaml.execution.parallel.max_agents
+        : 1,
+    },
+    maxReworkLoops: Math.max(0, loop.maxAttempts - 1),
+  };
+}
+
+function loopBudget(
+  config: LoadedConfig,
+  task: TaskFile | undefined,
+  depth: ExecutionDepth,
+): ExecutionPlan["loop"] {
+  const defaults = depth === "fast"
+    ? { maxTurns: 4, maxAttempts: 1, maxMinutes: 15 }
+    : depth === "standard"
+      ? { maxTurns: 8, maxAttempts: 2, maxMinutes: 30 }
+      : { maxTurns: 12, maxAttempts: 3, maxMinutes: 60 };
+  const project = config.bassYaml.execution.loop;
+  const taskLoop = task?.frontmatter.loop;
+  return {
+    maxTurns: taskLoop?.max_turns ?? project.max_turns ?? defaults.maxTurns,
+    maxAttempts: taskLoop?.max_attempts ?? project.max_attempts ?? defaults.maxAttempts,
+    maxMinutes: taskLoop?.max_minutes ?? project.max_minutes ?? defaults.maxMinutes,
+    noProgressLimit: taskLoop?.no_progress_limit ?? project.no_progress_limit,
+    stopWhen: taskLoop?.stop_when.length
+      ? taskLoop.stop_when
+      : ["acceptance criteria pass", "required evaluators pass", "no open high/medium findings"],
+    requiredEvidence: taskLoop?.required_evidence ?? [],
   };
 }
 
@@ -68,7 +99,7 @@ function resolveDepth(
   return "standard";
 }
 
-function inferChangedSurfaces(task?: TaskFile): string[] {
+export function inferChangedSurfaces(task?: TaskFile): string[] {
   if (!task) return [];
   const configured = task.frontmatter.config?.["changed_surfaces"];
   if (Array.isArray(configured)) return unique(configured.map(String).map(normalizeSurface).filter(Boolean));

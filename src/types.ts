@@ -34,6 +34,18 @@ export interface ExecutionPlan {
   verificationLevels: Array<1 | 2 | 3>;
   critics: string[];
   capabilityCalls: string[];
+  loop: {
+    maxTurns: number;
+    maxAttempts: number;
+    maxMinutes: number;
+    noProgressLimit: number;
+    stopWhen: string[];
+    requiredEvidence: string[];
+  };
+  parallel: {
+    maxAgents: number;
+  };
+  /** 0.3 host compatibility. Derived from loop.maxAttempts - 1. */
   maxReworkLoops: number;
 }
 

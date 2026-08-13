@@ -36,6 +36,15 @@ export function writeTask(
     capabilities?: string[];
     taskType?: string;
     config?: Record<string, unknown>;
+    coordination?: { parent_task?: string | null; depends_on?: string[]; owned_paths?: string[] };
+    loop?: {
+      stop_when?: string[];
+      required_evidence?: string[];
+      max_turns?: number;
+      max_attempts?: number;
+      max_minutes?: number;
+      no_progress_limit?: number;
+    };
   } = {},
 ): string {
   const sections: Record<string, string> = {
@@ -68,6 +77,8 @@ risk:
 ${opts.models ? `models:\n${Object.entries(opts.models).map(([k, v]) => `  ${k}: ${v}`).join("\n")}` : ""}
 ${opts.capabilities ? `capabilities: [${opts.capabilities.join(", ")}]` : ""}
 ${opts.config ? `config:\n${Object.entries(opts.config).map(([key, value]) => `  ${key}: ${JSON.stringify(value)}`).join("\n")}` : ""}
+${opts.coordination ? `coordination:\n  parent_task: ${opts.coordination.parent_task ?? "null"}\n  depends_on: ${JSON.stringify(opts.coordination.depends_on ?? [])}\n  owned_paths: ${JSON.stringify(opts.coordination.owned_paths ?? [])}` : ""}
+${opts.loop && Object.keys(opts.loop).length > 0 ? `loop:\n${Object.entries(opts.loop).map(([key, value]) => `  ${key}: ${JSON.stringify(value)}`).join("\n")}` : ""}
 human:
   owner: user
   reviewer_required: true
@@ -84,6 +95,7 @@ ${body}
 
 export function writeRunRecord(projectRoot: string, taskId: string, overrides: Record<string, unknown> = {}): string {
   const record = {
+    record_version: 1,
     task_id: taskId,
     summary_of_changes: "변경 요약",
     why: "변경 이유",
@@ -99,6 +111,21 @@ export function writeRunRecord(projectRoot: string, taskId: string, overrides: R
     docs_updated: { needed: false, updated: [] },
     lessons: { recorded: false, candidates: [] },
     rollback: { method: "git revert" },
+    attempts: [{ attempt: 1, status: "pass", started_at: "2026-07-21T00:00:00Z", completed_at: "2026-07-21T00:01:00Z" }],
+    evidence: [],
+    context: { sources: [], total_chars: 0, omitted: [] },
+    usage: {
+      turns: "unknown",
+      attempts: 1,
+      input_tokens: "unknown",
+      output_tokens: "unknown",
+      cached_input_tokens: "unknown",
+      evaluator_tokens: "unknown",
+      tool_calls: "unknown",
+      subagents: 0,
+      estimated_cost: "unknown",
+    },
+    scope: { actual_files: ["src/a.ts"], outside_allowed: [], forbidden_touched: [] },
     ...overrides,
   };
   const dir = path.join(projectRoot, ".bass", "records");

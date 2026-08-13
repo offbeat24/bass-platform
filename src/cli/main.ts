@@ -28,6 +28,9 @@ import { formatUpgradePlan, upgradeProject } from "../project/upgrade.js";
 import { normalizeWorkflowState } from "../workflow/stateMachine.js";
 import { getRuntime, parseRuntimeTargets, runtimeCatalog } from "../runtime/catalog.js";
 import { recommendRuntimes } from "../runtime/recommendation.js";
+import { buildTaskGraph, formatTaskGraph } from "../task/taskGraph.js";
+import { appendEvent, currentAttempt, EVENT_KINDS, EVENT_STATUSES, finishAttempt, readEvents, startAttempt } from "../task/events.js";
+import { buildProjectStatus, formatProjectStatus } from "../task/status.js";
 
 const program = new Command();
 program
@@ -178,6 +181,56 @@ program
 // ---------- task ----------
 const taskCmd = program.command("task").description("작업 명세 관리");
 taskCmd
+  .command("graph")
+  .description("작업 의존성, ready 상태, owned path 충돌 검사")
+  .option("--json", "기계 판독 JSON 출력", false)
+  .action((opts) => {
+    const { projectRoot } = requireProject();
+    const graph = buildTaskGraph(listTasks(projectRoot));
+    console.log(opts.json ? JSON.stringify(graph, null, 2) : formatTaskGraph(graph));
+    process.exit(graph.valid ? 0 : 1);
+  });
+const attemptCmd = taskCmd.command("attempt").description("bounded 구현·검증 시도 관리");
+attemptCmd
+  .command("start <taskId>")
+  .option("--parent <attempt>", "부모 시도 번호")
+  .option("--json", "기계 판독 JSON 출력", false)
+  .action((taskId, opts) => {
+    const { projectRoot, config } = requireProject();
+    const task = findTask(projectRoot, taskId);
+    const result = startAttempt({
+      projectRoot,
+      task,
+      plan: buildExecutionPlan(config, task),
+      ...(opts.parent ? { parentAttempt: Number(opts.parent) } : {}),
+    });
+    console.log(opts.json ? JSON.stringify(result, null, 2) : `${result.changed ? "started" : "unchanged"}: ${taskId} attempt=${result.attempt}${result.reason ? ` (${result.reason})` : ""}`);
+    if (result.blocked) process.exitCode = 1;
+  });
+attemptCmd
+  .command("finish <taskId>")
+  .requiredOption("--result <result>", "pass | fail | no-progress")
+  .requiredOption("--summary <summary>", "한 줄 결과 요약")
+  .option("--fingerprint <fingerprint>", "실패 지문")
+  .option("--turns <turns>", "이번 시도에서 호스트가 보고한 turn 수")
+  .option("--json", "기계 판독 JSON 출력", false)
+  .action((taskId, opts) => {
+    if (!["pass", "fail", "no-progress"].includes(String(opts.result))) throw new Error("--result must be pass, fail, or no-progress");
+    const { projectRoot, config } = requireProject();
+    const task = findTask(projectRoot, taskId);
+    const result = finishAttempt({
+      projectRoot,
+      task,
+      plan: buildExecutionPlan(config, task),
+      result: opts.result,
+      summary: String(opts.summary),
+      ...(opts.fingerprint ? { failureFingerprint: String(opts.fingerprint) } : {}),
+      ...(opts.turns !== undefined ? { turns: Number(opts.turns) } : {}),
+    });
+    console.log(opts.json ? JSON.stringify(result, null, 2) : `finished: ${taskId} attempt=${result.attempt}${result.reason ? `; blocked=${result.reason}` : ""}`);
+    if (result.blocked) process.exitCode = 1;
+  });
+taskCmd
   .command("new <taskId>")
   .description("에이전트가 표준 작업 파일을 멱등하게 준비")
   .requiredOption("--title <title>")
@@ -227,14 +280,76 @@ taskCmd
       console.log(`unchanged: ${taskId} is already DONE`);
       return;
     }
-    const report = preCompleteGate(task, { projectRoot, effective: config.effective });
+    const report = preCompleteGate(task, { projectRoot, effective: config.effective, executionPlan: buildExecutionPlan(config, task) });
     console.log(formatGateReport(report));
     if (!report.passed) {
       process.exitCode = 1;
       return;
     }
     const result = transitionTask(projectRoot, taskId, "DONE");
+    if (result.changed) {
+      appendEvent(projectRoot, { task_id: taskId, kind: "task.completed", status: "pass", summary: "task finalized as DONE" });
+    }
     console.log(`${result.changed ? "updated" : "unchanged"}: ${taskId} -> DONE`);
+  });
+
+// ---------- event / status ----------
+const eventCmd = program.command("event").description("구조화된 BASS 활동 이벤트 기록");
+eventCmd
+  .command("append <taskId> <kind>")
+  .requiredOption("--summary <summary>", "한 줄 요약; transcript와 비밀정보 금지")
+  .option("--status <status>", "pass | fail | skipped | error")
+  .option("--name <name>", "evaluator, critic, evidence 이름")
+  .option("--attempt <attempt>", "관련 시도 번호")
+  .action((taskId, kind, opts) => {
+    const allowed = new Set(["evaluation.completed", "critic.completed", "evidence.recorded"]);
+    if (!allowed.has(String(kind))) throw new Error(`event append accepts only: ${[...allowed].join(", ")}`);
+    if (!EVENT_KINDS.includes(kind)) throw new Error(`invalid event kind: ${kind}`);
+    if (opts.status && !EVENT_STATUSES.includes(opts.status)) throw new Error(`invalid event status: ${opts.status}`);
+    const { projectRoot } = requireProject();
+    findTask(projectRoot, taskId);
+    const openAttempt = currentAttempt(readEvents(projectRoot).events, taskId);
+    const event = appendEvent(projectRoot, {
+      task_id: taskId,
+      kind,
+      summary: String(opts.summary),
+      ...(opts.status ? { status: opts.status } : {}),
+      ...(opts.name ? { name: String(opts.name) } : {}),
+      ...(opts.attempt ? { attempt: Number(opts.attempt) } : openAttempt ? { attempt: openAttempt } : {}),
+    });
+    console.log(JSON.stringify(event));
+  });
+
+program
+  .command("status")
+  .description("작업, 시도, 검증, evidence, 비용 상태 표시")
+  .option("--json", "기계 판독 JSON 출력", false)
+  .option("--watch", "변경된 상태를 1초 간격으로 출력", false)
+  .action(async (opts) => {
+    const { projectRoot, config } = requireProject();
+    const print = (): string => {
+      const status = buildProjectStatus(projectRoot, config);
+      const output = opts.json ? JSON.stringify(status) : formatProjectStatus(status);
+      console.log(output);
+      return JSON.stringify({ ...status, generated_at: "" });
+    };
+    let previous = print();
+    if (!opts.watch) return;
+    await new Promise<void>((resolve) => {
+      const timer = setInterval(() => {
+        const status = buildProjectStatus(projectRoot, config);
+        const fingerprint = JSON.stringify({ ...status, generated_at: "" });
+        if (fingerprint === previous) return;
+        previous = fingerprint;
+        console.log(opts.json ? JSON.stringify(status) : formatProjectStatus(status));
+      }, 1_000);
+      const stop = (): void => {
+        clearInterval(timer);
+        process.off("SIGINT", stop);
+        resolve();
+      };
+      process.once("SIGINT", stop);
+    });
   });
 taskCmd
   .command("validate [taskId]")
@@ -271,7 +386,7 @@ gateCmd
   .action((taskId) => {
     const { projectRoot, config } = requireProject();
     const task = findTask(projectRoot, taskId);
-    const report = preTaskGate(task, { projectRoot, effective: config.effective });
+    const report = preTaskGate(task, { projectRoot, effective: config.effective, executionPlan: buildExecutionPlan(config, task) });
     console.log(formatGateReport(report));
     process.exit(report.passed ? 0 : 1);
   });
@@ -281,7 +396,7 @@ gateCmd
   .action((taskId) => {
     const { projectRoot, config } = requireProject();
     const task = findTask(projectRoot, taskId);
-    const report = preReviewGate(task, { projectRoot, effective: config.effective });
+    const report = preReviewGate(task, { projectRoot, effective: config.effective, executionPlan: buildExecutionPlan(config, task) });
     console.log(formatGateReport(report));
     process.exit(report.passed ? 0 : 1);
   });
@@ -291,7 +406,7 @@ gateCmd
   .action((taskId) => {
     const { projectRoot, config } = requireProject();
     const task = findTask(projectRoot, taskId);
-    const report = preCompleteGate(task, { projectRoot, effective: config.effective });
+    const report = preCompleteGate(task, { projectRoot, effective: config.effective, executionPlan: buildExecutionPlan(config, task) });
     console.log(formatGateReport(report));
     process.exit(report.passed ? 0 : 1);
   });
@@ -378,7 +493,8 @@ agentCmd
       console.log(`  task: ${guide.task.id} [${guide.task.status}] depth=${guide.task.workflow_depth}`);
       for (const action of guide.task.suggested_next_actions) console.log(`  next: ${action}`);
     }
-    console.log(`  execution: ${guide.execution_plan.taskKind}/${guide.execution_plan.depth}; levels=${guide.execution_plan.verificationLevels.join(",")}; loops<=${guide.execution_plan.maxReworkLoops}`);
+    const limits = guide.execution_plan.loop;
+    console.log(`  execution: ${guide.execution_plan.taskKind}/${guide.execution_plan.depth}; levels=${guide.execution_plan.verificationLevels.join(",")}; turns<=${limits.maxTurns}; attempts<=${limits.maxAttempts}; minutes<=${limits.maxMinutes}; agents<=${guide.execution_plan.parallel.maxAgents}`);
     for (const lock of guide.execution_plan.scopeLock) console.log(`  scope lock: ${lock}`);
   });
 
@@ -404,6 +520,20 @@ program
       ...(override ? { levels: override as Array<1 | 2 | 3> } : {}),
       reusePassing: true,
     });
+    if (task) {
+      const attempt = currentAttempt(readEvents(projectRoot).events, task.frontmatter.id);
+      for (const result of results) {
+        appendEvent(projectRoot, {
+          task_id: task.frontmatter.id,
+          ...(attempt ? { attempt } : {}),
+          kind: "evaluation.completed",
+          status: result.status === "timeout" ? "error" : result.status,
+          name: result.name,
+          summary: `${result.name} ${result.status}`,
+          duration_ms: result.durationMs,
+        });
+      }
+    }
     console.log(formatEvaluatorResults(results));
     process.exit(results.some((r) => r.status === "fail" || r.status === "error" || r.status === "timeout") ? 1 : 0);
   });

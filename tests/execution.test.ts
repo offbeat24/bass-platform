@@ -9,7 +9,7 @@ import { makeTempProject, writeTask } from "./helpers.js";
 
 describe("ExecutionPlan", () => {
   it.each([
-    { id: "TAB-301", name: "delete", profiles: ["common"], taskType: "delete", risk: "low", surface: "src/pottery", depth: "fast", levels: [1], critics: 0, loops: 1 },
+    { id: "TAB-301", name: "delete", profiles: ["common"], taskType: "delete", risk: "low", surface: "src/pottery", depth: "fast", levels: [1], critics: 0, loops: 0 },
     { id: "TAB-302", name: "ui", profiles: ["common", "web"], taskType: "feature", risk: "medium", surface: "ui", depth: "standard", levels: [1, 2], critics: 1, loops: 1 },
     { id: "TAB-303", name: "game", profiles: ["game"], taskType: "feature", risk: "low", surface: "game", depth: "standard", levels: [1, 2], critics: 1, loops: 1 },
     { id: "TAB-304", name: "data", profiles: ["common"], taskType: "feature", risk: "medium", surface: "data", depth: "hardened", levels: [1, 2, 3], critics: 2, loops: 2 },
@@ -26,6 +26,7 @@ describe("ExecutionPlan", () => {
     expect(plan.verificationLevels).toEqual(levels);
     expect(plan.critics).toHaveLength(critics);
     expect(plan.maxReworkLoops).toBe(loops);
+    expect(plan.loop.maxAttempts).toBe(loops + 1);
   });
 
   it("Pottery 삭제는 Fast 한 task에 잠기고 critic이나 인접 개선을 만들지 않는다", () => {
@@ -45,9 +46,20 @@ describe("ExecutionPlan", () => {
     expect(plan.depth).toBe("fast");
     expect(plan.verificationLevels).toEqual([1]);
     expect(plan.critics).toEqual([]);
-    expect(plan.maxReworkLoops).toBe(1);
+    expect(plan.maxReworkLoops).toBe(0);
+    expect(plan.loop).toMatchObject({ maxTurns: 4, maxAttempts: 1, maxMinutes: 15, noProgressLimit: 1 });
     expect(plan.scopeLock.join(" ")).toContain("Do not add adjacent features");
     expect(plan.capabilityCalls).toEqual(["ponytail:lite"]);
+  });
+
+  it("task loop 예산은 깊이 기본값을 명시적으로 덮어쓴다", () => {
+    const root = makeTempProject({ profiles: ["common"] });
+    const task = parseTaskFile(writeTask(root, "TAB-306", {
+      riskLevel: "low",
+      loop: { max_turns: 3, max_attempts: 2, max_minutes: 10, no_progress_limit: 2, required_evidence: ["test-output"] },
+    }));
+    const plan = buildExecutionPlan(loadConfig({ projectRoot: root }), task);
+    expect(plan.loop).toMatchObject({ maxTurns: 3, maxAttempts: 2, maxMinutes: 10, noProgressLimit: 2, requiredEvidence: ["test-output"] });
   });
 
   it("일반 game prototype은 Standard이고 critic과 재작업은 각각 최대 1회", () => {
@@ -73,6 +85,18 @@ describe("ExecutionPlan", () => {
     expect(plan.capabilityCalls).toEqual(["ouroboros:seed", "ouroboros:semantic-evaluation"]);
     expect(plan.critics.length).toBeLessThanOrEqual(2);
     expect(plan.maxReworkLoops).toBe(2);
+    expect(plan.parallel.maxAgents).toBe(1);
+  });
+
+  it("Hardened 작업도 owned_paths가 있어야만 기본 최대 2개 병렬 실행을 허용한다", () => {
+    const root = makeTempProject({ profiles: ["common"] });
+    const task = parseTaskFile(writeTask(root, "API-307", {
+      riskLevel: "high",
+      coordination: { owned_paths: ["src/api"] },
+    }));
+    const plan = buildExecutionPlan(loadConfig({ projectRoot: root }), task);
+    expect(plan.depth).toBe("hardened");
+    expect(plan.parallel.maxAgents).toBe(2);
   });
 
   it("UI Direction, Pen, HTML report는 작업이 명시적으로 요청한 경우에만 로드한다", () => {

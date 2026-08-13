@@ -34,6 +34,7 @@ describe("bass create (새 프로젝트 자동 연결)", () => {
     expect(fs.existsSync(path.join(projectRoot, "PRODUCT.md"))).toBe(true);
     expect(fs.existsSync(path.join(projectRoot, "TECH.md"))).toBe(true);
     expect(fs.existsSync(path.join(projectRoot, "DESIGN.md"))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, ".bass", "events.jsonl"))).toBe(true);
   });
 
   it("내용이 있는 폴더는 보존하고 bass init 사용을 안내한다", () => {

@@ -6,6 +6,11 @@ import { loadConfig } from "../src/config/loader.js";
 import { makeTempProject, writeTask, writeRunRecord } from "./helpers.js";
 import { recordRiskApproval } from "../src/task/approvalRecord.js";
 import { recordFinalApproval } from "../src/task/runRecord.js";
+import { evidenceEntryForFile } from "../src/task/runRecord.js";
+import fs from "node:fs";
+import path from "node:path";
+import { createHash } from "node:crypto";
+import { spawnSync } from "node:child_process";
 
 describe("워크플로 상태 머신", () => {
   it("정상 전이: 표준 경로를 따른다", () => {
@@ -100,6 +105,21 @@ describe("pre-task 게이트", () => {
     const report = preTaskGate(task, { projectRoot: root, effective });
     expect(report.passed).toBe(true);
   });
+
+  it("누락 dependency와 독립 작업의 owned path 충돌을 차단", () => {
+    const root = makeTempProject({});
+    writeTask(root, "T-101", {
+      coordination: { depends_on: ["MISSING-999"], owned_paths: ["src/shared"] },
+    });
+    const file = writeTask(root, "T-102", {
+      coordination: { owned_paths: ["src/shared/component.ts"] },
+    });
+    const config = loadConfig({ projectRoot: root });
+    const report = preTaskGate(parseTaskFile(file), { projectRoot: root, effective: config.effective });
+    const graph = report.checks.find((check) => check.id === "task-graph");
+    expect(graph?.status).toBe("fail");
+    expect(graph?.detail).toMatch(/overlaps/);
+  });
 });
 
 describe("에이전트 내부 상태 전이", () => {
@@ -178,20 +198,122 @@ describe("pre-complete 게이트", () => {
 
   it("design_profile 활성 시 렌더링 검증 기록이 없으면 실패", () => {
     const root = makeTempProject({ profiles: ["web"] });
-    const file = writeTask(root, "T-201", { status: "HUMAN_REVIEW" });
+    const file = writeTask(root, "T-201", { status: "HUMAN_REVIEW", config: { changed_surfaces: ["ui"] } });
     writeRunRecord(root, "T-201"); // design 필드 없음
     const config = loadConfig({ projectRoot: root });
     const report = preCompleteGate(parseTaskFile(file), { projectRoot: root, effective: config.effective });
     expect(report.checks.find((c) => c.id === "design-rendered-verification")?.status).toBe("fail");
   });
 
-  it("렌더링 미수행이 명시되면 통과하되 인간 확인 표시", () => {
+  it("material UI에서 렌더링 미수행은 완료를 차단한다", () => {
     const root = makeTempProject({ profiles: ["web"] });
-    const file = writeTask(root, "T-202", { status: "HUMAN_REVIEW" });
+    const file = writeTask(root, "T-202", { status: "HUMAN_REVIEW", config: { changed_surfaces: ["ui"] } });
     writeRunRecord(root, "T-202", { design: { rendered_verification: false } });
+    const config = loadConfig({ projectRoot: root });
+    const report = preCompleteGate(parseTaskFile(file), { projectRoot: root, effective: config.effective });
+    expect(report.passed).toBe(false);
+    expect(report.checks.find((c) => c.id === "design-rendered-verification")?.status).toBe("fail");
+  });
+
+  it("material UI의 실제 screenshot·viewport·console evidence가 있으면 통과한다", () => {
+    const root = makeTempProject({ profiles: ["web"] });
+    const file = writeTask(root, "T-204", { status: "HUMAN_REVIEW", config: { changed_surfaces: ["ui"] } });
+    const evidenceDir = path.join(root, ".bass", "evidence", "T-204");
+    fs.mkdirSync(evidenceDir, { recursive: true });
+    fs.writeFileSync(path.join(evidenceDir, "desktop.png"), "png", "utf8");
+    const screenshot = evidenceEntryForFile(root, "T-204", "screenshot", ".bass/evidence/T-204/desktop.png", "browser");
+    writeRunRecord(root, "T-204", {
+      evidence: [screenshot],
+      design: {
+        rendered_verification: true,
+        environment: "local",
+        evidence_paths: [screenshot.path],
+        viewports: ["1440x900"],
+        console_errors: 0,
+      },
+    });
+    const config = loadConfig({ projectRoot: root });
+    expect(preCompleteGate(parseTaskFile(file), { projectRoot: root, effective: config.effective }).passed).toBe(true);
+  });
+
+  it("0.3 run record는 기존 렌더링 기록 계약으로 계속 읽는다", () => {
+    const root = makeTempProject({ profiles: ["web"] });
+    const file = writeTask(root, "T-205", { status: "HUMAN_REVIEW" });
+    writeRunRecord(root, "T-205", { record_version: 0, design: { rendered_verification: false } });
     const config = loadConfig({ projectRoot: root });
     const report = preCompleteGate(parseTaskFile(file), { projectRoot: root, effective: config.effective });
     expect(report.passed).toBe(true);
     expect(report.checks.find((c) => c.id === "design-not-rendered")?.status).toBe("needs-human");
+  });
+
+  it("필수 evidence 종류가 없으면 완료를 차단", () => {
+    const { root, task, effective } = setup({ loop: { required_evidence: ["test-output"] } });
+    writeRunRecord(root, "T-200");
+    const check = preCompleteGate(task, { projectRoot: root, effective }).checks.find((item) => item.id === "evidence-manifest");
+    expect(check?.status).toBe("fail");
+    expect(check?.detail).toContain("missing kind: test-output");
+  });
+
+  it("evidence 파일이 생성 뒤 바뀌면 SHA-256 불일치로 차단", () => {
+    const { root, task, effective } = setup();
+    const evidenceDir = path.join(root, ".bass", "evidence", "T-200");
+    fs.mkdirSync(evidenceDir, { recursive: true });
+    const evidencePath = path.join(evidenceDir, "test.log");
+    fs.writeFileSync(evidencePath, "passed", "utf8");
+    const entry = evidenceEntryForFile(root, "T-200", "test-output", ".bass/evidence/T-200/test.log", "vitest");
+    fs.writeFileSync(evidencePath, "tampered", "utf8");
+    writeRunRecord(root, "T-200", { evidence: [entry] });
+    const check = preCompleteGate(task, { projectRoot: root, effective }).checks.find((item) => item.id === "evidence-manifest");
+    expect(check?.status).toBe("fail");
+    expect(check?.detail).toContain("checksum mismatch");
+  });
+
+  it("사용한 context가 이후 변경되면 stale 상태로 차단", () => {
+    const { root, task, effective } = setup();
+    const productPath = path.join(root, "PRODUCT.md");
+    fs.writeFileSync(productPath, "# Product\n\nOriginal", "utf8");
+    const sha256 = createHash("sha256").update(fs.readFileSync(productPath)).digest("hex");
+    fs.writeFileSync(productPath, "# Product\n\nChanged", "utf8");
+    writeRunRecord(root, "T-200", {
+      context: { sources: [{ path: "PRODUCT.md", sha256, chars: 20 }], total_chars: 20, omitted: [] },
+    });
+    const check = preCompleteGate(task, { projectRoot: root, effective }).checks.find((item) => item.id === "context-freshness");
+    expect(check?.status).toBe("fail");
+    expect(check?.detail).toContain("context changed after use");
+  });
+
+  it("Allowed/Forbidden 범위를 벗어난 실제 변경 기록을 차단", () => {
+    const { root, task, effective } = setup();
+    writeRunRecord(root, "T-200", {
+      files_changed: ["docs/secret.md"],
+      scope: { actual_files: ["docs/secret.md"], outside_allowed: [], forbidden_touched: [] },
+    });
+    const check = preCompleteGate(task, { projectRoot: root, effective }).checks.find((item) => item.id === "scope-diff");
+    expect(check?.status).toBe("fail");
+    expect(check?.detail).toMatch(/outside allowed scope|forbidden scope touched/);
+  });
+
+  it("git working tree의 미기록 변경 파일을 실제 diff 불일치로 차단", () => {
+    const { root, task, effective } = setup();
+    fs.mkdirSync(path.join(root, "src"), { recursive: true });
+    fs.writeFileSync(path.join(root, "src", "a.ts"), "export {};\n", "utf8");
+    expect(spawnSync("git", ["init", "-q"], { cwd: root }).status).toBe(0);
+    expect(spawnSync("git", ["add", "."], { cwd: root }).status).toBe(0);
+    expect(spawnSync("git", ["-c", "user.name=BASS", "-c", "user.email=bass@example.invalid", "commit", "-qm", "baseline"], { cwd: root }).status).toBe(0);
+    fs.writeFileSync(path.join(root, "src", "unrecorded.ts"), "export const changed = true;\n", "utf8");
+    writeRunRecord(root, "T-200");
+    const check = preCompleteGate(task, { projectRoot: root, effective }).checks.find((item) => item.id === "scope-diff");
+    expect(check?.status).toBe("fail");
+    expect(check?.detail).toContain("unrecorded git change: src/unrecorded.ts");
+  });
+
+  it("모델 권고를 따르지 않았으면 구체적 이유를 요구", () => {
+    const { root, task, effective } = setup();
+    writeRunRecord(root, "T-200", {
+      models_used: [{ role: "worker", alias: "custom", followed_recommendation: false }],
+    });
+    const check = preCompleteGate(task, { projectRoot: root, effective }).checks.find((item) => item.id === "model-deviation-reasons");
+    expect(check?.status).toBe("fail");
+    expect(check?.detail).toBe("worker");
   });
 });

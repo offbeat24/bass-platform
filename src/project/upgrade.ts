@@ -56,10 +56,17 @@ export function upgradeProject(projectRoot: string, apply = false): UpgradePlan 
   if (conflicts.length > 0) throw new Error(`Upgrade stopped:\n- ${conflicts.join("\n- ")}`);
 
   const bass = { ...((raw["bass"] as Record<string, unknown> | undefined) ?? {}), version: BASS_VERSION };
+  const currentExecution = (raw["execution"] as Record<string, unknown> | undefined) ?? {};
   const next = {
     ...raw,
     bass,
-    execution: raw["execution"] ?? { depth: "adaptive", verification: "affected" },
+    execution: {
+      depth: "adaptive",
+      verification: "affected",
+      ...currentExecution,
+      loop: currentExecution["loop"] ?? { no_progress_limit: 1 },
+      parallel: currentExecution["parallel"] ?? { max_agents: 2 },
+    },
     context: raw["context"] ?? { max_chars: 12_000 },
     capabilities: raw["capabilities"] ?? DEFAULT_CAPABILITIES,
     adapters: raw["adapters"] ?? DEFAULT_ADAPTERS,

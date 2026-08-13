@@ -17,6 +17,18 @@ risk:
 human:
   owner: {{OWNER}}
   reviewer_required: true
+
+coordination:
+  parent_task: null
+  depends_on: []
+  owned_paths: []
+
+loop:
+  stop_when:
+    - acceptance criteria pass
+    - required evaluators pass
+    - no open high/medium findings
+  required_evidence: []
 ---
 
 ## Problem

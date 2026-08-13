@@ -6,6 +6,15 @@ import type { WorkflowState } from "../types.js";
 import { assertTransition } from "../workflow/stateMachine.js";
 import { normalizeWorkflowState } from "../workflow/stateMachine.js";
 
+const TASK_ID = /^[A-Z][A-Z0-9]*-\d+$/;
+const taskIdSchema = z.string().regex(TASK_ID, "expected format like BASS-001");
+const ownedPathSchema = z.string().min(1).refine(
+  (value) => !path.isAbsolute(value)
+    && !value.replace(/\\/g, "/").split("/").includes("..")
+    && !/[*?[\]]/.test(value),
+  "owned paths must be literal portable project-relative paths",
+);
+
 const WORKFLOW_STATES = [
   "CAPTURED", "ACTIVE", "REVIEW", "DISCOVERY", "SHAPED", "READY", "PLANNED", "IMPLEMENTING",
   "VERIFYING", "CRITIQUING", "HUMAN_REVIEW", "DONE",
@@ -13,7 +22,7 @@ const WORKFLOW_STATES = [
 ] as const;
 
 export const taskFrontmatterSchema = z.object({
-  id: z.string().regex(/^[A-Z][A-Z0-9]*-\d+$/, "expected format like BASS-001"),
+  id: taskIdSchema,
   title: z.string(),
   status: z.enum(WORKFLOW_STATES),
   type: z.string(),
@@ -29,6 +38,23 @@ export const taskFrontmatterSchema = z.object({
     reviewer_required: z.boolean().default(true),
   }),
   config: z.record(z.string(), z.unknown()).optional(),
+  coordination: z
+    .object({
+      parent_task: taskIdSchema.nullable().optional(),
+      depends_on: z.array(taskIdSchema).default([]),
+      owned_paths: z.array(ownedPathSchema).default([]),
+    })
+    .default({ depends_on: [], owned_paths: [] }),
+  loop: z
+    .object({
+      stop_when: z.array(z.string().min(1)).default([]),
+      required_evidence: z.array(z.string().min(1)).default([]),
+      max_turns: z.number().int().positive().max(100).optional(),
+      max_attempts: z.number().int().positive().max(10).optional(),
+      max_minutes: z.number().int().positive().max(1_440).optional(),
+      no_progress_limit: z.number().int().positive().max(5).optional(),
+    })
+    .default({ stop_when: [], required_evidence: [] }),
 });
 
 export type TaskFrontmatter = z.infer<typeof taskFrontmatterSchema>;

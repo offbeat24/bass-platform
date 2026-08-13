@@ -32,8 +32,26 @@ export const bassYamlSchema = z.object({
     .object({
       depth: z.enum(["adaptive", "fast", "standard", "hardened"]).default("adaptive"),
       verification: z.enum(["affected", "all"]).default("affected"),
+      loop: z
+        .object({
+          max_turns: z.number().int().positive().max(100).optional(),
+          max_attempts: z.number().int().positive().max(10).optional(),
+          max_minutes: z.number().int().positive().max(1_440).optional(),
+          no_progress_limit: z.number().int().positive().max(5).default(1),
+        })
+        .default({ no_progress_limit: 1 }),
+      parallel: z
+        .object({
+          max_agents: z.number().int().min(1).max(3).default(2),
+        })
+        .default({ max_agents: 2 }),
     })
-    .default({ depth: "adaptive", verification: "affected" }),
+    .default({
+      depth: "adaptive",
+      verification: "affected",
+      loop: { no_progress_limit: 1 },
+      parallel: { max_agents: 2 },
+    }),
   context: z
     .object({
       max_chars: z.number().int().positive().max(100_000).default(12_000),

@@ -16,9 +16,12 @@ describe("agent guide", () => {
     expect(guide.task?.workflow_depth).toBe("fast");
     expect(guide.execution_plan.depth).toBe("fast");
     expect(guide.execution_plan.verificationLevels).toEqual([1]);
-    expect(guide.execution_plan.maxReworkLoops).toBe(1);
+    expect(guide.execution_plan.maxReworkLoops).toBe(0);
+    expect(guide.execution_plan.loop.maxAttempts).toBe(1);
     expect(guide.operating_rules.join(" ")).toContain("never ask the user to run commands");
     expect(guide.operating_rules.join(" ")).toContain("avoid a second source of truth");
+    expect(guide.operating_rules.join(" ")).toContain("task attempt start/finish");
+    expect(guide.operating_rules.join(" ")).toContain("repeated failure without new evidence");
   });
 
   it("빈 DESIGN.md 템플릿을 준비 완료로 오인하지 않는다", () => {

@@ -95,13 +95,14 @@ export function initProject(opts: InitOptions): InitResult {
     );
   }
 
-  for (const dir of ["specs", ".bass/tasks", ".bass/records", ".bass/cache"]) {
+  for (const dir of ["specs", ".bass/tasks", ".bass/records", ".bass/evidence", ".bass/cache"]) {
     const absolute = path.join(opts.projectRoot, dir);
     if (!fs.existsSync(absolute)) {
       fs.mkdirSync(absolute, { recursive: true });
       result.created.push(`${dir}/`);
     }
   }
+  writeNewFile(opts.projectRoot, ".bass/events.jsonl", "", result);
   updateGitignore(opts.projectRoot, result);
   return result;
 }
@@ -168,6 +169,10 @@ project:
 execution:
   depth: adaptive
   verification: affected
+  loop:
+    no_progress_limit: 1
+  parallel:
+    max_agents: 2
 
 context:
   max_chars: 12000

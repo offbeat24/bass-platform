@@ -70,6 +70,15 @@ try {
   for (const artifact of ["PRODUCT.md", "TECH.md", "DESIGN.md"]) {
     assert.ok(fs.existsSync(path.join(nodeRepo, artifact)), `missing product artifact: ${artifact}`);
   }
+  runBass(["task", "new", "PKG-1", "--title", "Package task"], nodeRepo);
+  const graph = JSON.parse(runBass(["task", "graph", "--json"], nodeRepo));
+  assert.deepEqual(graph.ready, ["PKG-1"]);
+  runBass(["task", "transition", "PKG-1", "ACTIVE"], nodeRepo);
+  runBass(["task", "attempt", "start", "PKG-1"], nodeRepo);
+  runBass(["task", "attempt", "finish", "PKG-1", "--result", "pass", "--summary", "package flow passed", "--turns", "1"], nodeRepo);
+  const status = JSON.parse(runBass(["status", "--json"], nodeRepo));
+  assert.equal(status.tasks[0].attempts, 1);
+  assert.equal(status.tasks[0].current_attempt, null);
 
   const pythonRepo = path.join(tempRoot, "python-repo");
   fs.mkdirSync(pythonRepo);
