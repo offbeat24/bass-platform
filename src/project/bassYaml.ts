@@ -34,6 +34,11 @@ export const bassYamlSchema = z.object({
       verification: z.enum(["affected", "all"]).default("affected"),
     })
     .default({ depth: "adaptive", verification: "affected" }),
+  context: z
+    .object({
+      max_chars: z.number().int().positive().max(100_000).default(12_000),
+    })
+    .default({ max_chars: 12_000 }),
   capabilities: capabilitySchema.default({
     specification: "builtin",
     simplicity: "ponytail",

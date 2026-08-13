@@ -1,0 +1,4 @@
+interface:
+  display_name: "BASS Shape"
+  short_description: "Turn an idea into product, technical, design, and task contracts."
+  default_prompt: "Ground this idea in the repository and shape only the artifacts needed before implementation."

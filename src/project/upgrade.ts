@@ -31,8 +31,12 @@ export function upgradeProject(projectRoot: string, apply = false): UpgradePlan 
 
   if (fromVersion !== BASS_VERSION) changes.push(`bass.version: ${fromVersion} -> ${BASS_VERSION}`);
   if (!raw["execution"]) changes.push("add adaptive execution policy");
+  if (!raw["context"]) changes.push("add selective context budget");
   if (!raw["capabilities"]) changes.push("add explicit capability selections");
   if (!raw["adapters"]) changes.push("add Codex primary and Claude/Cursor compatibility adapters");
+  for (const artifact of ["PRODUCT.md", "TECH.md", "DESIGN.md"]) {
+    if (!fs.existsSync(path.join(projectRoot, artifact))) changes.push(`create missing ${artifact} template`);
+  }
   if (fs.existsSync(path.join(projectRoot, "tasks"))) removals.push("stop writing root tasks/; keep it read-only for 0.2 compatibility");
   if (fs.existsSync(path.join(projectRoot, "records"))) removals.push("stop writing root records/; keep it read-only for 0.2 compatibility");
 
@@ -56,6 +60,7 @@ export function upgradeProject(projectRoot: string, apply = false): UpgradePlan 
     ...raw,
     bass,
     execution: raw["execution"] ?? { depth: "adaptive", verification: "affected" },
+    context: raw["context"] ?? { max_chars: 12_000 },
     capabilities: raw["capabilities"] ?? DEFAULT_CAPABILITIES,
     adapters: raw["adapters"] ?? DEFAULT_ADAPTERS,
   };

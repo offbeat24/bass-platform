@@ -69,6 +69,10 @@ describe("0.2 upgrade", () => {
     expect(fs.readFileSync(path.join(root, "bass.yaml"), "utf8")).toBe(beforeYaml);
     upgradeProject(root, true);
     expect(loadConfig({ projectRoot: root }).bassYaml.bass.version).toBe(BASS_VERSION);
+    expect(loadConfig({ projectRoot: root }).bassYaml.context.max_chars).toBe(12_000);
+    for (const artifact of ["PRODUCT.md", "TECH.md", "DESIGN.md"]) {
+      expect(fs.existsSync(path.join(root, artifact))).toBe(true);
+    }
     expect(fs.readFileSync(path.join(root, "AGENTS.md"), "utf8")).toContain("Never rewrite this");
     expect(listTasks(root)[0]?.frontmatter.status).toBe("ACTIVE");
     const after = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");

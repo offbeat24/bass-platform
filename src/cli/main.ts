@@ -88,7 +88,7 @@ program
   .option("--name <name>", "프로젝트 이름")
   .option("--profiles <list>", "프로파일 목록", "common")
   .option("--owner <owner>", "작업 소유자", "user")
-  .option("--design", "DESIGN.md 생성", false)
+  .option("--design", "web 프로파일과 디자인 검증 활성화", false)
   .option("--non-interactive", "대화형 capability 선택 생략", false)
   .option("--capability <name=provider>", "capability 선택 (반복 가능)", collect, [])
   .action(async (directory, opts) => runSetup(directory ? String(directory) : process.cwd(), opts));
@@ -99,7 +99,7 @@ program
   .option("--name <name>")
   .option("--profiles <list>", "프로파일 목록", "common")
   .option("--owner <owner>", "작업 소유자", "user")
-  .option("--design", "DESIGN.md 생성", false)
+  .option("--design", "web 프로파일과 디자인 검증 활성화", false)
   .option("--non-interactive", "대화형 선택 생략", false)
   .option("--capability <name=provider>", "capability 선택", collect, [])
   .action(async (directory, opts) => runSetup(String(directory), opts));
@@ -110,7 +110,7 @@ program
   .option("--name <name>")
   .option("--profiles <list>", "프로파일 목록", "common")
   .option("--owner <owner>", "작업 소유자", "user")
-  .option("--design", "DESIGN.md 생성", false)
+  .option("--design", "web 프로파일과 디자인 검증 활성화", false)
   .option("--non-interactive", "대화형 선택 생략", false)
   .option("--capability <name=provider>", "capability 선택", collect, [])
   .action(async (opts) => runSetup(process.cwd(), opts));

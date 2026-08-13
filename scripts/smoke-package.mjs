@@ -39,6 +39,10 @@ try {
     "plugins/bass/.codex-plugin/plugin.json",
     "plugins/bass/.claude-plugin/plugin.json",
     "plugins/bass/hooks/hooks.json",
+    "plugins/bass/skills/bass-shape/SKILL.md",
+    "templates/PRODUCT.md",
+    "templates/TECH.md",
+    "templates/spec.md",
   ]) assert.ok(packedPaths.includes(required), `missing package file: ${required}`);
   for (const excludedPrefix of ["src/", "tests/", "examples/", "tasks/"]) {
     assert.equal(packedPaths.some((file) => file.startsWith(excludedPrefix)), false);
@@ -63,6 +67,9 @@ try {
   runBass(setupArgs(nodeRepo, "common,web"));
   assert.equal(fs.readFileSync(path.join(nodeRepo, "package.json"), "utf8"), nodePackage);
   assert.ok(fs.existsSync(path.join(nodeRepo, "bass.yaml")));
+  for (const artifact of ["PRODUCT.md", "TECH.md", "DESIGN.md"]) {
+    assert.ok(fs.existsSync(path.join(nodeRepo, artifact)), `missing product artifact: ${artifact}`);
+  }
 
   const pythonRepo = path.join(tempRoot, "python-repo");
   fs.mkdirSync(pythonRepo);

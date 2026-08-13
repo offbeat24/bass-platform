@@ -31,6 +31,8 @@ describe("bass create (새 프로젝트 자동 연결)", () => {
     expect(result.packageInstalled).toBe(false);
     expect(fs.existsSync(path.join(projectRoot, "bass.yaml"))).toBe(true);
     expect(fs.existsSync(path.join(projectRoot, "AGENTS.md"))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, "PRODUCT.md"))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, "TECH.md"))).toBe(true);
     expect(fs.existsSync(path.join(projectRoot, "DESIGN.md"))).toBe(true);
   });
 
@@ -66,6 +68,8 @@ describe("bass init (shim 생성)", () => {
     expect(result.created).toContain("AGENTS.md");
     expect(result.created).toContain(".cursor/rules/bass.mdc");
     expect(result.created).toContain("CLAUDE.md");
+    expect(result.created).toContain("PRODUCT.md");
+    expect(result.created).toContain("TECH.md");
     expect(result.created).toContain("DESIGN.md");
 
     const agents = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
@@ -95,6 +99,18 @@ describe("bass init (shim 생성)", () => {
     const agents = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
     expect(agents).toContain("custom");
     expect(agents).toContain("bass:managed:start");
+  });
+
+  it("기존 제품·기술·디자인 명세는 덮어쓰지 않는다", () => {
+    const root = tempDir();
+    for (const relative of ["PRODUCT.md", "TECH.md", "DESIGN.md"]) {
+      fs.writeFileSync(path.join(root, relative), `${relative} custom`, "utf8");
+    }
+    const result = initProject({ projectRoot: root, name: "demo", profiles: ["common"], owner: "user", withDesign: false });
+    expect(result.skipped).toEqual(expect.arrayContaining(["PRODUCT.md", "TECH.md", "DESIGN.md"]));
+    for (const relative of ["PRODUCT.md", "TECH.md", "DESIGN.md"]) {
+      expect(fs.readFileSync(path.join(root, relative), "utf8")).toBe(`${relative} custom`);
+    }
   });
 
   it("기존 Claude/Cursor 지침도 보존하고 BASS 관리 블록만 추가한다", () => {
@@ -143,6 +159,7 @@ describe("bass doctor", () => {
   it("design_profile 활성인데 DESIGN.md 없으면 실패", () => {
     const root = tempDir();
     initProject({ projectRoot: root, name: "demo", profiles: ["common", "web"], owner: "user", withDesign: false });
+    fs.rmSync(path.join(root, "DESIGN.md"));
     const config = loadConfig({ projectRoot: root });
     const checks = doctor(root, config.effective);
     expect(checks.find((c) => c.id === "design-md")?.status).toBe("fail");

@@ -5,6 +5,7 @@ import type { TaskFile } from "../task/taskFile.js";
 import type { LoadedConfig } from "../config/loader.js";
 import { findRequiredApprovals } from "../policy/policyEngine.js";
 import { BASS_VERSION } from "../version.js";
+import { selectTaskContext } from "./context.js";
 
 export interface ComposeOptions {
   projectRoot: string;
@@ -102,6 +103,30 @@ export function composeInstructions(opts: ComposeOptions): string {
       content: fs.readFileSync(opts.task.filePath, "utf8"),
     });
   }
+
+  // 7. task-selected repository context. Full documents remain on disk.
+  const selected = selectTaskContext({
+    projectRoot: opts.projectRoot,
+    task: opts.task,
+    profiles,
+    maxChars: opts.config.bassYaml.context.max_chars,
+  });
+  for (const item of selected.loaded) {
+    parts.push({
+      label: `context: ${item.source}${item.selector ? `#${item.selector}` : ""}`,
+      source: path.join(opts.projectRoot, item.source),
+      content: item.content,
+    });
+  }
+  parts.push({
+    label: "context manifest",
+    source: path.join(opts.projectRoot, "bass.yaml"),
+    content: [
+      `selected context: ${selected.totalChars}/${selected.maxChars} chars`,
+      ...selected.loaded.map((item) => `- loaded ${item.origin}: ${item.source}${item.selector ? `#${item.selector}` : ""} (${item.chars} chars, sha256:${item.sha256})`),
+      ...selected.omitted.map((item) => `- omitted: ${item.source} (${item.reason})`),
+    ].join("\n"),
+  });
 
   const header = [
     "<!-- composed by bass compose -->",

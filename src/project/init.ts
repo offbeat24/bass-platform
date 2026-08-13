@@ -82,17 +82,20 @@ export function initProject(opts: InitOptions): InitResult {
       "---\ndescription: BASS runtime entrypoint\nalwaysApply: true\n---\n",
     );
   }
-  if (opts.withDesign) {
+  for (const [relative, template] of [
+    ["PRODUCT.md", "PRODUCT.md"],
+    ["TECH.md", "TECH.md"],
+    ["DESIGN.md", "DESIGN.md"],
+  ] as const) {
     writeNewFile(
       opts.projectRoot,
-      "DESIGN.md",
-      fs.readFileSync(path.join(templatesDir(), "DESIGN.md"), "utf8"),
+      relative,
+      fs.readFileSync(path.join(templatesDir(), template), "utf8"),
       result,
-      opts.force,
     );
   }
 
-  for (const dir of [".bass/tasks", ".bass/records", ".bass/cache"]) {
+  for (const dir of ["specs", ".bass/tasks", ".bass/records", ".bass/cache"]) {
     const absolute = path.join(opts.projectRoot, dir);
     if (!fs.existsSync(absolute)) {
       fs.mkdirSync(absolute, { recursive: true });
@@ -166,6 +169,9 @@ execution:
   depth: adaptive
   verification: affected
 
+context:
+  max_chars: 12000
+
 capabilities:
   specification: ${capabilities.specification}
   simplicity: ${capabilities.simplicity}
@@ -190,6 +196,7 @@ export function renderAgentsBlock(): string {
 - Inspect repository facts and implement the smallest accepted change.
 - Follow \`execution_plan\`; do not add checks, critics, or loops beyond it.
 - Run \`bass evaluate --task <id>\`; reuse unchanged passing evidence.
+- Load only task-relevant PRODUCT.md, TECH.md, and DESIGN.md sections.
 - Keep handoff evidence in \`.bass/tasks/\` and \`.bass/records/\` only when needed.`;
 }
 
@@ -254,11 +261,11 @@ export function doctor(projectRoot: string, effective: Record<string, unknown>):
     if (cursor) checks.push({ id: "adapter-cursor-managed-block", status: hasOneManagedBlock(cursor) ? "pass" : "fail", detail: hasOneManagedBlock(cursor) ? undefined : "Cursor BASS managed block missing or malformed" });
   }
 
-  if (Boolean(effective["design_profile"])) {
+  for (const relative of ["PRODUCT.md", "TECH.md", "DESIGN.md"]) {
     checks.push({
-      id: "design-md",
-      status: fs.existsSync(path.join(projectRoot, "DESIGN.md")) ? "pass" : "fail",
-      detail: fs.existsSync(path.join(projectRoot, "DESIGN.md")) ? undefined : "design profile selected but DESIGN.md is missing",
+      id: relative.toLowerCase().replace(".md", "-md"),
+      status: fs.existsSync(path.join(projectRoot, relative)) ? "pass" : "fail",
+      detail: fs.existsSync(path.join(projectRoot, relative)) ? undefined : `${relative} missing; run bass setup`,
     });
   }
   return checks;

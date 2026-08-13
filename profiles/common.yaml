@@ -28,6 +28,9 @@ discovery_checklist:
 required_docs:
   - README.md
   - AGENTS.md
+  - PRODUCT.md
+  - TECH.md
+  - DESIGN.md
 
 critics:
   - discovery
