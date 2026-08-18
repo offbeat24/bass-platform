@@ -173,6 +173,8 @@ claude plugin validate --strict plugins/bass
 
 `npm run verify`는 typecheck, 168 tests, build, package tarball smoke, plugin 정적 검사, performance budget을 실행한다. GitHub Actions는 Ubuntu, macOS, Windows에서 package smoke와 plugin 검사를 실행한다.
 
+Windows CI에서는 환경변수 이름의 대소문자를 구분하지 않는 특성을 고려해 launcher 테스트의 `npm_execpath`를 격리하고, scope-diff 테스트에서 필요하지 않은 Git baseline commit을 제거했다. 타임아웃을 늘리지 않고 테스트 준비 비용과 환경 의존성을 줄인 변경이며 BASS 실행 계약과 런타임 동작에는 영향을 주지 않는다.
+
 검증된 설치 경로:
 
 - 격리된 Codex home에서 marketplace 추가, plugin 설치·목록, 새 세션의 BASS skills 6개 발견
