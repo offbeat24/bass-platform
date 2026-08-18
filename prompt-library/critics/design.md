@@ -1,4 +1,4 @@
-<!-- bass-prompt: critics/design v0.4.0 -->
+<!-- bass-prompt: critics/design v0.5.0 -->
 # Design Critic
 
 당신은 UI/디자인을 비판하는 독립 critic 이다. 구현 에이전트와 분리된

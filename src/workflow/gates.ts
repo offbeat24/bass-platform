@@ -9,7 +9,9 @@ import { loadRiskApprovals } from "../task/approvalRecord.js";
 import { normalizeWorkflowState } from "./stateMachine.js";
 import { buildTaskGraph } from "../task/taskGraph.js";
 import { inferChangedSurfaces } from "../execution/planner.js";
-import { readEvents } from "../task/events.js";
+import { normalizeEventSummary, readEvents } from "../task/events.js";
+import { capabilityCallId } from "../task/capability.js";
+import { providerForCapabilityCall } from "../project/providerCatalog.js";
 
 /** CAPTURED 상태에서 ACTIVE로 들어가기 전에 필요한 최소 작업 계약. */
 const CAPTURED_SECTIONS = [
@@ -162,6 +164,90 @@ export function preCompleteGate(task: TaskFile, ctx: GateContext): GateReport {
     return buildReport("pre-complete", fm.id, checks, []);
   }
   checks.push({ id: "run-record", description: "run record 존재 및 스키마 유효", status: "pass" });
+
+  if (record.record_version >= 2) {
+    const contractIssues: string[] = [];
+    if (!ctx.executionPlan) {
+      contractIssues.push("current ExecutionPlan is unavailable");
+    } else if (!record.execution_contract) {
+      contractIssues.push("execution_contract is missing");
+    } else {
+      if (record.execution_contract.contract_version !== ctx.executionPlan.contractVersion) {
+        contractIssues.push("contract_version differs from the current plan");
+      }
+      if (record.execution_contract.plan_fingerprint !== ctx.executionPlan.planFingerprint) {
+        contractIssues.push("plan_fingerprint differs from the current plan");
+      }
+      if (JSON.stringify(record.execution_contract.capability_calls) !== JSON.stringify(ctx.executionPlan.capabilityCalls)) {
+        contractIssues.push("capability_calls differ from the current plan");
+      }
+    }
+    checks.push({
+      id: "execution-contract",
+      description: "run record가 현재 정규화된 ExecutionPlan 계약과 일치한다",
+      status: contractIssues.length === 0 ? "pass" : "fail",
+      detail: contractIssues.join("; ") || undefined,
+    });
+
+    const invocationIssues: string[] = [];
+    if (!ctx.executionPlan) {
+      invocationIssues.push("current ExecutionPlan is unavailable");
+    } else {
+      const plannedExternal = ctx.executionPlan.capabilityCalls.filter(
+        (capabilityCall) => providerForCapabilityCall(capabilityCall) !== null,
+      );
+      const completionEvents = readEvents(ctx.projectRoot).events.filter(
+        (event) => event.task_id === fm.id && event.kind === "capability.completed",
+      );
+      const seen = new Set<string>();
+      for (const invocation of record.capability_invocations) {
+        if (seen.has(invocation.call_id)) invocationIssues.push(`duplicate call_id: ${invocation.call_id}`);
+        seen.add(invocation.call_id);
+        if (!plannedExternal.includes(invocation.capability_call)) {
+          invocationIssues.push(`not in current plan: ${invocation.capability_call}`);
+        }
+        if (invocation.evidence_path && !record.evidence.some((entry) => entry.path === invocation.evidence_path)) {
+          invocationIssues.push(`evidence not in manifest: ${invocation.evidence_path}`);
+        }
+        const expectedId = capabilityCallId(
+          ctx.executionPlan.planFingerprint,
+          fm.id,
+          invocation.attempt,
+          invocation.capability_call,
+        );
+        if (invocation.call_id !== expectedId) invocationIssues.push(`invalid call_id: ${invocation.capability_call}`);
+        const event = completionEvents.find((candidate) => candidate.call_id === invocation.call_id);
+        if (!event) {
+          invocationIssues.push(`completion event missing: ${invocation.capability_call}`);
+          continue;
+        }
+        if (
+          event.capability_call !== invocation.capability_call
+          || event.host !== invocation.host
+          || event.status !== invocation.status
+          || event.summary !== normalizeEventSummary(invocation.summary)
+          || event.evidence_path !== invocation.evidence_path
+        ) {
+          invocationIssues.push(`record/event mismatch: ${invocation.capability_call}`);
+        }
+      }
+      for (const capabilityCall of plannedExternal) {
+        const latest = record.capability_invocations
+          .filter((invocation) => invocation.capability_call === capabilityCall)
+          .sort((left, right) => right.attempt - left.attempt)[0];
+        if (!latest) invocationIssues.push(`missing invocation: ${capabilityCall}`);
+        else if (latest.status !== "pass" && latest.status !== "skipped") {
+          invocationIssues.push(`latest invocation did not complete successfully: ${capabilityCall}`);
+        }
+      }
+    }
+    checks.push({
+      id: "capability-invocations",
+      description: "외부 capability 호출이 이벤트와 일치하고 최신 시도가 완료되었다",
+      status: invocationIssues.length === 0 ? "pass" : "fail",
+      detail: invocationIssues.join("; ") || undefined,
+    });
+  }
 
   const failed = record.verification.evaluations_run.filter((e) => e.status === "fail" || e.status === "error" || e.status === "timeout");
   checks.push({

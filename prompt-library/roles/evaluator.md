@@ -1,4 +1,4 @@
-<!-- bass-prompt: roles/evaluator v0.4.0 -->
+<!-- bass-prompt: roles/evaluator v0.5.0 -->
 
 # Role: Evaluator
 

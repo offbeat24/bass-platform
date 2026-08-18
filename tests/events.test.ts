@@ -8,6 +8,22 @@ import { parseTaskFile } from "../src/task/taskFile.js";
 import { makeTempProject, writeTask } from "./helpers.js";
 
 describe("BASS event log", () => {
+  it("기존 schema v1과 신규 schema v2 이벤트를 함께 읽는다", () => {
+    const root = makeTempProject({});
+    const file = path.join(root, ".bass", "events.jsonl");
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, `${JSON.stringify({
+      schema_version: 1,
+      at: "2026-07-21T00:00:00.000Z",
+      task_id: "EVENT-110",
+      kind: "task.started",
+      status: "running",
+      summary: "legacy event",
+    })}\n`, "utf8");
+    appendEvent(root, { task_id: "EVENT-110", kind: "evidence.recorded", status: "pass", summary: "v2 event" });
+    expect(readEvents(root).events.map((event) => event.schema_version)).toEqual([1, 2]);
+  });
+
   it("유효 이벤트를 읽고 잘린 마지막 줄은 경고 후 무시한다", () => {
     const root = makeTempProject({});
     appendEvent(root, { task_id: "EVENT-101", kind: "task.started", status: "running", summary: "started" });
@@ -32,6 +48,7 @@ describe("BASS event log", () => {
   it("열린 시도 start는 멱등하고 Fast 실패는 시도 예산에서 NEEDS_EXPERT로 전환한다", () => {
     const { root, task, plan } = activeTask("EVENT-102", "low");
     expect(startAttempt({ projectRoot: root, task, plan }).changed).toBe(true);
+    expect(readEvents(root).events.find((event) => event.kind === "attempt.started")?.plan_fingerprint).toBe(plan.planFingerprint);
     expect(startAttempt({ projectRoot: root, task, plan })).toMatchObject({ changed: false, attempt: 1 });
     const result = finishAttempt({ projectRoot: root, task, plan, result: "fail", summary: "test failed", turns: 2 });
     expect(result).toMatchObject({ blocked: true, reason: "attempt budget exhausted" });

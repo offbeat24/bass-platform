@@ -4,7 +4,7 @@ Minimal `bass.yaml`:
 
 ```yaml
 bass:
-  version: 0.4.0
+  version: 0.5.0
   profiles: [common]
 
 project:
@@ -69,3 +69,7 @@ evaluators:
 ```
 
 Profiles merge from low to high priority, followed by project, environment, task config, and runtime `--set`. `bass config explain` shows every source. `.bass/local.yaml` is gitignored; secrets must not be committed or added to composed context.
+
+`adapters.primary` and `compatibility` select official host checks, not alternate execution plans. Use `bass doctor --capabilities --host codex|claude` for one host and `--host all` for every configured official host. Cursor remains a repository-instruction shim and is ignored by `all`.
+
+External provider installation is host-local. Codex checks only `.codex/plugins/cache`, Claude checks only `.claude/plugins/cache`, and a provider without a host binding reports `unsupported`. `BASS_CODEX_ACTIVE_CAPABILITIES`, `BASS_CLAUDE_ACTIVE_CAPABILITIES`, and matching `*_AUTHENTICATED_CAPABILITIES` variables may contain comma-separated semantic provider IDs when discovery cannot expose session state. The generic legacy variables apply only to a single-host check; `--host all` requires host-specific confirmation.

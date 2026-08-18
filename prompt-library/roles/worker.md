@@ -1,4 +1,4 @@
-<!-- bass-prompt: roles/worker v0.4.0 -->
+<!-- bass-prompt: roles/worker v0.5.0 -->
 # Role: Worker
 
 Implement the smallest accepted change inside Allowed scope and `execution_plan.scopeLock`.

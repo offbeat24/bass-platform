@@ -10,6 +10,8 @@ export const EVENT_KINDS = [
   "task.started",
   "attempt.started",
   "attempt.completed",
+  "capability.started",
+  "capability.completed",
   "evaluation.completed",
   "critic.completed",
   "evidence.recorded",
@@ -22,7 +24,7 @@ export const EVENT_STATUSES = ["running", "pass", "fail", "no-progress", "blocke
 const summarySchema = z.string().min(1).max(500).refine((value) => !/[\r\n]/.test(value), "summary must be one line");
 
 export const bassEventSchema = z.object({
-  schema_version: z.literal(1),
+  schema_version: z.union([z.literal(1), z.literal(2)]),
   at: z.iso.datetime(),
   task_id: z.string().regex(/^[A-Z][A-Z0-9]*-\d+$/),
   attempt: z.number().int().positive().optional(),
@@ -34,6 +36,27 @@ export const bassEventSchema = z.object({
   failure_fingerprint: z.string().regex(/^[a-zA-Z0-9:_-]{1,128}$/).optional(),
   turns: z.number().int().nonnegative().optional(),
   duration_ms: z.number().int().nonnegative().optional(),
+  call_id: z.string().regex(/^[a-f0-9]{64}$/).optional(),
+  host: z.enum(["codex", "claude"]).optional(),
+  capability_call: z.string().min(3).max(200).regex(/^[a-z0-9-]+:[a-z0-9-]+$/).optional(),
+  evidence_path: z.string().min(1).max(500).optional(),
+  plan_fingerprint: z.string().regex(/^[a-f0-9]{64}$/).optional(),
+}).superRefine((event, context) => {
+  if (event.kind !== "capability.started" && event.kind !== "capability.completed") return;
+  if (event.schema_version !== 2) {
+    context.addIssue({ code: "custom", path: ["schema_version"], message: "capability events require schema v2" });
+  }
+  for (const field of ["attempt", "call_id", "host", "capability_call"] as const) {
+    if (event[field] === undefined) {
+      context.addIssue({ code: "custom", path: [field], message: `${field} is required for capability events` });
+    }
+  }
+  if (event.kind === "capability.started" && event.status !== "running") {
+    context.addIssue({ code: "custom", path: ["status"], message: "capability.started status must be running" });
+  }
+  if (event.kind === "capability.completed" && !["pass", "fail", "skipped", "error"].includes(event.status ?? "")) {
+    context.addIssue({ code: "custom", path: ["status"], message: "invalid capability completion status" });
+  }
 });
 
 export type BassEvent = z.infer<typeof bassEventSchema>;
@@ -58,10 +81,10 @@ export function eventLogPath(projectRoot: string): string {
 
 export function appendEvent(projectRoot: string, event: NewBassEvent): BassEvent {
   const parsed = bassEventSchema.parse({
-    schema_version: 1,
+    schema_version: 2,
     at: event.at ?? new Date().toISOString(),
     ...event,
-    summary: redactEventSecrets(event.summary),
+    summary: normalizeEventSummary(event.summary),
   });
   const file = eventLogPath(projectRoot);
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -121,7 +144,15 @@ export function startAttempt(opts: {
   const now = opts.now ?? new Date();
   const { events } = readEvents(opts.projectRoot);
   const open = currentAttempt(events, opts.task.frontmatter.id);
-  if (open !== null) return { changed: false, attempt: open, blocked: false };
+  if (open !== null) {
+    const started = events.find(
+      (event) => event.task_id === opts.task.frontmatter.id && event.kind === "attempt.started" && event.attempt === open,
+    );
+    if (started?.plan_fingerprint && started.plan_fingerprint !== opts.plan.planFingerprint) {
+      throw new Error(`Open attempt ${open} is bound to a different ExecutionPlan; finish it before changing the plan`);
+    }
+    return { changed: false, attempt: open, blocked: false };
+  }
   const taskEvents = events.filter((event) => event.task_id === opts.task.frontmatter.id);
   const starts = taskEvents.filter((event) => event.kind === "attempt.started");
   if (starts.length >= opts.plan.loop.maxAttempts) {
@@ -149,6 +180,7 @@ export function startAttempt(opts: {
     ...(opts.parentAttempt ? { parent_attempt: opts.parentAttempt } : {}),
     kind: "attempt.started",
     status: "running",
+    plan_fingerprint: opts.plan.planFingerprint,
     summary: `attempt ${attempt} started`,
   });
   return { changed: true, attempt, blocked: false, event };
@@ -171,6 +203,9 @@ export function finishAttempt(opts: {
   const started = [...before].reverse().find(
     (event) => event.task_id === opts.task.frontmatter.id && event.kind === "attempt.started" && event.attempt === attempt,
   );
+  if (started?.plan_fingerprint && started.plan_fingerprint !== opts.plan.planFingerprint) {
+    throw new Error(`Attempt ${attempt} is bound to a different ExecutionPlan; finish it with the original plan`);
+  }
   const failureFingerprint = opts.result === "pass"
     ? undefined
     : opts.failureFingerprint ?? fingerprint(opts.summary);
@@ -180,7 +215,7 @@ export function finishAttempt(opts: {
     attempt,
     kind: "attempt.completed",
     status: opts.result,
-    summary: oneLine(opts.summary),
+    summary: normalizeEventSummary(opts.summary),
     ...(failureFingerprint ? { failure_fingerprint: failureFingerprint } : {}),
     ...(opts.turns !== undefined ? { turns: opts.turns } : {}),
     ...(started ? { duration_ms: Math.max(0, now.getTime() - Date.parse(started.at)) } : {}),
@@ -288,6 +323,10 @@ function fingerprint(value: string): string {
 
 function oneLine(value: string): string {
   return value.replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 500);
+}
+
+export function normalizeEventSummary(value: string): string {
+  return redactEventSecrets(oneLine(value));
 }
 
 function redactEventSecrets(value: string): string {

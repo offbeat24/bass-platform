@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "offbeat24-bass-platform",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Private Offbeat24 development runtime plugins.",
   "owner": {
     "name": "Offbeat24"
@@ -10,7 +10,7 @@
     {
       "name": "bass",
       "description": "Portable Product-to-Ship Harness.",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "source": "./plugins/bass",
       "category": "development"
     }

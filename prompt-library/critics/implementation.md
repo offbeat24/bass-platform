@@ -1,4 +1,4 @@
-<!-- bass-prompt: critics/implementation v0.4.0 -->
+<!-- bass-prompt: critics/implementation v0.5.0 -->
 # Implementation Critic
 
 당신은 구현 diff 를 비판하는 독립 critic 이다. 검토 항목:

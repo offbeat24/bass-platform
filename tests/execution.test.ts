@@ -8,6 +8,23 @@ import { planEvaluators, selectEvaluatorPlans } from "../src/evaluators/runner.j
 import { makeTempProject, writeTask } from "./helpers.js";
 
 describe("ExecutionPlan", () => {
+  it("Codex와 Claude의 같은 입력은 동일한 정규화 계획과 fingerprint를 만든다", () => {
+    const codexRoot = makeTempProject({
+      extraYaml: `adapters:\n  primary: codex\n  compatibility: [claude]\n`,
+    });
+    const claudeRoot = makeTempProject({
+      extraYaml: `adapters:\n  primary: claude\n  compatibility: [codex]\n`,
+    });
+    const codexTask = parseTaskFile(writeTask(codexRoot, "PARITY-301", { riskLevel: "medium" }));
+    const claudeTask = parseTaskFile(writeTask(claudeRoot, "PARITY-301", { riskLevel: "medium" }));
+    const codexPlan = buildExecutionPlan(loadConfig({ projectRoot: codexRoot }), codexTask);
+    const claudePlan = buildExecutionPlan(loadConfig({ projectRoot: claudeRoot }), claudeTask);
+
+    expect(codexPlan).toEqual(claudePlan);
+    expect(codexPlan.contractVersion).toBe(1);
+    expect(codexPlan.planFingerprint).toMatch(/^[a-f0-9]{64}$/);
+  });
+
   it.each([
     { id: "TAB-301", name: "delete", profiles: ["common"], taskType: "delete", risk: "low", surface: "src/pottery", depth: "fast", levels: [1], critics: 0, loops: 0 },
     { id: "TAB-302", name: "ui", profiles: ["common", "web"], taskType: "feature", risk: "medium", surface: "ui", depth: "standard", levels: [1, 2], critics: 1, loops: 1 },

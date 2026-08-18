@@ -16,6 +16,8 @@ Start with PRODUCT, TECH, and DESIGN. Use `specs/<feature>.md` only for a large 
 
 ```text
 attempt start
+→ claim planned external capability
+→ invoke once and complete the claim
 → smallest implementation
 → cheapest affected machine checks
 → relevant critic only when planned
@@ -27,9 +29,11 @@ Fast/Standard/Hardened default to 4/8/12 turns, 1/2/3 attempts, and 15/30/60 min
 
 Full logs live under `.bass/evidence/<task-id>/`. Events contain one-line summaries only. Host token metrics are recorded when available and otherwise remain `unknown`.
 
+A repeated claim in the same attempt returns `reuse` after completion or `uncertain` after an incomplete start. Neither path reinvokes the provider. Only a newly started attempt permits an intentional retry.
+
 ## Review and done
 
-`pre-review` validates the Run Record, final passing attempt, evidence checksums, context freshness, actual scope, model deviations, docs, rollback, critics, and material UI evidence. It does not manufacture final human approval.
+`pre-review` validates the Run Record, current plan fingerprint, capability events, final passing attempt, evidence checksums, context freshness, actual scope, model deviations, docs, rollback, critics, and material UI evidence. It does not manufacture final human approval.
 
 After the human accepts product meaning and remaining risk, `bass approval final` records the decision and `bass task finalize` transitions REVIEW to DONE. Repeating finalize is a no-op.
 

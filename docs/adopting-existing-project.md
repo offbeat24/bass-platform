@@ -22,7 +22,8 @@ Run:
 
 ```bash
 bass doctor
-bass doctor --capabilities
+bass doctor --capabilities --host codex
+bass doctor --capabilities --host claude
 bass agent guide --json
 ```
 
@@ -30,6 +31,6 @@ Then execute one real, small user task. Adoption is complete when the plan selec
 
 Select Prime Agent, Graft, OMC, Orca, or Buzz only after the repository demonstrates the matching need. BASS records the selection but never installs it. A selected missing provider must be fixed or explicitly changed in `bass.yaml`; do not silently use another tool.
 
-## Upgrade 0.2 or 0.3
+## Upgrade 0.2 through 0.4
 
-Use `bass upgrade --check` first. Only `--apply` changes files. Root `tasks/` and `records/` remain readable; 0.3 Run Records load defaults for new optional fields. Do not rewrite old completion history merely to match the new contract.
+Use `bass upgrade --check` first. Only `--apply` changes files, and a second apply must be a no-op. Root `tasks/` and `records/` remain readable; old Run Records load defaults for new optional fields. Do not rewrite old completion history merely to match the new contract.

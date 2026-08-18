@@ -12,12 +12,12 @@ const npmCli = process.env.npm_execpath;
 
 assert.ok(npmCli, "smoke:package must run through npm so npm_execpath is available");
 
-function run(command, args, cwd = root) {
+function run(command, args, cwd = root, extraEnv = {}) {
   return execFileSync(command, args, {
     cwd,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
-    env: { ...process.env, npm_config_cache: npmCache },
+    env: { ...process.env, npm_config_cache: npmCache, ...extraEnv },
   }).trim();
 }
 
@@ -57,7 +57,7 @@ try {
   fs.writeFileSync(path.join(host, "package.json"), JSON.stringify({ private: true }), "utf8");
   runNpm(["install", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", tarball, ...dependencyTarballs], host);
   const bassCli = path.join(host, "node_modules", packageJson.name, packageJson.bin.bass);
-  const runBass = (args, cwd = host) => run(process.execPath, [bassCli, ...args], cwd);
+  const runBass = (args, cwd = host, extraEnv = {}) => run(process.execPath, [bassCli, ...args], cwd, extraEnv);
   assert.equal(runBass(["--version"]), packageJson.version);
 
   const nodeRepo = path.join(tempRoot, "node-web");
@@ -65,6 +65,8 @@ try {
   const nodePackage = JSON.stringify({ name: "node-web", private: true, scripts: { test: "node --test" } }, null, 2);
   fs.writeFileSync(path.join(nodeRepo, "package.json"), nodePackage, "utf8");
   runBass(setupArgs(nodeRepo, "common,web"));
+  const repeatedSetup = runBass(setupArgs(nodeRepo, "common,web"));
+  assert.doesNotMatch(repeatedSetup, /^(?:created|updated):/m);
   assert.equal(fs.readFileSync(path.join(nodeRepo, "package.json"), "utf8"), nodePackage);
   assert.ok(fs.existsSync(path.join(nodeRepo, "bass.yaml")));
   for (const artifact of ["PRODUCT.md", "TECH.md", "DESIGN.md"]) {
@@ -103,6 +105,50 @@ try {
   runBass(["upgrade", "--apply"], legacy);
   assert.match(fs.readFileSync(path.join(legacy, "bass.yaml"), "utf8"), new RegExp(`version: ${packageJson.version}`));
   assert.match(fs.readFileSync(path.join(legacy, "AGENTS.md"), "utf8"), /# Keep me/);
+  assert.match(runBass(["upgrade", "--apply"], legacy), /No changes required/);
+
+  const providerRepo = path.join(tempRoot, "provider-repo");
+  fs.mkdirSync(providerRepo);
+  runBass(["setup", providerRepo, "--non-interactive", "--capability", "simplicity=ponytail"], host);
+  const fakeHome = path.join(tempRoot, "provider-home");
+  for (const agentHost of ["codex", "claude"]) {
+    const manifest = agentHost === "codex" ? ".codex-plugin" : ".claude-plugin";
+    const pluginManifest = path.join(fakeHome, `.${agentHost}`, "plugins", "cache", "test-market", "ponytail", "1.0.0", manifest);
+    fs.mkdirSync(pluginManifest, { recursive: true });
+    fs.writeFileSync(path.join(pluginManifest, "plugin.json"), JSON.stringify({ name: "ponytail", version: "1.0.0" }), "utf8");
+  }
+  const providerEnv = {
+    HOME: fakeHome,
+    USERPROFILE: fakeHome,
+    PATH: "",
+    BASS_CODEX_ACTIVE_CAPABILITIES: "ponytail",
+    BASS_CLAUDE_ACTIVE_CAPABILITIES: "ponytail",
+  };
+  assert.match(runBass(["doctor", "--capabilities", "--host", "all"], providerRepo, providerEnv), /\[CODEX\]\[ACTUAL-PLUGIN\]/);
+  runBass(["task", "new", "PKG-2", "--title", "External provider task"], providerRepo, providerEnv);
+  runBass(["task", "transition", "PKG-2", "ACTIVE"], providerRepo, providerEnv);
+  runBass(["task", "attempt", "start", "PKG-2"], providerRepo, providerEnv);
+  const claimed = JSON.parse(runBass([
+    "capability", "claim", "PKG-2", "ponytail:full", "--host", "codex", "--json",
+  ], providerRepo, providerEnv));
+  assert.equal(claimed.action, "run");
+  runBass([
+    "capability", "complete", "PKG-2", "ponytail:full", "--host", "codex",
+    "--status", "pass", "--summary", "package provider flow passed",
+  ], providerRepo, providerEnv);
+  const reused = JSON.parse(runBass([
+    "capability", "claim", "PKG-2", "ponytail:full", "--host", "claude", "--json",
+  ], providerRepo, providerEnv));
+  assert.equal(reused.action, "reuse");
+  assert.equal(reused.callId, claimed.callId);
+  fs.rmSync(path.join(fakeHome, ".claude"), { recursive: true, force: true });
+  const missingHost = spawnSync(process.execPath, [bassCli, "doctor", "--capabilities", "--host", "all"], {
+    cwd: providerRepo,
+    encoding: "utf8",
+    env: { ...process.env, ...providerEnv },
+  });
+  assert.notEqual(missingHost.status, 0);
+  assert.match(missingHost.stdout, /\[CLAUDE\]\[MISSING\]/);
 
   const mismatch = fs.readFileSync(path.join(nodeRepo, "bass.yaml"), "utf8").replace(`version: ${packageJson.version}`, "version: 999.0.0");
   fs.writeFileSync(path.join(nodeRepo, "bass.yaml"), mismatch, "utf8");

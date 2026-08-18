@@ -5,7 +5,7 @@ import { evidenceEntryForFile, loadRunRecord } from "../src/task/runRecord.js";
 import { makeTempProject } from "./helpers.js";
 
 describe("run record compatibility and evidence paths", () => {
-  it("0.3 record에 0.4 선택 필드가 없어도 기본값을 채워 읽는다", () => {
+  it("0.3 record에 최신 선택 필드가 없어도 기본값을 채워 읽는다", () => {
     const root = makeTempProject({});
     const recordsDir = path.join(root, ".bass", "records");
     fs.mkdirSync(recordsDir, { recursive: true });
@@ -28,11 +28,13 @@ describe("run record compatibility and evidence paths", () => {
     expect(record).toMatchObject({
       record_version: 0,
       attempts: [],
+      capability_invocations: [],
       evidence: [],
       context: { sources: [], total_chars: 0, omitted: [] },
       scope: { actual_files: [], outside_allowed: [], forbidden_touched: [] },
     });
     expect(record?.usage.input_tokens).toBe("unknown");
+    expect(record?.execution_contract).toBeUndefined();
   });
 
   it("task evidence 디렉터리 밖의 파일은 manifest에 넣지 못한다", () => {

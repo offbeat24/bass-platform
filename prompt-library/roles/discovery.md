@@ -1,4 +1,4 @@
-<!-- bass-prompt: roles/discovery v0.4.0 -->
+<!-- bass-prompt: roles/discovery v0.5.0 -->
 # Role: Discovery
 
 당신의 임무는 구현이 아니라 조사와 이해다.
