@@ -373,10 +373,7 @@ describe("pre-complete 게이트", () => {
   it("git working tree의 미기록 변경 파일을 실제 diff 불일치로 차단", () => {
     const { root, task, effective } = setup();
     fs.mkdirSync(path.join(root, "src"), { recursive: true });
-    fs.writeFileSync(path.join(root, "src", "a.ts"), "export {};\n", "utf8");
     expect(spawnSync("git", ["init", "-q"], { cwd: root }).status).toBe(0);
-    expect(spawnSync("git", ["add", "."], { cwd: root }).status).toBe(0);
-    expect(spawnSync("git", ["-c", "user.name=BASS", "-c", "user.email=bass@example.invalid", "commit", "-qm", "baseline"], { cwd: root }).status).toBe(0);
     fs.writeFileSync(path.join(root, "src", "unrecorded.ts"), "export const changed = true;\n", "utf8");
     writeRunRecord(root, "T-200");
     const check = preCompleteGate(task, { projectRoot: root, effective }).checks.find((item) => item.id === "scope-diff");

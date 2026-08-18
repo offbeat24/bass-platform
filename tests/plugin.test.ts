@@ -51,13 +51,17 @@ describe("team plugin", () => {
     fs.writeFileSync(path.join(dir, ".codex-plugin", "plugin.json"), JSON.stringify({ version: "0.5.0+codex.test" }), "utf8");
     const fakeNpm = path.join(dir, "fake-npm.cjs");
     fs.writeFileSync(fakeNpm, "console.log(JSON.stringify(process.argv.slice(2)));\n", "utf8");
+    const launcherEnv = Object.fromEntries(
+      Object.entries(process.env).filter(([key]) => key.toLowerCase() !== "npm_execpath"),
+    );
+    launcherEnv.npm_execpath = fakeNpm;
 
     const result = spawnSync(process.execPath, [path.join(scripts, "bass-launcher.cjs"), "setup", dir], {
       cwd: dir,
       encoding: "utf8",
-      env: { ...process.env, npm_execpath: fakeNpm },
+      env: launcherEnv,
     });
-    expect(result.status).toBe(0);
+    expect(result.status, result.stderr || result.error?.message).toBe(0);
     expect(JSON.parse(result.stdout)).toContain("--package=@offbeat24/bass@0.5.0");
   });
 
