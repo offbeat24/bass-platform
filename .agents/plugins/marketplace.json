@@ -1,11 +1,13 @@
 {
   "name": "offbeat24-bass-platform",
+  "version": "0.5.0",
   "interface": {
     "displayName": "Offbeat24 Bass Platform"
   },
   "plugins": [
     {
       "name": "bass",
+      "version": "0.5.0",
       "source": {
         "source": "local",
         "path": "./plugins/bass"

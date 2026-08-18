@@ -9,6 +9,10 @@ import {
   DEFAULT_ADAPTERS,
   DEFAULT_CAPABILITIES,
   initProject,
+  renderAgentsBlock,
+  renderClaudeShim,
+  renderCursorShim,
+  type AdapterSelection,
 } from "./init.js";
 
 export interface UpgradePlan {
@@ -44,16 +48,31 @@ export function upgradeProject(projectRoot: string, apply = false): UpgradePlan 
   if (fs.existsSync(path.join(projectRoot, "tasks"))) removals.push("stop writing root tasks/; keep it read-only for 0.2 compatibility");
   if (fs.existsSync(path.join(projectRoot, "records"))) removals.push("stop writing root records/; keep it read-only for 0.2 compatibility");
 
-  const agentsFile = path.join(projectRoot, "AGENTS.md");
-  if (fs.existsSync(agentsFile)) {
-    const agents = fs.readFileSync(agentsFile, "utf8");
-    const starts = agents.split(BASS_BLOCK_START).length - 1;
-    const ends = agents.split(BASS_BLOCK_END).length - 1;
-    if (starts !== ends || starts > 1) conflicts.push("AGENTS.md has malformed or duplicate BASS managed markers");
-    else if (starts === 0) changes.push("append a <=2KB BASS managed block to AGENTS.md");
-    else changes.push("refresh only the BASS managed block in AGENTS.md");
-  } else {
-    changes.push("create AGENTS.md with a <=2KB BASS managed block");
+  planManagedBlock("AGENTS.md", renderAgentsBlock(), "a <=2KB BASS managed block");
+  const plannedAdapters = { ...DEFAULT_ADAPTERS, ...existingAdapters } as AdapterSelection;
+  if (plannedAdapters.primary === "claude" || plannedAdapters.compatibility.includes("claude")) {
+    planManagedBlock("CLAUDE.md", renderClaudeShim(), "the thin Claude compatibility shim");
+  }
+  if (plannedAdapters.primary === "cursor" || plannedAdapters.compatibility.includes("cursor")) {
+    planManagedBlock(".cursor/rules/bass.mdc", renderCursorShim(), "the thin Cursor compatibility shim");
+  }
+
+  function planManagedBlock(relative: string, block: string, label: string): void {
+    const target = path.join(projectRoot, relative);
+    if (!fs.existsSync(target)) {
+      changes.push(`create ${relative} with ${label}`);
+      return;
+    }
+    const current = fs.readFileSync(target, "utf8");
+    const starts = current.split(BASS_BLOCK_START).length - 1;
+    const ends = current.split(BASS_BLOCK_END).length - 1;
+    if (starts !== ends || starts > 1) {
+      conflicts.push(`${relative} has malformed or duplicate BASS managed markers`);
+      return;
+    }
+    const expected = `${BASS_BLOCK_START}\n${block.trim()}\n${BASS_BLOCK_END}`;
+    if (starts === 0) changes.push(`append ${label} to ${relative}`);
+    else if (!current.includes(expected)) changes.push(`refresh only the BASS managed block in ${relative}`);
   }
 
   if (!apply) return { fromVersion, toVersion: BASS_VERSION, changes, removals, conflicts, applied: false };
@@ -79,7 +98,8 @@ export function upgradeProject(projectRoot: string, apply = false): UpgradePlan 
   if (!parsed.success) {
     throw new Error(`Cannot upgrade invalid bass.yaml: ${parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; ")}`);
   }
-  fs.writeFileSync(file, stringify(next, { lineWidth: 0 }), "utf8");
+  const nextYaml = stringify(next, { lineWidth: 0 });
+  if (fs.readFileSync(file, "utf8") !== nextYaml) fs.writeFileSync(file, nextYaml, "utf8");
 
   const project = parsed.data.project;
   initProject({
@@ -99,6 +119,7 @@ export function formatUpgradePlan(plan: UpgradePlan): string {
   for (const change of plan.changes) lines.push(`  change: ${change}`);
   for (const removal of plan.removals) lines.push(`  compatibility: ${removal}`);
   for (const conflict of plan.conflicts) lines.push(`  conflict: ${conflict}`);
+  if (plan.changes.length === 0 && plan.conflicts.length === 0) lines.push("No changes required.");
   if (!plan.applied) lines.push("No files changed. Run `bass upgrade --apply` to apply this plan.");
   return lines.join("\n");
 }

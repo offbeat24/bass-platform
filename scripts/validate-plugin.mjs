@@ -13,19 +13,34 @@ const launcher = fs.readFileSync(path.join(root, "plugins", "bass", "scripts", "
 
 assert.equal(codex.version, pkg.version);
 assert.equal(claude.version, pkg.version);
+assert.equal(codex.skills, "./skills/");
+assert.equal(claude.skills, codex.skills);
+assert.equal(codex.hooks, "./hooks/hooks.json");
+assert.equal("hooks" in claude, false, "Claude auto-discovers the standard hooks/hooks.json file");
+assert.equal(claudeMarket.version, pkg.version);
 assert.equal(claudeMarket.plugins[0].version, pkg.version);
+assert.equal(codexMarket.version, pkg.version);
+assert.equal(codexMarket.plugins[0].version, pkg.version);
 assert.equal(codexMarket.plugins[0].source.path, "./plugins/bass");
 assert.equal(claudeMarket.plugins[0].source, "./plugins/bass");
 assert.ok(hooks.hooks.SessionStart);
 assert.ok(hooks.hooks.PostToolUse);
+assert.match(hooks.hooks.PostToolUse[0].matcher, /(?:^|\|)Bash(?:\||$)/);
 assert.match(launcher, /pluginVersion\(\)/);
-assert.doesNotMatch(launcher, /findVersion\(process\.cwd\(\)\) \|\| "0\.3\.0"/);
+assert.match(launcher, /split\(["']\+["'],\s*1\)/);
+assert.match(launcher, /process\.env\.npm_execpath/);
+assert.match(launcher, /spawnSync\(\s*process\.execPath/);
+assert.doesNotMatch(launcher, /npm\.cmd|spawnSync\(\s*["']npm["']/);
 
 const skillsRoot = path.join(root, "plugins", "bass", "skills");
 for (const name of fs.readdirSync(skillsRoot)) {
   const skill = fs.readFileSync(path.join(skillsRoot, name, "SKILL.md"), "utf8").replaceAll("\r\n", "\n");
   assert.match(skill, new RegExp(`^---\\nname: ${name}\\ndescription: .+\\n---`, "s"));
   assert.doesNotMatch(skill, /\[TODO:/);
+  assert.match(skill, /\.\.\/\.\.\/scripts\/bass-launcher\.cjs/);
+  assert.doesNotMatch(skill, /CLAUDE_PLUGIN_ROOT|PLUGIN_ROOT/);
+  assert.doesNotMatch(skill, /`bass\s+[^`]+`/i);
+  assert.ok(fs.existsSync(path.join(skillsRoot, name, "agents", "openai.yaml")));
 }
 
 console.log(`plugin validation PASS: bass@${pkg.version}`);

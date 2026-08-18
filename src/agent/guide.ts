@@ -74,7 +74,8 @@ export function buildAgentGuide(
       "Do not continue after repeated failure without new evidence, no-progress, or an exhausted attempt, turn, or time budget.",
       "Never self-approve risk or final product judgment.",
       "Preserve repository-native instructions and avoid a second source of truth.",
-      "Invoke an external provider only when execution_plan.capabilityCalls names it and doctor plus the host session confirm it is installed and active; never auto-install or emulate it.",
+      "Invoke an external provider only when execution_plan.capabilityCalls names it and host-specific doctor confirms it active; claim before invocation, complete afterward, reuse completed calls, and stop on uncertain calls.",
+      "Never auto-install, emulate, copy, or silently substitute an external provider.",
     ],
     execution_plan: buildExecutionPlan(config, task),
   };

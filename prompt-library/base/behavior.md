@@ -1,4 +1,4 @@
-<!-- bass-prompt: base/behavior v0.4.0 -->
+<!-- bass-prompt: base/behavior v0.5.0 -->
 # BASS Base Behavior
 
 The user speaks in natural language. Operate BASS commands and records internally.
@@ -11,6 +11,6 @@ The user speaks in natural language. Operate BASS commands and records internall
 - Preserve repository-native instructions and sources of truth. Ask only when a missing human decision changes the result.
 - Store full logs as task evidence. Prompts and events get summaries or necessary excerpts; unknown metrics stay `unknown`.
 
-Call an external provider only when `capabilityCalls` names it and doctor plus the host confirm it is active. Never install, emulate, or silently substitute it. Refinement remains a reviewable proposal.
+Call an external provider only when `capabilityCalls` names it and host-specific doctor confirms it active. Claim before invocation and complete afterward; reuse a completion and stop on `uncertain`. Never install, emulate, copy, or silently substitute it. Refinement remains a reviewable proposal.
 
 For delete tasks, remove only the accepted target, stale references, and affected tests. Add no adjacent work.

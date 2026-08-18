@@ -11,6 +11,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
+import os from "node:os";
+import { buildExecutionPlan } from "../src/execution/planner.js";
+import { claimCapability, completeCapability } from "../src/task/capability.js";
+import { finishAttempt, startAttempt } from "../src/task/events.js";
 
 describe("워크플로 상태 머신", () => {
   it("정상 전이: 표준 경로를 따른다", () => {
@@ -152,6 +156,79 @@ describe("pre-complete 게이트", () => {
     writeRunRecord(root, "T-200");
     const report = preCompleteGate(task, { projectRoot: root, effective });
     expect(report.passed).toBe(true);
+  });
+
+  it("run record v2의 실행 계약과 capability 완료 이벤트가 일치하면 통과한다", () => {
+    const root = makeTempProject({});
+    const file = writeTask(root, "T-206", { status: "ACTIVE", riskLevel: "medium" });
+    const task = parseTaskFile(file);
+    const config = loadConfig({ projectRoot: root });
+    const plan = buildExecutionPlan(config, task);
+    const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), "bass-gate-capability-"));
+    startAttempt({ projectRoot: root, task, plan });
+    const claim = claimCapability({
+      projectRoot: root,
+      task,
+      plan,
+      config: config.bassYaml,
+      capabilityCall: "ponytail:full",
+      host: "codex",
+      inspection: { homeDir: fakeHome, commandAvailable: (command) => command === "ponytail", active: new Set(["ponytail"]) },
+    });
+    completeCapability({
+      projectRoot: root,
+      task,
+      plan,
+      config: config.bassYaml,
+      capabilityCall: "ponytail:full",
+      host: "codex",
+      status: "pass",
+      summary: "provider result accepted",
+    });
+    finishAttempt({ projectRoot: root, task, plan, result: "pass", summary: "accepted" });
+    transitionTask(root, "T-206", "REVIEW");
+    writeRunRecord(root, "T-206", {
+      record_version: 2,
+      execution_contract: {
+        contract_version: plan.contractVersion,
+        plan_fingerprint: plan.planFingerprint,
+        capability_calls: plan.capabilityCalls,
+      },
+      capability_invocations: [{
+        call_id: claim.callId,
+        attempt: 1,
+        capability_call: "ponytail:full",
+        host: "codex",
+        status: "pass",
+        summary: "provider result accepted",
+      }],
+    });
+
+    const report = preCompleteGate(parseTaskFile(file), {
+      projectRoot: root,
+      effective: config.effective,
+      executionPlan: plan,
+    });
+    expect(report.checks.find((check) => check.id === "execution-contract")?.status).toBe("pass");
+    expect(report.checks.find((check) => check.id === "capability-invocations")?.status).toBe("pass");
+    expect(report.passed).toBe(true);
+  });
+
+  it("run record v2가 현재 plan fingerprint와 다르면 완료를 차단한다", () => {
+    const { root, task, effective } = setup();
+    const config = loadConfig({ projectRoot: root });
+    const plan = buildExecutionPlan(config, task);
+    writeRunRecord(root, "T-200", {
+      record_version: 2,
+      execution_contract: {
+        contract_version: 1,
+        plan_fingerprint: "0".repeat(64),
+        capability_calls: plan.capabilityCalls,
+      },
+    });
+    const report = preCompleteGate(task, { projectRoot: root, effective, executionPlan: plan });
+    expect(report.checks.find((check) => check.id === "execution-contract")?.status).toBe("fail");
+    expect(report.checks.find((check) => check.id === "capability-invocations")?.status).toBe("fail");
   });
 
   it("실패한 평가가 있으면 실패", () => {

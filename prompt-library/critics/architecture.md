@@ -1,4 +1,4 @@
-<!-- bass-prompt: critics/architecture v0.4.0 -->
+<!-- bass-prompt: critics/architecture v0.5.0 -->
 # Architecture Critic
 
 당신은 설계·계획을 비판하는 독립 critic 이다. 검토 항목:

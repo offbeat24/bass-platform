@@ -30,10 +30,26 @@ function run() {
     const diff = gitLines(root, ["diff", "--no-ext-diff", "--binary"]).join("\n") + changed.join("\n");
     const fingerprint = crypto.createHash("sha256").update(diff).digest("hex");
     const cache = path.join(root, ".bass", "cache", "scope-warning.txt");
-    if (fs.existsSync(cache) && fs.readFileSync(cache, "utf8") === fingerprint) return;
     fs.mkdirSync(path.dirname(cache), { recursive: true });
-    fs.writeFileSync(cache, fingerprint, "utf8");
-    output(`BASS scope lock warning: ${violations.slice(0, 5).join(", ")}. Do not expand scope; revert or obtain an explicit scope decision.`);
+    const lock = `${cache}.lock`;
+    let lockHandle;
+    try {
+      lockHandle = fs.openSync(lock, "wx");
+    } catch (error) {
+      if (error && error.code === "EEXIST") return;
+      throw error;
+    }
+    const temporary = `${cache}.${process.pid}.${crypto.randomUUID()}.tmp`;
+    try {
+      if (fs.existsSync(cache) && fs.readFileSync(cache, "utf8") === fingerprint) return;
+      fs.writeFileSync(temporary, fingerprint, "utf8");
+      fs.renameSync(temporary, cache);
+      output(`BASS scope lock warning: ${violations.slice(0, 5).join(", ")}. Do not expand scope; revert or obtain an explicit scope decision.`);
+    } finally {
+      if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
+      fs.closeSync(lockHandle);
+      fs.unlinkSync(lock);
+    }
   } catch (_) {}
 }
 

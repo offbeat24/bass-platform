@@ -6,6 +6,22 @@ import { z } from "zod";
 const sha256Schema = z.string().regex(/^[a-f0-9]{64}$/);
 const usageMetricSchema = z.union([z.number().nonnegative(), z.literal("unknown")]);
 
+const executionContractSchema = z.object({
+  contract_version: z.literal(1),
+  plan_fingerprint: sha256Schema,
+  capability_calls: z.array(z.string()),
+});
+
+const capabilityInvocationSchema = z.object({
+  call_id: sha256Schema,
+  attempt: z.number().int().positive(),
+  capability_call: z.string().min(3).max(200).regex(/^[a-z0-9-]+:[a-z0-9-]+$/),
+  host: z.enum(["codex", "claude"]),
+  status: z.enum(["pass", "fail", "skipped", "error"]),
+  summary: z.string().min(1).max(500).refine((value) => !/[\r\n]/.test(value), "summary must be one line"),
+  evidence_path: z.string().min(1).max(500).optional(),
+});
+
 export const evidenceEntrySchema = z.object({
   kind: z.string().min(1),
   path: z.string().min(1),
@@ -20,6 +36,8 @@ export const evidenceEntrySchema = z.object({
  */
 export const runRecordSchema = z.object({
   record_version: z.number().int().min(0).default(0),
+  execution_contract: executionContractSchema.optional(),
+  capability_invocations: z.array(capabilityInvocationSchema).default([]),
   task_id: z.string(),
   summary_of_changes: z.string().min(1),
   why: z.string().min(1),

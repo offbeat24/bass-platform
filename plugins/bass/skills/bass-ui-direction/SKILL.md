@@ -5,6 +5,8 @@ description: Define a concise visual direction before a new UI or material redes
 
 # BASS UI Direction
 
+Resolve `../../scripts/bass-launcher.cjs` from this `SKILL.md` to an absolute path for any BASS CLI check. Do not use a host-specific environment variable or a bare CLI binary.
+
 Only run when `execution_plan.capabilityCalls` includes `bass:ui-direction`.
 
 Inspect the rendered product, existing components, tokens, and `DESIGN.md`. Then add or refresh one short `## Direction` section covering:

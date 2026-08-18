@@ -37,4 +37,4 @@ Add dashboards, decorative progress animation, hidden background execution, or d
 
 ## Decisions and history
 
-0.4 retains terminal and file interfaces. A web console is explicitly deferred.
+0.5 retains terminal and file interfaces while adding host labels, plan fingerprints, and capability claim states. A web console remains explicitly deferred.

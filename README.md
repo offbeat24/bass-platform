@@ -1,8 +1,10 @@
-# BASS 0.4 — Portable Product-to-Ship Harness
+# BASS 0.5 — Codex–Claude Portable Product-to-Ship Harness
 
 BASS는 아이디어를 제품·기술·디자인 명세로 구체화하고, 작은 작업으로 나눈 뒤 구현·검증·리뷰를 bounded loop로 관리한다. BASS가 Task Graph, 게이트, Run Record, evidence의 기준을 유지하고 Codex·Claude·Prime Agent와 외부 하네스는 선택형 실행 도구로만 사용한다.
 
-동일한 `0.4.x` 버전을 세 계층이 공유한다.
+설치부터 업그레이드·개발·배포까지의 전체 절차는 [BASS 0.5.0 Release Notes](RELEASE_NOTES.md)에 정리되어 있다.
+
+동일한 `0.5.x` 버전을 세 계층이 공유한다.
 
 - 호스트 CLI: `@offbeat24/bass`
 - 팀 플러그인: Codex·Claude marketplace의 `bass`
@@ -21,7 +23,7 @@ npm login --scope=@offbeat24 --auth-type=legacy --registry=https://npm.pkg.githu
 플러그인 launcher가 `bass.yaml`과 같은 버전을 npm cache에서 실행하므로 전역 설치는 선택이다.
 
 ```bash
-npm install -g @offbeat24/bass@0.4.0
+npm install -g @offbeat24/bass@0.5.0
 codex plugin marketplace add offbeat24/bass-platform
 ```
 
@@ -32,7 +34,7 @@ Codex `/plugins` 또는 데스크톱 Plugins Directory에서 `bass`를 설치하
 /plugin install bass@offbeat24-bass-platform
 ```
 
-Codex와 Claude는 같은 skills, hooks, launcher를 사용하며 코어를 복제하지 않는다.
+Codex와 Claude는 같은 skills, hooks, launcher를 사용하며 코어를 복제하지 않는다. Codex 매니페스트는 공용 훅 경로를 명시하고, Claude Code는 표준 `hooks/hooks.json`을 자동 발견한다.
 
 ## 어느 저장소에서든 연결
 
@@ -52,12 +54,15 @@ bass setup /path/to/repository --non-interactive \
   --adapter collaboration_provider=buzz
 ```
 
-BASS는 외부 도구를 설치하거나 흉내 내지 않는다. 선택된 provider가 없거나 명시적으로 inactive이면 doctor가 실패한다.
+BASS는 외부 도구를 설치하거나 흉내 내지 않는다. 각 호스트의 설치·인증·세션 활성 상태를 따로 검사하고, 한 호스트의 캐시를 다른 호스트 설치로 인정하지 않는다.
 
 ```bash
-bass doctor
-bass doctor --capabilities
+bass doctor --capabilities --host codex
+bass doctor --capabilities --host claude
+bass doctor --capabilities --host all  # 공식 호환 호스트 전체 릴리스 검사
 ```
+
+Codex와 Claude Code가 같은 BASS 버전, `bass.yaml`, task, 저장소 상태를 읽으면 `contractVersion`, `planFingerprint`, `capabilityCalls`, scope lock, gate 요구사항이 같아야 한다. 모델명·토큰·시간·설명 문구와 허용 범위 안의 구현 세부는 달라도 된다. Cursor shim은 유지하지만 이 동등성 릴리스 게이트에는 포함하지 않는다.
 
 기본 저장소 계약:
 
@@ -95,9 +100,12 @@ AGENTS.md
 
 ```bash
 bass task graph --json
+bass agent guide TASK-001 --json
 bass compose --role worker --task TASK-001
 bass task transition TASK-001 ACTIVE
 bass task attempt start TASK-001
+bass capability claim TASK-001 ponytail:full --host codex --json
+bass capability complete TASK-001 ponytail:full --host codex --status pass --summary "review complete"
 bass evaluate --task TASK-001
 bass task attempt finish TASK-001 --result pass --summary "checks passed" --turns 3
 bass gate pre-review TASK-001
@@ -127,6 +135,8 @@ bass status --watch
 - OMC·Orca: Task Graph와 `owned_paths`를 따르는 선택형 workspace executor다.
 - Buzz: 비밀·전문이 제거된 `events.jsonl`을 소비하는 협업 provider다.
 
+외부 호출은 `claim → 실제 호스트 플러그인 호출 → complete`로 기록한다. `call_id`는 host를 제외한 plan fingerprint·task·attempt·semantic call로 계산한다. 완료된 호출은 재사용하고, 시작만 남은 호출은 부작용을 알 수 없어 `uncertain`으로 차단한다. 새 attempt에서만 같은 semantic call을 다시 실행할 수 있다.
+
 ECC·gstack·Spec Kit의 구체화 순서, Claude Loop의 종료 조건, Prime Agent의 evidence-backed refinement, Herdr·cmux의 관찰 개념은 BASS Core와 skills에 이식했다. 외부 프롬프트나 런타임은 복제하지 않는다. 자세한 경계는 [External harness providers](docs/agent-harness-plugins.md)를 참고한다.
 
 ## 모델 라우팅
@@ -150,8 +160,10 @@ npm run verify
 claude plugin validate .
 ```
 
-0.2·0.3 task와 Run Record는 읽기 호환한다. 기존 완료 이력을 새 형식으로 일괄 재작성하지 않는다. push와 package publish는 별도 승인 작업이다.
+릴리스는 PR 병합 후 `v0.5.0` GitHub Release를 발행하는 순서로 진행한다. `release.yml`이 검증과 GitHub Packages publish를 수행하므로 같은 릴리스에 `workflow_dispatch`를 중복 실행하지 않는다.
 
-웹 콘솔과 TUI는 0.4 범위가 아니다. 서로 다른 프로젝트 3개 이상, 실제 task 20개 이상, 반복 loop 5개 이상과 팀 피드백이 쌓이고 이벤트 형식이 안정된 뒤에만 0.5 읽기 전용 웹 콘솔을 검토한다.
+이벤트 reader는 schema v1·v2를 함께 읽는다. 0.2–0.4 task와 기존 Run Record도 기본값으로 읽으며 완료 이력을 일괄 재작성하지 않는다. 새 Run Record v2는 `execution_contract`와 `capability_invocations`를 기록한다. push와 package publish는 별도 승인 작업이다.
+
+웹 콘솔과 TUI는 0.5 범위가 아니다. 충분한 실제 프로젝트·task·반복 loop와 팀 피드백이 쌓이고 이벤트 형식이 안정된 뒤에만 별도 버전의 읽기 전용 콘솔을 검토한다. 현재 Codex IDE 확장은 플러그인 설치 릴리스 매트릭스에서 제외하고 저장소의 `AGENTS.md`와 로컬 스킬만 적용한다.
 
 상세 문서: [Architecture](docs/architecture.md), [Configuration](docs/configuration.md), [Workflows](docs/workflows.md), [Agent operations](docs/agent-operations.md), [Existing repository adoption](docs/adopting-existing-project.md).

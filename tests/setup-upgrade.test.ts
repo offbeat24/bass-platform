@@ -11,6 +11,13 @@ import { BASS_VERSION } from "../src/version.js";
 
 function temp(): string { return fs.mkdtempSync(path.join(os.tmpdir(), "bass-03-")); }
 
+function fakePlugin(home: string, host: "codex" | "claude", marketplace: string, plugin: string): void {
+  const manifest = host === "codex" ? ".codex-plugin" : ".claude-plugin";
+  const dir = path.join(home, `.${host}`, "plugins", "cache", marketplace, plugin, "1.0.0", manifest);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "plugin.json"), JSON.stringify({ name: plugin, version: "1.0.0" }), "utf8");
+}
+
 describe("bass setup", () => {
   it("외부 harness provider는 명시적 adapter assignment로만 선택한다", () => {
     expect(applyAdapterAssignments([
@@ -55,6 +62,10 @@ describe("bass setup", () => {
     const gitignore = fs.readFileSync(path.join(root, ".gitignore"), "utf8");
     expect(gitignore).toContain(".bass/local.yaml");
     expect(gitignore).toContain("!.bass/evidence/**/*.log");
+    const repeated = setupProject({ projectRoot: root });
+    expect(repeated.initialized.created).toEqual([]);
+    expect(repeated.initialized.updated).toEqual([]);
+    expect(repeated.initialized.conflicts).toEqual([]);
   });
 
   it("구버전 bass.yaml은 setup에서 덮지 않고 upgrade 대상으로 중지한다", () => {
@@ -93,11 +104,12 @@ describe("legacy upgrade", () => {
     expect(fs.readFileSync(path.join(root, "AGENTS.md"), "utf8")).toContain("Never rewrite this");
     expect(listTasks(root)[0]?.frontmatter.status).toBe("ACTIVE");
     const after = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
-    upgradeProject(root, true);
+    const repeated = upgradeProject(root, true);
     expect(fs.readFileSync(path.join(root, "AGENTS.md"), "utf8")).toBe(after);
+    expect(repeated.changes).toEqual([]);
   });
 
-  it("0.3 설정을 보존하면서 0.4 loop와 provider 기본값만 보강한다", () => {
+  it("0.3 설정을 보존하면서 최신 loop와 provider 기본값만 보강한다", () => {
     const root = temp();
     fs.writeFileSync(path.join(root, "bass.yaml"), `bass:\n  version: 0.3.0\n  profiles: [common]\nproject:\n  name: v03\nexecution:\n  depth: fast\n  verification: all\nadapters:\n  primary: claude\n  compatibility: [codex]\n`, "utf8");
     upgradeProject(root, true);
@@ -128,8 +140,8 @@ describe("capability doctor states", () => {
     });
     const config = loadConfig({ projectRoot: root }).bassYaml;
     const fakeHome = temp();
-    fs.mkdirSync(path.join(fakeHome, ".codex", "plugins", "cache", "ponytail"), { recursive: true });
-    fs.mkdirSync(path.join(fakeHome, ".codex", "plugins", "cache", "pen"), { recursive: true });
+    fakePlugin(fakeHome, "codex", "test-market", "ponytail");
+    fakePlugin(fakeHome, "codex", "test-market", "pen");
     const states = inspectCapabilities(config, { homeDir: fakeHome, commandAvailable: () => false, active: new Set(["ponytail"]), authenticated: new Set() });
     expect(states.find((item) => item.selected === "ouroboros")?.state).toBe("missing");
     expect(states.find((item) => item.selected === "ponytail")?.state).toBe("actual-plugin");
@@ -153,6 +165,7 @@ describe("capability doctor states", () => {
     const config = loadConfig({ projectRoot: root }).bassYaml;
     const installed = new Set(["prime-agent", "graft", "omc"]);
     const states = inspectProviders(config, {
+      host: "claude",
       commandAvailable: (command) => installed.has(command),
       active: new Set(["prime-agent", "omc"]),
     });
@@ -160,5 +173,26 @@ describe("capability doctor states", () => {
     expect(states.find((item) => item.capability === "context_provider")).toMatchObject({ state: "actual-plugin", sessionActive: false });
     expect(states.find((item) => item.capability === "workspace_executor")).toMatchObject({ state: "actual-plugin", sessionActive: true });
     expect(states.find((item) => item.capability === "collaboration_provider")?.state).toBe("missing");
+  });
+
+  it("호스트 캐시를 분리하고 지원하지 않는 provider를 대체하지 않는다", () => {
+    const root = temp();
+    setupProject({
+      projectRoot: root,
+      adapters: applyAdapterAssignments(["workspace_executor=omc"]),
+      capabilities: { specification: "builtin", simplicity: "ponytail", ui_direction: "off", ui_canvas: "off", html_report: "off" },
+    });
+    const config = loadConfig({ projectRoot: root }).bassYaml;
+    const fakeHome = temp();
+    fakePlugin(fakeHome, "codex", "test-market", "ponytail");
+    fakePlugin(fakeHome, "claude", "test-market", "oh-my-claudecode");
+    const common = { homeDir: fakeHome, commandAvailable: () => false, active: new Set(["ponytail", "omc"]) };
+
+    const codex = inspectProviders(config, { ...common, host: "codex" });
+    const claude = inspectProviders(config, { ...common, host: "claude" });
+    expect(codex.find((item) => item.selected === "ponytail")).toMatchObject({ host: "codex", state: "actual-plugin" });
+    expect(claude.find((item) => item.selected === "ponytail")).toMatchObject({ host: "claude", state: "missing" });
+    expect(codex.find((item) => item.selected === "omc")).toMatchObject({ host: "codex", state: "unsupported" });
+    expect(claude.find((item) => item.selected === "omc")).toMatchObject({ host: "claude", state: "actual-plugin" });
   });
 });

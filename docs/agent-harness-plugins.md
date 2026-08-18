@@ -23,6 +23,6 @@ Prime Agent is not bundled. Its persistent REPL, recursive agents, and continual
 
 ## Doctor contract
 
-`bass doctor --capabilities` reports builtin, off, actual-plugin, missing, or unauthenticated plus installation, authentication, session activation, and restart status. An explicitly inactive provider is a failure. When activation cannot be detected, doctor warns and the host must confirm that the matching skill or command is loaded before invocation.
+`bass doctor --capabilities --host codex|claude` reports builtin, off, actual-plugin, missing, unauthenticated, or unsupported plus installation, authentication, session activation, and restart status. `--host all` checks every configured official host and fails when activation cannot be confirmed. OMC's marketplace plugin is Claude-only and therefore unsupported on Codex; Orca is cataloged for both hosts.
 
 BASS never auto-installs a provider, changes global hooks, or substitutes a builtin after a missing external selection.

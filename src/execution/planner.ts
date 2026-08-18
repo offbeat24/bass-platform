@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { LoadedConfig } from "../config/loader.js";
 import type { ExecutionDepth, ExecutionPlan, TaskKind } from "../types.js";
 import type { TaskFile } from "../task/taskFile.js";
@@ -30,7 +31,7 @@ export function buildExecutionPlan(config: LoadedConfig, task?: TaskFile): Execu
   const maxAgents = parallelAgentLimit(config, task, depth);
   const adapters = config.bassYaml.adapters;
 
-  return {
+  const plan: Omit<ExecutionPlan, "contractVersion" | "planFingerprint"> = {
     taskKind,
     depth,
     changedSurfaces,
@@ -53,6 +54,27 @@ export function buildExecutionPlan(config: LoadedConfig, task?: TaskFile): Execu
     },
     maxReworkLoops: Math.max(0, loop.maxAttempts - 1),
   };
+  const contractVersion = 1 as const;
+  const planFingerprint = createHash("sha256")
+    .update(stableStringify({ contractVersion, ...plan }))
+    .digest("hex");
+  return { contractVersion, planFingerprint, ...plan };
+}
+
+function stableStringify(value: unknown): string {
+  return JSON.stringify(sortKeys(value));
+}
+
+function sortKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortKeys);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0)
+        .map(([key, child]) => [key, sortKeys(child)]),
+    );
+  }
+  return value;
 }
 
 function parallelAgentLimit(

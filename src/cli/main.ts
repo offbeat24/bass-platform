@@ -24,12 +24,14 @@ import type { ModelRole, WorkflowState } from "../types.js";
 import { BASS_VERSION } from "../version.js";
 import { buildExecutionPlan } from "../execution/planner.js";
 import { formatCapabilityStatuses, inspectProviders } from "../project/capabilities.js";
+import type { AgentHost } from "../project/providerCatalog.js";
 import { formatUpgradePlan, upgradeProject } from "../project/upgrade.js";
 import { normalizeWorkflowState } from "../workflow/stateMachine.js";
 import { getRuntime, parseRuntimeTargets, runtimeCatalog } from "../runtime/catalog.js";
 import { recommendRuntimes } from "../runtime/recommendation.js";
 import { buildTaskGraph, formatTaskGraph } from "../task/taskGraph.js";
 import { appendEvent, currentAttempt, EVENT_KINDS, EVENT_STATUSES, finishAttempt, readEvents, startAttempt } from "../task/events.js";
+import { claimCapability, completeCapability, type CapabilityCompletionStatus } from "../task/capability.js";
 import { buildProjectStatus, formatProjectStatus, watchProjectStatus } from "../task/status.js";
 
 const program = new Command();
@@ -324,6 +326,54 @@ eventCmd
       ...(opts.attempt ? { attempt: Number(opts.attempt) } : openAttempt ? { attempt: openAttempt } : {}),
     });
     console.log(JSON.stringify(event));
+  });
+
+// ---------- external capability invocation ----------
+const capabilityCmd = program.command("capability").description("외부 capability 호출을 멱등하게 claim하고 완료 기록");
+capabilityCmd
+  .command("claim <taskId> <capabilityCall>")
+  .requiredOption("--host <host>", "codex | claude")
+  .option("--json", "기계 판독 JSON 출력", false)
+  .action((taskId, capabilityCall, opts) => {
+    const { projectRoot, config } = requireProject();
+    const task = findTask(projectRoot, taskId);
+    const result = claimCapability({
+      projectRoot,
+      task,
+      plan: buildExecutionPlan(config, task),
+      config: config.bassYaml,
+      capabilityCall: String(capabilityCall),
+      host: parseAgentHost(opts.host),
+    });
+    console.log(opts.json ? JSON.stringify(result, null, 2) : `${result.action}: ${result.callId} attempt=${result.attempt}`);
+    if (result.action === "uncertain") process.exitCode = 1;
+  });
+capabilityCmd
+  .command("complete <taskId> <capabilityCall>")
+  .requiredOption("--host <host>", "codex | claude")
+  .requiredOption("--status <status>", "pass | fail | skipped | error")
+  .requiredOption("--summary <text>", "호출 결과 한 줄 요약")
+  .option("--evidence <path>", ".bass/evidence/<taskId>/ 아래의 증거 파일")
+  .option("--json", "기계 판독 JSON 출력", false)
+  .action((taskId, capabilityCall, opts) => {
+    const status = String(opts.status);
+    if (!["pass", "fail", "skipped", "error"].includes(status)) {
+      throw new Error("--status must be pass, fail, skipped, or error");
+    }
+    const { projectRoot, config } = requireProject();
+    const task = findTask(projectRoot, taskId);
+    const result = completeCapability({
+      projectRoot,
+      task,
+      plan: buildExecutionPlan(config, task),
+      config: config.bassYaml,
+      capabilityCall: String(capabilityCall),
+      host: parseAgentHost(opts.host),
+      status: status as CapabilityCompletionStatus,
+      summary: String(opts.summary),
+      ...(opts.evidence ? { evidence: String(opts.evidence) } : {}),
+    });
+    console.log(opts.json ? JSON.stringify(result, null, 2) : `${result.changed ? "completed" : "unchanged"}: ${result.callId} attempt=${result.attempt}`);
   });
 
 program
@@ -733,39 +783,67 @@ program
   .command("doctor")
   .description("연결 상태와 선택 capability의 실제 호스트 상태 검사")
   .option("--capabilities", "capability 상태만 자세히 표시", false)
+  .option("--host <host>", "codex | claude | all (기본: primary host)")
   .action((opts) => {
     const { projectRoot, config } = requireProject();
+    const hosts = resolveDoctorHosts(config, opts.host ? String(opts.host) : undefined);
+    const strictActivation = opts.host === "all";
+    const providersForHosts = hosts.flatMap((host) => inspectProviders(config.bassYaml, {
+      host,
+      allowGenericEnv: !strictActivation,
+    }));
     if (opts.capabilities) {
-      const statuses = inspectProviders(config.bassYaml);
-      console.log(formatCapabilityStatuses(statuses));
-      process.exit(providerFailed(statuses) ? 1 : 0);
+      console.log(formatCapabilityStatuses(providersForHosts));
+      process.exit(providerFailed(providersForHosts, strictActivation) ? 1 : 0);
       return;
     }
     const checks = doctor(projectRoot, config.effective);
     for (const c of checks) {
       console.log(`  [${c.status.toUpperCase()}] ${c.id}${c.detail ? ` — ${c.detail}` : ""}`);
     }
-    const providers = inspectProviders(config.bassYaml).filter((status) => status.state !== "builtin" && status.state !== "off");
+    const providers = providersForHosts.filter((status) => status.state !== "builtin" && status.state !== "off");
     for (const provider of providers) {
-      const state = provider.state === "missing" || provider.state === "unauthenticated" || provider.sessionActive === false
+      const state = provider.state === "missing"
+        || provider.state === "unauthenticated"
+        || provider.state === "unsupported"
+        || provider.sessionActive === false
+        || (strictActivation && provider.state === "actual-plugin" && provider.sessionActive === null)
         ? "FAIL"
-        : provider.sessionActive === null
+        : provider.sessionActive === null && !strictActivation
           ? "WARN"
           : "PASS";
-      console.log(`  [${state}] provider:${provider.capability} — ${provider.detail}`);
+      console.log(`  [${state}] provider:${provider.host}:${provider.capability} — ${provider.detail}`);
     }
-    process.exit(checks.some((c) => c.status === "fail") || providerFailed(providers) ? 1 : 0);
+    process.exit(checks.some((c) => c.status === "fail") || providerFailed(providers, strictActivation) ? 1 : 0);
   });
 
-function providerFailed(statuses: ReturnType<typeof inspectProviders>): boolean {
+function providerFailed(statuses: ReturnType<typeof inspectProviders>, strictActivation = false): boolean {
   return statuses.some((status) =>
-    status.state === "missing" || status.state === "unauthenticated" || status.sessionActive === false,
+    status.state === "missing"
+    || status.state === "unauthenticated"
+    || status.state === "unsupported"
+    || status.sessionActive === false
+    || (strictActivation && status.state === "actual-plugin" && status.sessionActive === null),
   );
+}
+
+function parseAgentHost(value: unknown): AgentHost {
+  const host = String(value);
+  if (host !== "codex" && host !== "claude") throw new Error(`Invalid host "${host}" (expected codex or claude)`);
+  return host;
+}
+
+function resolveDoctorHosts(config: LoadedConfig, requested?: string): AgentHost[] {
+  if (requested && requested !== "all") return [parseAgentHost(requested)];
+  const configured = [config.bassYaml.adapters.primary, ...config.bassYaml.adapters.compatibility]
+    .filter((host): host is AgentHost => host === "codex" || host === "claude");
+  if (requested === "all") return [...new Set(configured.length > 0 ? configured : ["codex"] as AgentHost[])];
+  return [configured[0] ?? "codex"];
 }
 
 program
   .command("upgrade")
-  .description("이전 저장소를 사용자 파일을 보존하며 0.4 계약으로 마이그레이션")
+  .description("이전 저장소를 사용자 파일을 보존하며 0.5 계약으로 마이그레이션")
   .option("--check", "읽기 전용 변경 계획 표시", false)
   .option("--apply", "계획 적용", false)
   .action((opts) => {

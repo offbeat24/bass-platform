@@ -17,7 +17,7 @@ Builders and small teams use several coding agents and harnesses but need one po
 
 ## Name and brand
 
-BASS remains the product name. The 0.4 descriptor is “Portable Product-to-Ship Harness.” Visual identity and logo changes are proposals until explicitly approved.
+BASS remains the product name. The 0.5 descriptor is “Codex–Claude Portable Product-to-Ship Harness.” Visual identity and logo changes are proposals until explicitly approved.
 
 ## Scope
 
@@ -29,9 +29,10 @@ Web dashboard, TUI, autonomous approval, external harness installation, model ho
 
 ## Open decisions
 
-Evaluate a read-only 0.5 web console only after 3 project types, 20 tasks, 5 loops, parallel experience, team feedback, and a stable event schema.
+Evaluate a read-only web console in a later version only after 3 project types, 20 tasks, 5 loops, parallel experience, team feedback, and a stable event schema.
 
 ## Decisions and history
 
 - 0.3 established the portable adaptive runtime and exact-version plugin contract.
 - 0.4 expands the contract from task execution to product shaping, bounded loops, evidence, and observation.
+- 0.5 makes Codex and Claude Code share one plugin package and deterministic execution contract, with host-aware provider checks and idempotent external calls.

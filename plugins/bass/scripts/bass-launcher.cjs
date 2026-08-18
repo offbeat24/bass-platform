@@ -3,16 +3,27 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 
-const version = findVersion(process.cwd()) || pluginVersion();
-if (!/^0\.4\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
-  console.error(`Invalid BASS 0.4 version: ${version}`);
+const args = process.argv.slice(2);
+const pluginCommands = new Set(["setup", "create", "init", "upgrade"]);
+const installedPluginVersion = pluginVersion();
+const version = pluginCommands.has(args[0])
+  ? packageVersion(installedPluginVersion)
+  : findVersion(process.cwd()) || packageVersion(installedPluginVersion);
+if (!/^0\.5\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
+  console.error(`BASS 0.5 cannot run project version ${version}. Run the 0.5 launcher with \`upgrade --check\` first.`);
   process.exit(1);
 }
-const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-const result = spawnSync(npm, ["exec", "--yes", `--package=@offbeat24/bass@${version}`, "--", "bass", ...process.argv.slice(2)], {
-  cwd: process.cwd(),
-  stdio: "inherit",
-});
+
+const npmExecPath = process.env.npm_execpath || findNpmExecPath();
+if (!npmExecPath) {
+  console.error("Unable to locate npm-cli.js. Run with a standard Node.js/npm installation or set npm_execpath.");
+  process.exit(1);
+}
+const result = spawnSync(
+  process.execPath,
+  [npmExecPath, "exec", "--yes", `--package=@offbeat24/bass@${version}`, "--", "bass", ...args],
+  { cwd: process.cwd(), stdio: "inherit" },
+);
 if (result.error) {
   console.error(`Unable to launch @offbeat24/bass@${version}: ${result.error.message}`);
   process.exit(1);
@@ -31,6 +42,20 @@ function findVersion(start) {
     if (parent === current) return null;
     current = parent;
   }
+}
+
+function findNpmExecPath() {
+  const bin = path.dirname(process.execPath);
+  const candidates = [
+    path.join(bin, "node_modules", "npm", "bin", "npm-cli.js"),
+    path.join(bin, "..", "lib", "node_modules", "npm", "bin", "npm-cli.js"),
+    path.join(bin, "..", "node_modules", "npm", "bin", "npm-cli.js"),
+  ];
+  return candidates.find((candidate) => fs.existsSync(candidate)) || null;
+}
+
+function packageVersion(version) {
+  return version.split("+", 1)[0];
 }
 
 function pluginVersion() {

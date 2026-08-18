@@ -207,17 +207,17 @@ export function renderAgentsBlock(): string {
   return `BASS ${BASS_VERSION}: use \`bass agent guide --json\` before work.
 - Humans own product direction, risk, and final judgment.
 - Inspect facts; implement the smallest accepted change.
-- Obey the task graph, scope, bounded loop, and \`capabilityCalls\`.
-- Use named providers only after doctor and host confirmation.
+- Obey the plan fingerprint, task graph, scope, bounded loop, and gates.
+- Claim named providers only after host-specific doctor confirmation.
 - Run affected checks once; reuse unchanged passing evidence.
 - Load selected product context only; keep full logs in task evidence.`;
 }
 
-function renderClaudeShim(): string {
+export function renderClaudeShim(): string {
   return `Read the BASS managed block in \`AGENTS.md\`. Use \`bass agent guide --json\` as the dynamic execution contract. Do not copy the full BASS workflow here.`;
 }
 
-function renderCursorShim(): string {
+export function renderCursorShim(): string {
   return `Read the BASS managed block in AGENTS.md and use \`bass agent guide --json\`.`;
 }
 

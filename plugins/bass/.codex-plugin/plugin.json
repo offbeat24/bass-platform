@@ -1,11 +1,12 @@
 {
   "name": "bass",
-  "version": "0.4.0",
-  "description": "Portable Product-to-Ship Harness for Codex teams.",
+  "version": "0.5.0",
+  "description": "Portable Product-to-Ship Harness for Codex and Claude Code teams.",
   "author": {
     "name": "Offbeat24"
   },
   "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
   "interface": {
     "displayName": "BASS",
     "shortDescription": "Portable Product-to-Ship Harness",
