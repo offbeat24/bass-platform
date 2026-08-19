@@ -4,6 +4,8 @@ BASS는 아이디어를 제품·기술·디자인 명세로 구체화하고, 작
 
 설치부터 업그레이드·개발·배포까지의 전체 절차는 [BASS 0.5.0 Release Notes](RELEASE_NOTES.md)에 정리되어 있다.
 
+개발·터미널·GitHub를 처음 접하는 사람이 BASS로 첫 게임을 만드는 과정은 [코딩을 몰라도 시작하는 첫 게임 만들기](docs/game-development-for-complete-beginners.ko.md)를 따른다.
+
 동일한 `0.5.x` 버전을 세 계층이 공유한다.
 
 - 호스트 CLI: `@offbeat24/bass`
