@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import type { ExecutionPlan, GateCheck, GateReport } from "../types.js";
-import { checkSections, countActiveTasks, listTasks, TASK_SECTIONS, type TaskFile } from "../task/taskFile.js";
+import { checkSections, listTasks, TASK_SECTIONS, type TaskFile } from "../task/taskFile.js";
 import { loadRunRecord, verifyContextSources, verifyEvidenceEntries } from "../task/runRecord.js";
 import { findRequiredApprovals } from "../policy/policyEngine.js";
 import { loadRiskApprovals } from "../task/approvalRecord.js";
@@ -65,7 +65,9 @@ export function preTaskGate(task: TaskFile, ctx: GateContext): GateReport {
     }
   }
 
-  const graph = buildTaskGraph(listTasks(ctx.projectRoot));
+  // Callers may project an ACTIVE transition without writing the task first.
+  const tasks = listTasks(ctx.projectRoot).map((candidate) => candidate.frontmatter.id === fm.id ? task : candidate);
+  const graph = buildTaskGraph(tasks);
   const graphIssues = graph.issues.filter((issue) => issue.taskIds.includes(fm.id));
   const graphNode = graph.nodes.find((node) => node.id === fm.id);
   checks.push({
@@ -81,7 +83,7 @@ export function preTaskGate(task: TaskFile, ctx: GateContext): GateReport {
 
   const workflow = (ctx.effective["workflow"] ?? {}) as Record<string, unknown>;
   const maxActive = ctx.executionPlan?.parallel.maxAgents ?? Number(workflow["max_active_tasks"] ?? 1);
-  const active = countActiveTasks(ctx.projectRoot);
+  const active = tasks.filter((candidate) => normalizeWorkflowState(candidate.frontmatter.status) === "ACTIVE").length;
   const alreadyActive = normalizeWorkflowState(fm.status) === "ACTIVE";
   checks.push({
     id: "active-task-limit",

@@ -1,0 +1,5 @@
+
+> @offbeat24/bass@0.5.0 validate:plugin
+> node scripts/validate-plugin.mjs
+
+plugin validation PASS: bass@0.5.0

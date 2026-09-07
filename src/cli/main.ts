@@ -6,7 +6,7 @@ import { findProjectRoot, templatesDir } from "../paths.js";
 import { loadConfig, explainConfig, parseSetArgs, type LoadedConfig } from "../config/loader.js";
 import { loadRegistry, resolveAlias } from "../registry/registry.js";
 import { routeTask } from "../router/router.js";
-import { findTask, listTasks, checkSections, TASK_SECTIONS, taskDirectory, transitionTask } from "../task/taskFile.js";
+import { findTask, listTasks, checkSections, TASK_SECTIONS, taskDirectory, transitionTask, type TaskFile } from "../task/taskFile.js";
 import { preTaskGate, preReviewGate, preCompleteGate, formatGateReport } from "../workflow/gates.js";
 import { allowedTransitions } from "../workflow/stateMachine.js";
 import { planEvaluators, runEvaluators, formatEvaluatorResults, selectEvaluatorPlans } from "../evaluators/runner.js";
@@ -47,6 +47,13 @@ function requireProject(): { projectRoot: string; config: LoadedConfig } {
     process.exit(2);
   }
   return { projectRoot, config: loadConfig({ projectRoot }) };
+}
+
+function requirePreTask(projectRoot: string, config: LoadedConfig, task: TaskFile) {
+  const plan = buildExecutionPlan(config, task);
+  const report = preTaskGate(task, { projectRoot, effective: config.effective, executionPlan: plan });
+  if (!report.passed) throw new Error(formatGateReport(report));
+  return plan;
 }
 
 function collect(value: string, previous: string[]): string[] {
@@ -209,7 +216,7 @@ attemptCmd
     const result = startAttempt({
       projectRoot,
       task,
-      plan: buildExecutionPlan(config, task),
+      plan: requirePreTask(projectRoot, config, task),
       ...(opts.parent ? { parentAttempt: Number(opts.parent) } : {}),
     });
     console.log(opts.json ? JSON.stringify(result, null, 2) : `${result.changed ? "started" : "unchanged"}: ${taskId} attempt=${result.attempt}${result.reason ? ` (${result.reason})` : ""}`);
@@ -272,8 +279,13 @@ taskCmd
   .command("transition <taskId> <state>")
   .description("에이전트가 내부 workflow 상태를 안전하고 멱등하게 전이")
   .action((taskId, state) => {
-    const { projectRoot } = requireProject();
-    const result = transitionTask(projectRoot, taskId, String(state).toUpperCase() as WorkflowState);
+    const { projectRoot, config } = requireProject();
+    const target = String(state).toUpperCase() as WorkflowState;
+    if (normalizeWorkflowState(target) === "ACTIVE") {
+      const task = findTask(projectRoot, taskId);
+      requirePreTask(projectRoot, config, { ...task, frontmatter: { ...task.frontmatter, status: "ACTIVE" } });
+    }
+    const result = transitionTask(projectRoot, taskId, target);
     console.log(
       `${result.changed ? "updated" : "unchanged"}: ${result.taskId} ${result.from} -> ${result.to}`,
     );

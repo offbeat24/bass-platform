@@ -1,0 +1,205 @@
+name: tests
+level: 2
+command: npm test
+status: fail
+exit_code: 1
+duration_ms: 2136
+
+--- output ---
+
+> @offbeat24/bass@0.5.0 test
+> vitest run
+
+
+ RUN  v4.1.10 /Users/okestro/croquis/deck/BASS/bass-platform
+
+ ❯ tests/project.test.ts (13 tests | 1 failed) 236ms
+     × base + role + profile + project + policy + task 를 출처 주석과 함께 조합한다 47ms
+
+ Test Files  1 failed | 20 passed (21)
+      Tests  1 failed | 179 passed (180)
+   Start at  11:01:01
+   Duration  1.85s (transform 1.11s, setup 0ms, import 3.57s, tests 5.32s, environment 1ms)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/project.test.ts > bass compose (지침 조합) > base + role + profile + project + policy + task 를 출처 주석과 함께 조합한다
+AssertionError: expected '<!-- composed by bass compose -->\n<!…' to contain 'Ponytail은 승인된 범위에만 적용한다'
+
+- Expected
++ Received
+
+- Ponytail은 승인된 범위에만 적용한다
++ <!-- composed by bass compose -->
++ <!-- bass-platform v0.5.0 | composed at 2026-09-07T02:01:01.718Z -->
++ <!-- 이 파일은 파생물이다. 수정하지 말고 원본(source 주석)을 수정하라. -->
++
++ <!-- section: base behavior | source: /Users/okestro/croquis/deck/BASS/bass-platform/prompt-library/base/behavior.md -->
++
++ <!-- bass-prompt: base/behavior v0.5.0 -->
++ # BASS Base Behavior
++
++ The user speaks in natural language. Operate BASS commands and records internally.
++
++ - Humans own product direction, irreversible risk, and final judgment.
++ - Inspect repository facts; separate facts, decisions, assumptions, constraints, and risks.
++ - Treat `execution_plan` as a ceiling and make the smallest accepted change inside its scope.
++ - Use one bounded attempt. Stop on success, exhausted budget, repeated failure without new evidence, or no progress.
++ - Run affected machine checks once; reuse unchanged passing evidence and retry only failed/directly affected checks.
++ - Preserve repository-native instructions and sources of truth. Ask only when a missing human decision changes the result.
++ - Store full logs as task evidence. Prompts and events get summaries or necessary excerpts; unknown metrics stay `unknown`.
++
++ Call an external provider only when `capabilityCalls` names it and host-specific doctor confirms it active. Claim before invocation and complete afterward; reuse a completion and stop on `uncertain`. Never install, emulate, copy, or silently substitute it. Refinement remains a reviewable proposal.
++
++ For delete tasks, remove only the accepted target, stale references, and affected tests. Add no adjacent work.
++
++ <!-- section: role: worker | source: /Users/okestro/croquis/deck/BASS/bass-platform/prompt-library/roles/worker.md -->
++
++ <!-- bass-prompt: roles/worker v0.5.0 -->
++ # Role: Worker
++
++ Implement inside Allowed scope and `execution_plan.scopeLock`. Preserve requirements, validation, security, accessibility, and data safety when simplifying.
++
++ Start and finish a BASS attempt. Run `bass evaluate --task <id>` after the meaningful change, prepare a proportional Run Record, and move to REVIEW after the pre-review gate passes. Report the result, evidence, limitations, and outstanding human judgment; never claim unperformed verification.
++
++ <!-- section: project-type profile | source: /Users/okestro/croquis/deck/BASS/bass-platform/profiles/common.yaml, /Users/okestro/croquis/deck/BASS/bass-platform/profiles/web.yaml -->
++
++ active profiles: common, web
++
++ discovery checklist:
++ - 전역 CSS, 디자인 토큰, 테마 설정
++ - 공통 컴포넌트와 상태(loading/error/empty) 구현
++ - 반응형과 접근성 구현 수준
++ - 제품 카피와 Voice
++
++ configured critics: discovery, architecture, implementation, test, simplicity, design
++
++ <!-- section: project context | source: /var/folders/l_/n9z9s11d2yv1d0xrbnvhgzgr0000gn/T/bass-init-2YbPhk/bass.yaml -->
++
++ project: demo
++ UI 작업 전 반드시 프로젝트 루트의 DESIGN.md 를 읽어라. 디자인 의도의 단일 명세다.
++
++ <!-- section: active policy | source: /Users/okestro/croquis/deck/BASS/bass-platform/policies/approval.yaml -->
++
++ 다음 조건에 해당하면 구현 전에 정지하고 인간 승인을 요청한다.
++ 전체 목록: policies/approval.yaml
++
++ 이 작업에서 이미 트리거된 승인 조건: auth-and-permissions
++
++ <!-- section: task: T-001 | source: /var/folders/l_/n9z9s11d2yv1d0xrbnvhgzgr0000gn/T/bass-init-2YbPhk/.bass/tasks/T-001.md -->
++
++ ---
++ id: T-001
++ title: Test task
++ status: READY
++ type: feature
++ risk:
++   level: low
++   reasons: [touches-auth]
++
++
++
++
++
++ human:
++   owner: user
++   reviewer_required: true
++ ---
++
++ ## Problem
++
++ 실제 문제 설명
++
++ ## What we are shipping
++
++ 이번에 제공하는 것
++
++ ## What we are not shipping
++
++ 제외 범위
++
++ ## Facts
++
++ 확인된 사실
++
++ ## Decisions
++
++ 결정 사항
++
++ ## Assumptions
++
++ none
++
++ ## Relevant context
++
++ 관련 파일
++
++ ## Allowed scope
++
++ src/
++
++ ## Forbidden scope
++
++ docs/
++
++ ## Acceptance criteria
++
++ 기준 1
++
++ ## Human judgment
++
++ 제품 방향
++
++ ## Verification
++
++ npm test
++
++ ## Rollback
++
++ git revert
++
++ <!-- section: context: PRODUCT.md#Product intent | source: /var/folders/l_/n9z9s11d2yv1d0xrbnvhgzgr0000gn/T/bass-init-2YbPhk/PRODUCT.md -->
++
++ ## Product intent
++
++ <!-- 누구의 어떤 문제를 왜 해결하는가. 한 문단으로 유지한다. -->
++
++ <!-- section: context: TECH.md#Stack | source: /var/folders/l_/n9z9s11d2yv1d0xrbnvhgzgr0000gn/T/bass-init-2YbPhk/TECH.md -->
++
++ ## Stack
++
++ <!-- section: context: TECH.md#Architecture | source: /var/folders/l_/n9z9s11d2yv1d0xrbnvhgzgr0000gn/T/bass-init-2YbPhk/TECH.md -->
++
++ ## Architecture
++
++ <!-- section: context: DESIGN.md#Purpose | source: /var/folders/l_/n9z9s11d2yv1d0xrbnvhgzgr0000gn/T/bass-init-2YbPhk/DESIGN.md -->
++
++ ## Purpose
++
++ <!-- 이 제품이 누구의 어떤 문제를 해결하는가. 디자인이 무엇을 우선해야 하는가. -->
++
++ <!-- section: context: DESIGN.md#Design principles | source: /var/folders/l_/n9z9s11d2yv1d0xrbnvhgzgr0000gn/T/bass-init-2YbPhk/DESIGN.md -->
++
++ ## Design principles
++
++ <!-- 예: "오류 메시지는 사과보다 해결 방법을 먼저 제시한다." 같은 구체 규칙 3~7개 -->
++
++ <!-- section: context manifest | source: /var/folders/l_/n9z9s11d2yv1d0xrbnvhgzgr0000gn/T/bass-init-2YbPhk/bass.yaml -->
++
++ selected context: 224/12000 chars
++ - loaded automatic: PRODUCT.md#Product intent (60 chars, sha256:b4a7f91cbba531dce141e6532ee7207784c8c126dc5fcb93caa4f41bc45f188e)
++ - loaded automatic: TECH.md#Stack (8 chars, sha256:c559a0a77f4190c9bc352000e2a76d9bd4750c4cc5dcbdd5ed321056edee3aaf)
++ - loaded automatic: TECH.md#Architecture (15 chars, sha256:c559a0a77f4190c9bc352000e2a76d9bd4750c4cc5dcbdd5ed321056edee3aaf)
++ - loaded automatic: DESIGN.md#Purpose (63 chars, sha256:876a2a5b98da22ff8e9593210e85e0ca1f17ca5f57e134e7f12cb15de7cf40b0)
++ - loaded automatic: DESIGN.md#Design principles (78 chars, sha256:876a2a5b98da22ff8e9593210e85e0ca1f17ca5f57e134e7f12cb15de7cf40b0)
+
+ ❯ tests/project.test.ts:195:22
+    193|     expect(composed).toContain("DESIGN.md");
+    194|     expect(composed).toContain("Call an external provider only when `c…
+    195|     expect(composed).toContain("Ponytail은 승인된 범위에만 적용한다");
+       |                      ^
+    196|     // 출처 추적
+    197|     expect(composed).toContain("source:");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯

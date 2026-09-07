@@ -126,7 +126,7 @@ function cycleIssues(tasks: TaskFile[], byId: Map<string, TaskFile>): TaskGraphI
 }
 
 function pathConflictIssues(tasks: TaskFile[], byId: Map<string, TaskFile>): TaskGraphIssue[] {
-  const active = tasks.filter((task) => !["DONE", "CANCELLED", "ROLLED_BACK"].includes(normalizeWorkflowState(task.frontmatter.status)));
+  const active = tasks.filter((task) => !["REVIEW", "DONE", "CANCELLED", "ROLLED_BACK"].includes(normalizeWorkflowState(task.frontmatter.status)));
   const issues: TaskGraphIssue[] = [];
   for (let leftIndex = 0; leftIndex < active.length; leftIndex++) {
     const left = active[leftIndex]!;

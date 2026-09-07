@@ -1,0 +1,273 @@
+{
+  "record_version": 2,
+  "task_id": "BASS-051",
+  "execution_contract": {
+    "contract_version": 1,
+    "plan_fingerprint": "8c559a44509e62bc89b9241b3f07a54a9f27395918d016d5e11edcbae0d1fecd",
+    "capability_calls": [
+      "ponytail:full"
+    ]
+  },
+  "capability_invocations": [
+    {
+      "call_id": "302bcaa261afac5e200df3432ebd761cf3c89cc0b7f0c1763066dfc787499905",
+      "attempt": 2,
+      "capability_call": "ponytail:full",
+      "host": "codex",
+      "status": "pass",
+      "summary": "Applied installed Ponytail full: minimal graph change, shared pre-task guard, concise instructions, no dependencies; same-agent review recorded.",
+      "evidence_path": ".bass/evidence/BASS-051/implementation-review.md"
+    }
+  ],
+  "summary_of_changes": "Pruned four instruction files by 21.4%; released REVIEW path ownership while retaining explicit dependencies; enforced pre-task at CLI activation and attempt start.",
+  "why": "Old review records blocked independent maintenance, and separate gate failures did not prevent subsequent CLI mutations.",
+  "files_changed": [
+    ".bass/events.jsonl",
+    ".bass/evidence/BASS-051/attempt-2/L1-typecheck.log",
+    ".bass/evidence/BASS-051/attempt-2/L2-build.log",
+    ".bass/evidence/BASS-051/attempt-2/L2-tests.log",
+    ".bass/evidence/BASS-051/evaluate.log",
+    ".bass/evidence/BASS-051/guide.json",
+    ".bass/evidence/BASS-051/implementation-review.md",
+    ".bass/evidence/BASS-051/instruction-pruning.patch",
+    ".bass/evidence/BASS-051/plugin-validation.log",
+    ".bass/evidence/BASS-051/review.md",
+    ".bass/evidence/BASS-051/skill-shape-validation.log",
+    ".bass/evidence/BASS-051/skill-work-validation.log",
+    ".bass/evidence/BASS-051/tests-final.log",
+    ".bass/records/BASS-051.json",
+    ".bass/tasks/BASS-051.md",
+    "docs/workflows.md",
+    "plugins/bass/skills/bass-shape/SKILL.md",
+    "plugins/bass/skills/bass-work/SKILL.md",
+    "prompt-library/roles/evaluator.md",
+    "prompt-library/roles/worker.md",
+    "src/cli/main.ts",
+    "src/task/taskGraph.ts",
+    "src/workflow/gates.ts",
+    "tests/cli-workflow.test.ts",
+    "tests/taskGraph.test.ts",
+    "tests/workflow.test.ts"
+  ],
+  "models_used": [
+    {
+      "role": "worker",
+      "alias": "auto",
+      "followed_recommendation": true
+    },
+    {
+      "role": "critic",
+      "alias": "host-current",
+      "followed_recommendation": false,
+      "reason": "Same-agent implementation review; no independent agent was delegated."
+    }
+  ],
+  "verification": {
+    "evaluations_run": [
+      {
+        "name": "typecheck",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "tests",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "build",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "plugin-validation",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "skill-work-validation",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "skill-shape-validation",
+        "level": 1,
+        "status": "pass"
+      }
+    ],
+    "not_verified": [
+      "No live Codex/Claude behavior benchmark or Windows host execution; byte reduction is not a model-quality measurement."
+    ]
+  },
+  "critic_findings": {
+    "total": 0,
+    "open_high_or_medium": 0,
+    "report_path": ".bass/evidence/BASS-051/implementation-review.md"
+  },
+  "known_limitations": [
+    "REVIEW remains awaiting human approval; explicit dependencies still require DONE.",
+    "Historical initial attempt and time-budget block events are retained."
+  ],
+  "out_of_scope_findings": [],
+  "docs_updated": {
+    "needed": true,
+    "updated": [
+      "docs/workflows.md"
+    ]
+  },
+  "lessons": {
+    "recorded": false,
+    "candidates": []
+  },
+  "rollback": {
+    "method": "Revert only BASS-051 implementation files; preserve task events/evidence and BASS-040 history."
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "no-progress",
+      "started_at": "2026-09-07T00:57:58.542Z",
+      "completed_at": "2026-09-07T01:00:16.647Z",
+      "failure_fingerprint": "75fb716513b1e6a40e0ddc8149d56b83ef7c8e6d294fc3b4d7abb6c6a264b33f"
+    },
+    {
+      "attempt": 2,
+      "status": "pass",
+      "started_at": "2026-09-07T01:58:18.533Z",
+      "completed_at": "2026-09-07T02:03:21.647Z"
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-051/attempt-2/L1-typecheck.log",
+      "sha256": "fd3958cbb93bcd65bcd4c6d96cc111cbccb149c3a030577d230c3981544eb893",
+      "produced_by": "BASS-051 local implementation",
+      "at": "2026-09-07T02:04:07.310558Z"
+    },
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-051/attempt-2/L2-build.log",
+      "sha256": "3c953d7fa93d1b611ed96eaef7b0901757e059d630717d4e43557ab335021612",
+      "produced_by": "BASS-051 local implementation",
+      "at": "2026-09-07T02:04:07.310558Z"
+    },
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-051/attempt-2/L2-tests.log",
+      "sha256": "d2cbbff80e24b4bee53818d216ab4a1485881d94ad46a5bd68b3d60874bcd4f1",
+      "produced_by": "BASS-051 local implementation",
+      "at": "2026-09-07T02:04:07.310558Z"
+    },
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-051/evaluate.log",
+      "sha256": "54667fe47fef0d4c61428975096b3487a74a11c1531e2f72c6bbd57dee9ccf8b",
+      "produced_by": "BASS-051 local implementation",
+      "at": "2026-09-07T02:04:07.310558Z"
+    },
+    {
+      "kind": "review",
+      "path": ".bass/evidence/BASS-051/guide.json",
+      "sha256": "0229d2511bf1e06b2813a8638503a0035c82f8879aad383649c69b4e17d445b9",
+      "produced_by": "BASS-051 local implementation",
+      "at": "2026-09-07T02:04:07.310558Z"
+    },
+    {
+      "kind": "review",
+      "path": ".bass/evidence/BASS-051/implementation-review.md",
+      "sha256": "b26a730bbd1362ec071323af754247018983d2c969225e09915e902645ff396d",
+      "produced_by": "BASS-051 local implementation",
+      "at": "2026-09-07T02:04:07.310558Z"
+    },
+    {
+      "kind": "review",
+      "path": ".bass/evidence/BASS-051/instruction-pruning.patch",
+      "sha256": "7323dc09fb415e52a552ed744e7f1e1844fd71d7235c34ed8cf70ccf93bfe914",
+      "produced_by": "BASS-051 local implementation",
+      "at": "2026-09-07T02:04:07.310558Z"
+    },
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-051/plugin-validation.log",
+      "sha256": "e2c762d2d4f3587a6f665211c0819d8fcdc3001c4eec82efc2cc88829c2e340d",
+      "produced_by": "BASS-051 local implementation",
+      "at": "2026-09-07T02:04:07.310558Z"
+    },
+    {
+      "kind": "review",
+      "path": ".bass/evidence/BASS-051/review.md",
+      "sha256": "4de45f997d13d796865e35b31444932f0e72c0da04bc7388c940eb34c407952e",
+      "produced_by": "BASS-051 local implementation",
+      "at": "2026-09-07T02:04:07.310558Z"
+    },
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-051/skill-shape-validation.log",
+      "sha256": "db349825903d66adffea3ecf1bd8e1803043e8a71cf1a051235dabc5371f5bb0",
+      "produced_by": "BASS-051 local implementation",
+      "at": "2026-09-07T02:04:07.310558Z"
+    },
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-051/skill-work-validation.log",
+      "sha256": "db349825903d66adffea3ecf1bd8e1803043e8a71cf1a051235dabc5371f5bb0",
+      "produced_by": "BASS-051 local implementation",
+      "at": "2026-09-07T02:04:07.310558Z"
+    },
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-051/tests-final.log",
+      "sha256": "e4b718af116385cd4395c993f1ed3527048b60e2669dd13de83c502fe84ab494",
+      "produced_by": "BASS-051 local implementation",
+      "at": "2026-09-07T02:04:07.310558Z"
+    }
+  ],
+  "context": {
+    "sources": [
+      {
+        "path": "prompt-library/base/behavior.md",
+        "sha256": "5ca2bd7f06f76ceed8d55fe87468b6f1d511fb43db6631a7ccc12df545b9538c",
+        "chars": 1299
+      }
+    ],
+    "total_chars": 1299,
+    "omitted": []
+  },
+  "usage": {
+    "attempts": 2,
+    "subagents": 0
+  },
+  "scope": {
+    "actual_files": [
+      ".bass/events.jsonl",
+      ".bass/evidence/BASS-051/attempt-2/L1-typecheck.log",
+      ".bass/evidence/BASS-051/attempt-2/L2-build.log",
+      ".bass/evidence/BASS-051/attempt-2/L2-tests.log",
+      ".bass/evidence/BASS-051/evaluate.log",
+      ".bass/evidence/BASS-051/guide.json",
+      ".bass/evidence/BASS-051/implementation-review.md",
+      ".bass/evidence/BASS-051/instruction-pruning.patch",
+      ".bass/evidence/BASS-051/plugin-validation.log",
+      ".bass/evidence/BASS-051/review.md",
+      ".bass/evidence/BASS-051/skill-shape-validation.log",
+      ".bass/evidence/BASS-051/skill-work-validation.log",
+      ".bass/evidence/BASS-051/tests-final.log",
+      ".bass/records/BASS-051.json",
+      ".bass/tasks/BASS-051.md",
+      "docs/workflows.md",
+      "plugins/bass/skills/bass-shape/SKILL.md",
+      "plugins/bass/skills/bass-work/SKILL.md",
+      "prompt-library/roles/evaluator.md",
+      "prompt-library/roles/worker.md",
+      "src/cli/main.ts",
+      "src/task/taskGraph.ts",
+      "src/workflow/gates.ts",
+      "tests/cli-workflow.test.ts",
+      "tests/taskGraph.test.ts",
+      "tests/workflow.test.ts"
+    ],
+    "outside_allowed": [],
+    "forbidden_touched": []
+  }
+}

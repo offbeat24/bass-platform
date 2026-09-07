@@ -52,6 +52,20 @@ describe("워크플로 상태 머신", () => {
 });
 
 describe("pre-task 게이트", () => {
+  it.each(["REVIEW", "HUMAN_REVIEW"])("projects %s reactivation for graph and capacity checks without writing", (status) => {
+    const root = makeTempProject({});
+    const file = writeTask(root, "REACTIVATE-1", { status, coordination: { owned_paths: ["src/shared"] } });
+    writeTask(root, "REACTIVATE-2", { status: "ACTIVE", coordination: { owned_paths: ["src/shared/component"] } });
+    const before = fs.readFileSync(file, "utf8");
+    const task = parseTaskFile(file);
+    const projected = { ...task, frontmatter: { ...task.frontmatter, status: "ACTIVE" as const } };
+    const report = preTaskGate(projected, { projectRoot: root, effective: loadConfig({ projectRoot: root }).effective });
+    expect(report.checks.find((check) => check.id === "task-graph")?.status).toBe("fail");
+    expect(report.checks.find((check) => check.id === "active-task-limit")?.status).toBe("fail");
+    expect(fs.readFileSync(file, "utf8")).toBe(before);
+    expect(fs.existsSync(path.join(root, ".bass", "events.jsonl"))).toBe(false);
+  });
+
   function setup(taskOpts: Parameters<typeof writeTask>[2] = {}) {
     const root = makeTempProject({});
     const file = writeTask(root, "T-100", taskOpts);

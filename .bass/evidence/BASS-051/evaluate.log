@@ -1,0 +1,18 @@
+[bass evaluate] results:
+  [L1] typecheck: PASS (exit=0, 256ms) — npm run typecheck
+    evidence: .bass/evidence/BASS-051/attempt-2/L1-typecheck.log
+  [L2] tests: FAIL (exit=1, 2136ms) — npm test
+    
+     ❯ tests/project.test.ts:195:22
+        193|     expect(composed).toContain("DESIGN.md");
+        194|     expect(composed).toContain("Call an external provider only when `c…
+        195|     expect(composed).toContain("Ponytail은 승인된 범위에만 적용한다");
+           |                      ^
+        196|     // 출처 추적
+        197|     expect(composed).toContain("source:");
+    
+    ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+    evidence: .bass/evidence/BASS-051/attempt-2/L2-tests.log
+  [L2] build: PASS (exit=0, 256ms) — npm run build
+    evidence: .bass/evidence/BASS-051/attempt-2/L2-build.log
+  => 1 FAILING

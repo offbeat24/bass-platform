@@ -4,6 +4,25 @@ import { buildTaskGraph } from "../src/task/taskGraph.js";
 import { makeTempProject, writeTask } from "./helpers.js";
 
 describe("task graph", () => {
+  it.each(["REVIEW", "HUMAN_REVIEW"])("%s releases paths but does not satisfy dependencies", (status) => {
+    const root = makeTempProject({});
+    const review = parseTaskFile(writeTask(root, "GRAPH-110", { status, coordination: { owned_paths: ["src"] } }));
+    const next = parseTaskFile(writeTask(root, "GRAPH-111", { coordination: { owned_paths: ["src/app"] } }));
+    const dependent = parseTaskFile(writeTask(root, "GRAPH-112", { coordination: { depends_on: ["GRAPH-110"] } }));
+    const graph = buildTaskGraph([review, next, dependent]);
+    expect(graph.valid).toBe(true);
+    expect(graph.ready).toEqual(["GRAPH-111"]);
+    expect(graph.nodes.find((node) => node.id === "GRAPH-112")?.blockedBy).toEqual(["GRAPH-110"]);
+  });
+
+  it("independent ACTIVE tasks still cannot own overlapping paths", () => {
+    const root = makeTempProject({});
+    const tasks = ["GRAPH-113", "GRAPH-114"].map((id) => parseTaskFile(writeTask(root, id, {
+      status: "ACTIVE", coordination: { owned_paths: ["src"] },
+    })));
+    expect(buildTaskGraph(tasks).issues.some((issue) => issue.kind === "path-conflict")).toBe(true);
+  });
+
   it("완료된 의존성 다음 작업만 ready로 표시한다", () => {
     const root = makeTempProject({});
     const a = parseTaskFile(writeTask(root, "GRAPH-101", { status: "DONE", coordination: { owned_paths: ["src/a"] } }));

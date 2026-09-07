@@ -12,6 +12,10 @@ Start with PRODUCT, TECH, and DESIGN. Use `specs/<feature>.md` only for a large 
 
 `bass task graph` blocks missing dependencies, cycles, and independent owned-path overlap before work starts.
 
+REVIEW (including legacy HUMAN_REVIEW) releases owned paths for independent work. An explicit `depends_on` still requires the predecessor to be DONE. Returning a review task to ACTIVE checks its paths and the active-task limit again before changing state.
+
+The CLI enforces `pre-task` on ACTIVE transitions and attempt starts, even if a separate gate command was skipped or failed. A rejected check changes neither task state nor events. Read-only questions do not start implementation or finalization.
+
 ## Active bounded loop
 
 ```text

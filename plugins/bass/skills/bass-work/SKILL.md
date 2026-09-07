@@ -1,21 +1,17 @@
 ---
 name: bass-work
-description: Execute coding tasks in BASS-connected repositories when the user asks to build, fix, delete, refactor, explore, or release. Use the generated ExecutionPlan to limit validation, critics, optional plugin calls, records, and rework loops.
+description: Implement, fix, delete, refactor, or prepare a release in a BASS-connected repository using its ExecutionPlan. For read-only questions, inspect and answer without starting implementation or finalization.
 ---
 
 # BASS Work
 
-Resolve `../../scripts/bass-launcher.cjs` from this `SKILL.md` to an absolute path before any BASS CLI step. `<BASS>` below means `node <absolute launcher path>`; use the same launcher in Codex and Claude Code.
+Resolve `../../scripts/bass-launcher.cjs` relative to this file. `<BASS>` means `node <absolute launcher path>` on both Codex and Claude Code.
 
-1. Read repository instructions and run `<BASS> agent guide <task-id> --json`.
-2. Load only `Relevant context` and the PRODUCT, TECH, or DESIGN sections named by the composed context manifest. Read another file only when the task exposes a concrete need.
-3. Treat `execution_plan`, `contractVersion`, and `planFingerprint` as the current completion contract. Do not add critics, capability calls, checks, agents, or loops absent from it.
-4. Run `<BASS> gate pre-task <task-id>` when the task is CAPTURED, then `<BASS> task transition <task-id> ACTIVE`. Run `<BASS> task graph`, followed by `<BASS> task attempt start <task-id> --json`. If BASS reports a budget, repeated-failure, or no-progress block, stop and surface `NEEDS_DECISION` or `NEEDS_EXPERT`.
-5. For delete tasks, enforce every `scopeLock`: remove stale references and affected tests, and create no adjacent improvement or follow-up task.
-6. Implement the smallest accepted change. Keep Fast records to scope, acceptance, and verification only.
-7. Before each external call named in `capabilityCalls`, run `<BASS> doctor --capabilities --host <codex-or-claude>` and `<BASS> capability claim <task-id> <capability-call> --host <codex-or-claude> --json`. On `run`, invoke the installed host plugin once and record it with `<BASS> capability complete ... --status <pass|fail|skipped|error> --summary <text>`. On `reuse`, use the recorded result. On `uncertain`, stop without reinvoking because prior side effects are unknown.
-8. Prime Agent is a runner, Graft supplies context only after repeated large-repository exploration, OMC/Orca obey the BASS graph and owned paths, and Buzz consumes sanitized events. Never auto-install, emulate, copy, or silently substitute a provider. Treat Prime Agent `/refine` as a pending `refinement_proposal` requiring review.
-9. Run `<BASS> evaluate --task <task-id>` once after the meaningful change. After a failure, rerun only failed and directly affected checks. Save full logs under `.bass/evidence/<task-id>/`; put only summaries in prompts and `events.jsonl`.
-10. Finish every attempt with `<BASS> task attempt finish <task-id> --result <pass|fail|no-progress> --summary <text>`, including turns when available. Record unavailable usage as `unknown`.
-11. Prepare run record v2. Map `execution_plan.contractVersion`, `planFingerprint`, and `capabilityCalls` exactly to `execution_contract.contract_version`, `plan_fingerprint`, and `capability_calls`; copy completed capability events into `capability_invocations` without inference.
-12. Run `<BASS> gate pre-review <task-id>`, transition to REVIEW, obtain explicit human approval with `<BASS> approval final <task-id> --approver <name>`, then run `<BASS> task finalize <task-id>`. Use `<BASS> status` or `<BASS> status --watch` only for observation.
+1. Read repository instructions and `<BASS> agent guide <task-id> --json`. Follow its operating rules, `execution_plan`, `contractVersion`, and `planFingerprint`. Load composed `Relevant context`; inspect more files when the task requires them.
+2. For a CAPTURED task, pass `<BASS> gate pre-task <task-id>` before transitioning to ACTIVE. Check `<BASS> task graph`, then run `<BASS> task attempt start <task-id> --json`. Surface any budget, repeated-failure, or no-progress block as `NEEDS_DECISION` or `NEEDS_EXPERT`.
+3. Implement within Allowed scope and `scopeLock`. Delete tasks include stale references and affected tests, without adjacent work.
+4. For a named external call, run `<BASS> doctor --capabilities --host <codex-or-claude>` and `<BASS> capability claim <task-id> <capability-call> --host <codex-or-claude> --json`. On `run`, invoke the active host plugin and record `<BASS> capability complete ... --status <pass|fail|skipped|error> --summary <text>`. On `reuse`, reuse the result; on `uncertain`, stop because prior side effects are unknown. Never install, emulate, copy, or silently substitute providers. Runner refinement remains a reviewable proposal.
+5. Run `<BASS> evaluate --task <task-id>` after the meaningful change. Reuse unchanged passing evidence; rerun only failed or newly affected checks within the plan. Save full logs under `.bass/evidence/<task-id>/` and summaries in prompts/events.
+6. Finish the attempt with `<BASS> task attempt finish <task-id> --result <pass|fail|no-progress> --summary <text>`. Include measured turns when available; unavailable usage stays `unknown`.
+7. Prepare a proportional run record v2. Map `execution_plan.contractVersion`, `planFingerprint`, and `capabilityCalls` to `execution_contract.contract_version`, `plan_fingerprint`, and `capability_calls`. Copy completed events into `capability_invocations` without inference.
+8. Pass `<BASS> gate pre-review <task-id>`, transition to REVIEW, and present the result and evidence. Finalize only with explicit human final approval: record `<BASS> approval final <task-id> --approver <name>`, then `<BASS> task finalize <task-id>`. Reuse an applicable recorded approval; implementation authorization alone is not final approval.
