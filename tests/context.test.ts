@@ -6,8 +6,66 @@ import { selectTaskContext } from "../src/compose/context.js";
 import { loadConfig } from "../src/config/loader.js";
 import { parseTaskFile } from "../src/task/taskFile.js";
 import { makeTempProject, writeTask } from "./helpers.js";
+import { buildExecutionPlan } from "../src/execution/planner.js";
+import { recordRiskApproval } from "../src/task/approvalRecord.js";
+
+describe("task-scoped instruction composition", () => {
+  it.each(["common", "cli", "server", "web", "game", "nan2026"])("%s routes discovery checklists and critics by role and plan", (profile) => {
+    const root = makeTempProject({ profiles: [profile] });
+    const task = parseTaskFile(writeTask(root, "ROUTE-1", { config: { changed_surfaces: ["docs"] } }));
+    const config = loadConfig({ projectRoot: root });
+    const plan = buildExecutionPlan(config, task);
+    for (const role of ["worker", "evaluator"]) {
+      const composed = composeInstructions({ projectRoot: root, config, task, role });
+      expect(composed).not.toContain("discovery checklist:");
+      expect(composed).not.toContain("configured critics:");
+      expect(composed).toContain(`planned critics: ${plan.critics.join(", ") || "none"}`);
+      expect(composed).not.toContain("Before UI implementation");
+    }
+    const discovery = composeInstructions({ projectRoot: root, config, role: "discovery" });
+    expect(discovery).toContain("discovery checklist:");
+    for (const item of config.effective["discovery_checklist"] as string[]) expect(discovery).toContain(item);
+    expect(discovery).not.toContain("planned critics:");
+    if (profile === "server") expect(discovery).not.toContain("반응형과 접근성 구현 수준");
+    if (profile === "cli") expect(discovery).not.toContain("API 계약과 버전 정책");
+  });
+
+  it("UI work and explicit design reviews retain design context even outside the web profile", () => {
+    const root = makeTempProject({ profiles: ["common"] });
+    const config = loadConfig({ projectRoot: root });
+    const task = parseTaskFile(writeTask(root, "ROUTE-2", { config: { changed_surfaces: ["ui"] } }));
+    expect(composeInstructions({ projectRoot: root, config, task, role: "worker" })).toContain("Before UI implementation");
+    fs.writeFileSync(path.join(root, "DESIGN.md"), "# Design\n\n## Purpose\n\nReadable\n");
+    expect(composeInstructions({ projectRoot: root, config, task, role: "worker" })).toContain("Use the relevant DESIGN.md sections");
+    expect(composeInstructions({ projectRoot: root, config, critic: "design" })).toContain("Use the relevant DESIGN.md sections");
+  });
+
+  it.each(["pending", "approved", "rejected"] as const)("composed approval guidance honors %s policy state", (decision) => {
+    const root = makeTempProject({ profiles: ["server"] });
+    const task = parseTaskFile(writeTask(root, "ROUTE-3", { riskReasons: ["touches-auth"] }));
+    if (decision !== "pending") recordRiskApproval({ projectRoot: root, taskId: "ROUTE-3", ruleId: "auth-and-permissions", decision, approver: "user", reason: "Explicit test decision" });
+    const composed = composeInstructions({ projectRoot: root, config: loadConfig({ projectRoot: root }), task, role: "worker" });
+    expect(composed).toContain(`auth-and-permissions: ${decision};`);
+    if (decision === "approved") {
+      expect(composed).toContain("approved; do not ask again");
+      expect(composed).not.toContain("pending; obtain");
+    }
+    if (decision === "rejected") expect(composed).toContain("rejected; do not proceed");
+  });
+});
 
 describe("selective task context", () => {
+  it("web profile alone does not load DESIGN; explicit context and inferred UI scope still do", () => {
+    const root = projectWithDocs();
+    const select = (task: ReturnType<typeof parseTaskFile>) => selectTaskContext({ projectRoot: root, task, profiles: ["web"], maxChars: 12_000 });
+    const docs = parseTaskFile(writeTask(root, "CTX-105", { sections: { "Allowed scope": "docs/" }, config: { changed_surfaces: ["docs"] } }));
+    expect(select(docs).loaded.some((item) => item.source === "DESIGN.md")).toBe(false);
+    const explicit = parseTaskFile(writeTask(root, "CTX-106", { sections: { "Allowed scope": "docs/", "Relevant context": "DESIGN.md#Purpose" } }));
+    expect(select(explicit).loaded.find((item) => item.source === "DESIGN.md")?.origin).toBe("explicit");
+    const ui = parseTaskFile(writeTask(root, "CTX-107", { sections: { "Allowed scope": "src/components/" } }));
+    expect(select(ui).loaded.some((item) => item.source === "DESIGN.md" && item.origin === "automatic")).toBe(true);
+  });
+
   it("명시한 heading과 작업 표면에 관련된 루트 명세만 선택한다", () => {
     const root = projectWithDocs();
     fs.writeFileSync(path.join(root, "README.md"), "# Readme\n\n## Run\n\nnpm test\n\n## Deploy\n\nmanual\n", "utf8");

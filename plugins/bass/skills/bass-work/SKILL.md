@@ -1,6 +1,6 @@
 ---
 name: bass-work
-description: Implement, fix, delete, refactor, or prepare a release in a BASS-connected repository using its ExecutionPlan. For read-only questions, inspect and answer without starting implementation or finalization.
+description: Implement repository changes in BASS using the task ExecutionPlan. Read-only questions do not start implementation.
 ---
 
 # BASS Work
@@ -8,7 +8,7 @@ description: Implement, fix, delete, refactor, or prepare a release in a BASS-co
 Resolve `../../scripts/bass-launcher.cjs` relative to this file. `<BASS>` means `node <absolute launcher path>` on both Codex and Claude Code.
 
 1. Read repository instructions and `<BASS> agent guide <task-id> --json`. Follow its operating rules, `execution_plan`, `contractVersion`, and `planFingerprint`. Load composed `Relevant context`; inspect more files when the task requires them.
-2. For a CAPTURED task, pass `<BASS> gate pre-task <task-id>` before transitioning to ACTIVE. Check `<BASS> task graph`, then run `<BASS> task attempt start <task-id> --json`. Surface any budget, repeated-failure, or no-progress block as `NEEDS_DECISION` or `NEEDS_EXPERT`.
+2. Run `<BASS> task transition <task-id> ACTIVE`, then `<BASS> task attempt start <task-id> --json`; both enforce pre-task checks. Inspect `<BASS> task graph` when diagnosing dependency or path conflicts. Surface any budget, repeated-failure, or no-progress block as `NEEDS_DECISION` or `NEEDS_EXPERT`.
 3. Implement within Allowed scope and `scopeLock`. Delete tasks include stale references and affected tests, without adjacent work.
 4. For a named external call, run `<BASS> doctor --capabilities --host <codex-or-claude>` and `<BASS> capability claim <task-id> <capability-call> --host <codex-or-claude> --json`. On `run`, invoke the active host plugin and record `<BASS> capability complete ... --status <pass|fail|skipped|error> --summary <text>`. On `reuse`, reuse the result; on `uncertain`, stop because prior side effects are unknown. Never install, emulate, copy, or silently substitute providers. Runner refinement remains a reviewable proposal.
 5. Run `<BASS> evaluate --task <task-id>` after the meaningful change. Reuse unchanged passing evidence; rerun only failed or newly affected checks within the plan. Save full logs under `.bass/evidence/<task-id>/` and summaries in prompts/events.

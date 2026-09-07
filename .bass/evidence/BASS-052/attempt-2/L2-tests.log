@@ -1,0 +1,182 @@
+name: tests
+level: 2
+command: npm test
+status: fail
+exit_code: 1
+duration_ms: 2653
+
+--- output ---
+
+> @offbeat24/bass@0.5.0 test
+> vitest run
+
+
+ RUN  v4.1.10 /Users/okestro/croquis/deck/BASS/bass-platform
+
+ ❯ tests/project.test.ts (13 tests | 1 failed) 330ms
+     × base + role + profile + project + policy + task 를 출처 주석과 함께 조합한다 86ms
+
+ Test Files  1 failed | 20 passed (21)
+      Tests  1 failed | 200 passed (201)
+   Start at  16:09:31
+   Duration  2.33s (transform 1.36s, setup 0ms, import 4.58s, tests 7.22s, environment 2ms)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/project.test.ts > bass compose (지침 조합) > base + role + profile + project + policy + task 를 출처 주석과 함께 조합한다
+AssertionError: expected '<!-- composed by bass compose -->\n<!…' to contain 'DESIGN.md'
+
+- Expected
++ Received
+
+- DESIGN.md
++ <!-- composed by bass compose -->
++ <!-- bass-platform v0.5.0 | composed at 2026-09-07T07:09:33.514Z -->
++ <!-- 이 파일은 파생물이다. 수정하지 말고 원본(source 주석)을 수정하라. -->
++
++ <!-- section: base behavior | source: /Users/okestro/croquis/deck/BASS/bass-platform/prompt-library/base/behavior.md -->
++
++ <!-- bass-prompt: base/behavior v0.5.0 -->
++ # BASS Base Behavior
++
++ Operate BASS internally. For read-only questions, inspect and answer without starting implementation or finalization.
++
++ - Humans own product direction, irreversible risk, and final judgment.
++ - Inspect repository facts; separate facts, decisions, assumptions, constraints, and risks.
++ - Treat `execution_plan` as a ceiling and make the smallest accepted change inside its scope.
++ - For implementation, use one bounded attempt. Stop on success, exhausted budget, repeated failure without new evidence, or no progress.
++ - Run affected machine checks once; reuse unchanged passing evidence and retry only failed/directly affected checks.
++ - Preserve repository-native instructions and existing user decisions. Ask only for a missing decision; recorded policy approvals and rejections remain authoritative.
++ - Store full logs as task evidence. Prompts and events get summaries or necessary excerpts; unknown metrics stay `unknown`.
++
++ Call an external provider only when `capabilityCalls` names it and host-specific doctor confirms it active. Claim before invocation and complete afterward; reuse a completion and stop on `uncertain`. Never install, emulate, copy, or silently substitute it. Refinement remains a reviewable proposal.
++
++ For delete tasks, remove only the accepted target, stale references, and affected tests. Add no adjacent work.
++
++ <!-- section: role: worker | source: /Users/okestro/croquis/deck/BASS/bass-platform/prompt-library/roles/worker.md -->
++
++ <!-- bass-prompt: roles/worker v0.5.0 -->
++ # Role: Worker
++
++ Ponytail은 승인된 범위에만 적용한다. Preserve requirements, validation, security, accessibility, and data safety when simplifying.
++
++ Start and finish a BASS attempt. Run `bass evaluate --task <id>` after the meaningful change, prepare a proportional Run Record, and move to REVIEW after the pre-review gate passes. Report the result, evidence, limitations, and outstanding human judgment; never claim unperformed verification.
++
++ <!-- section: project-type profile | source: /Users/okestro/croquis/deck/BASS/bass-platform/profiles/common.yaml, /Users/okestro/croquis/deck/BASS/bass-platform/profiles/web.yaml -->
++
++ active profiles: common, web
++
++ planned critics: implementation, test
++
++ <!-- section: project context | source: /var/folders/l_/n9z9s11d2yv1d0xrbnvhgzgr0000gn/T/bass-init-WhH8yM/bass.yaml -->
++
++ project: demo
++
++ <!-- section: active policy | source: /Users/okestro/croquis/deck/BASS/bass-platform/policies/approval.yaml -->
++
++ Apply policies/approval.yaml; reuse recorded approvals and honor rejections.
++ auth-and-permissions: pending; obtain and record the missing human decision before the affected action.
++
++ <!-- section: task: T-001 | source: /var/folders/l_/n9z9s11d2yv1d0xrbnvhgzgr0000gn/T/bass-init-WhH8yM/.bass/tasks/T-001.md -->
++
++ ---
++ id: T-001
++ title: Test task
++ status: READY
++ type: feature
++ risk:
++   level: low
++   reasons: [touches-auth]
++
++
++
++
++
++ human:
++   owner: user
++   reviewer_required: true
++ ---
++
++ ## Problem
++
++ 실제 문제 설명
++
++ ## What we are shipping
++
++ 이번에 제공하는 것
++
++ ## What we are not shipping
++
++ 제외 범위
++
++ ## Facts
++
++ 확인된 사실
++
++ ## Decisions
++
++ 결정 사항
++
++ ## Assumptions
++
++ none
++
++ ## Relevant context
++
++ 관련 파일
++
++ ## Allowed scope
++
++ src/
++
++ ## Forbidden scope
++
++ docs/
++
++ ## Acceptance criteria
++
++ 기준 1
++
++ ## Human judgment
++
++ 제품 방향
++
++ ## Verification
++
++ npm test
++
++ ## Rollback
++
++ git revert
++
++ <!-- section: context: PRODUCT.md#Product intent | source: /var/folders/l_/n9z9s11d2yv1d0xrbnvhgzgr0000gn/T/bass-init-WhH8yM/PRODUCT.md -->
++
++ ## Product intent
++
++ <!-- 누구의 어떤 문제를 왜 해결하는가. 한 문단으로 유지한다. -->
++
++ <!-- section: context: TECH.md#Stack | source: /var/folders/l_/n9z9s11d2yv1d0xrbnvhgzgr0000gn/T/bass-init-WhH8yM/TECH.md -->
++
++ ## Stack
++
++ <!-- section: context: TECH.md#Architecture | source: /var/folders/l_/n9z9s11d2yv1d0xrbnvhgzgr0000gn/T/bass-init-WhH8yM/TECH.md -->
++
++ ## Architecture
++
++ <!-- section: context manifest | source: /var/folders/l_/n9z9s11d2yv1d0xrbnvhgzgr0000gn/T/bass-init-WhH8yM/bass.yaml -->
++
++ selected context: 83/12000 chars
++ - loaded automatic: PRODUCT.md#Product intent (60 chars, sha256:b4a7f91cbba531dce141e6532ee7207784c8c126dc5fcb93caa4f41bc45f188e)
++ - loaded automatic: TECH.md#Stack (8 chars, sha256:c559a0a77f4190c9bc352000e2a76d9bd4750c4cc5dcbdd5ed321056edee3aaf)
++ - loaded automatic: TECH.md#Architecture (15 chars, sha256:c559a0a77f4190c9bc352000e2a76d9bd4750c4cc5dcbdd5ed321056edee3aaf)
+
+ ❯ tests/project.test.ts:193:22
+    191|     expect(composed).toContain("section: task: T-001");
+    192|     expect(composed).toContain("auth-and-permissions");
+    193|     expect(composed).toContain("DESIGN.md");
+       |                      ^
+    194|     expect(composed).toContain("Call an external provider only when `c…
+    195|     expect(composed).toContain("Ponytail은 승인된 범위에만 적용한다");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import type { TaskFile } from "../task/taskFile.js";
+import { inferChangedSurfaces } from "../execution/planner.js";
 
 export interface SelectedContext {
   source: string;
@@ -37,7 +38,7 @@ export function selectTaskContext(opts: {
   maxChars: number;
 }): ContextSelection {
   const explicit = parseRelevantContext(opts.task?.sections.get("Relevant context") ?? "");
-  const automatic = automaticReferences(opts.projectRoot, opts.task, opts.profiles);
+  const automatic = automaticReferences(opts.projectRoot, opts.task);
   const references = dedupe([
     ...explicit.map((reference) => ({ ...reference, origin: "explicit" as const })),
     ...automatic,
@@ -98,7 +99,6 @@ function splitReference(value: string): { source: string; selector?: string } {
 function automaticReferences(
   projectRoot: string,
   task: TaskFile | undefined,
-  profiles: string[],
 ): ContextReference[] {
   if (!task) return [];
   const references: ContextReference[] = [
@@ -112,7 +112,7 @@ function automaticReferences(
     ...(task.frontmatter.capabilities ?? []),
     ...configuredSurfaces(task),
   ].join(" ");
-  if (profiles.includes("web") || /\b(ui|ux|design|component|style|css|screen|화면|디자인)\b/i.test(taskText)) {
+  if (inferChangedSurfaces(task).includes("ui") || /\b(ui|ux|design|component|style|css|screen|화면|디자인)\b/i.test(taskText)) {
     references.push(
       { source: "DESIGN.md", selector: "Purpose", origin: "automatic" },
       { source: "DESIGN.md", selector: "Design principles", origin: "automatic" },

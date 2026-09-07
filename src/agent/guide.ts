@@ -40,8 +40,9 @@ export function buildAgentGuide(
   task?: TaskFile,
 ): AgentGuide {
   const designProfile = Boolean(config.effective["design_profile"]);
+  const plan = buildExecutionPlan(config, task);
   const designFile = path.join(projectRoot, "DESIGN.md");
-  const designSpec = !designProfile
+  const designSpec = !designProfile && !plan.changedSurfaces.includes("ui")
     ? "ready"
     : !fs.existsSync(designFile)
       ? "missing"
@@ -65,19 +66,17 @@ export function buildAgentGuide(
     },
     operating_rules: [
       "Operate BASS internally; never ask the user to run commands or edit records.",
-      "Inspect repository facts yourself; ask only for product or risk decisions.",
+      "Read-only questions need inspection and an answer, not an implementation attempt or finalization.",
       "Implement the smallest accepted change and obey execution_plan.scopeLock.",
-      "Wrap implementation and verification in task attempt start/finish; stop at execution_plan.loop limits or stopWhen conditions.",
-      "Run each planned affected check once; reuse a passing result while its diff fingerprint is unchanged.",
-      "Retry only failed and directly affected checks, within maxReworkLoops.",
-      "Store full logs as evidence files; put only summaries and necessary excerpts in prompts and events.",
-      "Do not continue after repeated failure without new evidence, no-progress, or an exhausted attempt, turn, or time budget.",
-      "Never self-approve risk or final product judgment.",
+      "Use task attempt start/finish for implementation and its verification; stop on execution_plan.loop limits, stopWhen, repeated failure without new evidence, or no progress.",
+      "Run affected checks; reuse unchanged passing evidence and retry only failed or newly affected checks within maxReworkLoops.",
+      "Keep full logs in evidence files and summaries in prompts/events; unavailable metrics stay unknown.",
+      "Reuse explicit user decisions and applicable recorded approvals. Ask only for missing product/risk decisions; never self-approve final judgment or bypass a rejected policy decision.",
       "Preserve repository-native instructions and avoid a second source of truth.",
       "Invoke an external provider only when execution_plan.capabilityCalls names it and host-specific doctor confirms it active; claim before invocation, complete afterward, reuse completed calls, and stop on uncertain calls.",
       "Never auto-install, emulate, copy, or silently substitute an external provider.",
     ],
-    execution_plan: buildExecutionPlan(config, task),
+    execution_plan: plan,
   };
 
   if (task) {
@@ -86,13 +85,18 @@ export function buildAgentGuide(
     const unresolved = required
       .filter((approval) => !recorded.some((entry) => entry.rule_id === approval.rule.id))
       .map((approval) => approval.rule.id);
+    const rejected = required
+      .filter((approval) => recorded.some((entry) => entry.rule_id === approval.rule.id && entry.decision === "rejected"))
+      .map((approval) => approval.rule.id);
     guide.task = {
       id: task.frontmatter.id,
       status: normalizeWorkflowState(task.frontmatter.status),
       workflow_depth: guide.execution_plan.depth,
       allowed_transitions: allowedTransitions(task.frontmatter.status),
       unresolved_human_decisions: unresolved,
-      suggested_next_actions: suggestedNextActions(task.frontmatter.status, unresolved, designProfile, designSpec),
+      suggested_next_actions: rejected.length > 0
+        ? [`Do not proceed with rejected policy actions: ${rejected.join(", ")}. Preserve the decision; resume only after an explicit revision.`]
+        : suggestedNextActions(task.frontmatter.status, unresolved, guide.execution_plan, designSpec),
     };
   }
 
@@ -102,7 +106,7 @@ export function buildAgentGuide(
 function suggestedNextActions(
   status: string,
   unresolvedApprovals: string[],
-  designProfile: boolean,
+  plan: ExecutionPlan,
   designSpec: "ready" | "missing" | "template",
 ): string[] {
   if (unresolvedApprovals.length > 0) {
@@ -110,6 +114,10 @@ function suggestedNextActions(
       `Present one decision packet covering: ${unresolvedApprovals.join(", ")}.`,
       "Record only the user's explicit decision, then rerun the pre-task gate.",
     ];
+  }
+
+  if (plan.taskKind === "explore") {
+    return ["Inspect the requested evidence and report findings; do not start implementation or finalize a task for a read-only request."];
   }
 
   const canonical = normalizeWorkflowState(status as TaskFile["frontmatter"]["status"]);
@@ -124,7 +132,7 @@ function suggestedNextActions(
     FAILED: ["Reuse prior evidence, diagnose the failure, and retry only the failed step."],
   };
   const result = [...(actions[canonical] ?? ["Inspect the current state before choosing the next action."])];
-  if (designProfile && designSpec !== "ready") {
+  if (plan.changedSurfaces.includes("ui") && designSpec !== "ready") {
     result.unshift(
       designSpec === "missing"
         ? "Create DESIGN.md from an audit of existing product and code evidence before UI implementation."

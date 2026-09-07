@@ -1,0 +1,50 @@
+
+> @offbeat24/bass@0.5.0 validate:plugin
+> node scripts/validate-plugin.mjs
+
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: The input did not match the regular expression /\.\.\/\.\.\/scripts\/bass-launcher\.cjs/. Input:
+
+'---\n' +
+  'name: bass-html-report\n' +
+  'description: Render an existing BASS run record as HTML when HTML is requested and the plan calls bass:html-report.\n' +
+  '---\n' +
+  '\n' +
+  '# BASS HTML Report\n' +
+  '\n' +
+  'Resolve `scripts/render-report.cjs` relative to this file to an absolute path.\n' +
+  '\n' +
+  '1. Require an existing `.bass/records/<task-id>.json` or legacy `records/<task-id>.json`.\n' +
+  '2. Run `node <absolute renderer path> <record.json> <report.html>`.\n' +
+  '3. Use the bundled fixed layout and status components. Do not add a new design system or dependency.\n' +
+  '4. Do not paste the generated HTML back into model context. Inspect it only when the user requested visual QA.\n' +
+  '5. Return the report path and any source-record validation error.\n'
+
+    at file:///Users/okestro/croquis/deck/BASS/bass-platform/scripts/validate-plugin.mjs:40:10
+    at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: '---\n' +
+    'name: bass-html-report\n' +
+    'description: Render an existing BASS run record as HTML when HTML is requested and the plan calls bass:html-report.\n' +
+    '---\n' +
+    '\n' +
+    '# BASS HTML Report\n' +
+    '\n' +
+    'Resolve `scripts/render-report.cjs` relative to this file to an absolute path.\n' +
+    '\n' +
+    '1. Require an existing `.bass/records/<task-id>.json` or legacy `records/<task-id>.json`.\n' +
+    '2. Run `node <absolute renderer path> <record.json> <report.html>`.\n' +
+    '3. Use the bundled fixed layout and status components. Do not add a new design system or dependency.\n' +
+    '4. Do not paste the generated HTML back into model context. Inspect it only when the user requested visual QA.\n' +
+    '5. Return the report path and any source-record validation error.\n',
+  expected: /\.\.\/\.\.\/scripts\/bass-launcher\.cjs/,
+  operator: 'match'
+}
+
+Node.js v20.19.0

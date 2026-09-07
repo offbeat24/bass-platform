@@ -1,0 +1,75 @@
+{
+  "files": [
+    {
+      "file": "src/agent/guide.ts",
+      "bytes": 6284
+    },
+    {
+      "file": "src/compose/composer.ts",
+      "bytes": 5375
+    },
+    {
+      "file": "prompt-library/base/behavior.md",
+      "bytes": 1299
+    },
+    {
+      "file": "prompt-library/roles/discovery.md",
+      "bytes": 655
+    },
+    {
+      "file": "prompt-library/roles/planner.md",
+      "bytes": 616
+    },
+    {
+      "file": "plugins/bass/skills/bass-game-runtime/SKILL.md",
+      "bytes": 1230
+    },
+    {
+      "file": "plugins/bass/skills/bass-html-report/SKILL.md",
+      "bytes": 934
+    },
+    {
+      "file": "plugins/bass/skills/bass-setup/SKILL.md",
+      "bytes": 1681
+    },
+    {
+      "file": "plugins/bass/skills/bass-shape/SKILL.md",
+      "bytes": 1497
+    },
+    {
+      "file": "plugins/bass/skills/bass-ui-direction/SKILL.md",
+      "bytes": 1150
+    },
+    {
+      "file": "plugins/bass/skills/bass-work/SKILL.md",
+      "bytes": 2636
+    }
+  ],
+  "descriptions": [
+    {
+      "name": "bass-game-runtime",
+      "chars": 249
+    },
+    {
+      "name": "bass-html-report",
+      "chars": 215
+    },
+    {
+      "name": "bass-setup",
+      "chars": 248
+    },
+    {
+      "name": "bass-shape",
+      "chars": 243
+    },
+    {
+      "name": "bass-ui-direction",
+      "chars": 204
+    },
+    {
+      "name": "bass-work",
+      "chars": 203
+    }
+  ],
+  "head": "321d7ffeb3e8128f5db4a002f00520037b20eb87"
+}

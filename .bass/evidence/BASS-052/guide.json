@@ -1,0 +1,109 @@
+{
+  "contract": {
+    "user_interface": "natural-language",
+    "cli_operator": "ai-agent",
+    "goal": "Implement the smallest change that satisfies the user's intent while preserving explicit human ownership of product and risk decisions."
+  },
+  "project": {
+    "root": "/Users/okestro/croquis/deck/BASS/bass-platform",
+    "name": "bass-platform",
+    "profiles": [
+      "common",
+      "cli"
+    ],
+    "design_profile": false,
+    "design_spec": "ready"
+  },
+  "operating_rules": [
+    "Operate BASS internally; never ask the user to run commands or edit records.",
+    "Read-only questions need inspection and an answer, not an implementation attempt or finalization.",
+    "Implement the smallest accepted change and obey execution_plan.scopeLock.",
+    "Use task attempt start/finish for implementation and its verification; stop on execution_plan.loop limits, stopWhen, repeated failure without new evidence, or no progress.",
+    "Run affected checks; reuse unchanged passing evidence and retry only failed or newly affected checks within maxReworkLoops.",
+    "Keep full logs in evidence files and summaries in prompts/events; unavailable metrics stay unknown.",
+    "Reuse explicit user decisions and applicable recorded approvals. Ask only for missing product/risk decisions; never self-approve final judgment or bypass a rejected policy decision.",
+    "Preserve repository-native instructions and avoid a second source of truth.",
+    "Invoke an external provider only when execution_plan.capabilityCalls names it and host-specific doctor confirms it active; claim before invocation, complete afterward, reuse completed calls, and stop on uncertain calls.",
+    "Never auto-install, emulate, copy, or silently substitute an external provider."
+  ],
+  "execution_plan": {
+    "contractVersion": 1,
+    "planFingerprint": "95e16c9f3fec6056f1c33992fca95e448016d5e5e04e782e17841ef8e0e35919",
+    "taskKind": "refactor",
+    "depth": "standard",
+    "changedSurfaces": [
+      "src/agent/guide.ts",
+      "src/compose/composer.ts",
+      "src/compose/context.ts",
+      "plugins/bass/skills/bass-work/SKILL.md",
+      "plugins/bass/skills/bass-shape/SKILL.md",
+      "plugins/bass/skills/bass-setup/SKILL.md",
+      "plugins/bass/skills/bass-game-runtime/SKILL.md",
+      "plugins/bass/skills/bass-ui-direction/SKILL.md",
+      "plugins/bass/skills/bass-html-report/SKILL.md",
+      "prompt-library/base/behavior.md",
+      "prompt-library/roles/discovery.md",
+      "prompt-library/roles/planner.md",
+      "tests/agent.test.ts",
+      "tests/context.test.ts",
+      "tests/project.test.ts",
+      "docs/agent-operations.md",
+      "docs/audit/instruction-audit.md",
+      ".bass/tasks/BASS-052.md",
+      ".bass/records/BASS-052.json",
+      ".bass/evidence/BASS-052",
+      ".bass/events.jsonl"
+    ],
+    "scopeLock": [],
+    "verificationLevels": [
+      1,
+      2
+    ],
+    "critics": [
+      "implementation"
+    ],
+    "capabilityCalls": [
+      "ponytail:full"
+    ],
+    "providers": {
+      "runner": "host",
+      "context": "bass",
+      "workspace": "host",
+      "collaboration": "events"
+    },
+    "loop": {
+      "maxTurns": 8,
+      "maxAttempts": 3,
+      "maxMinutes": 30,
+      "noProgressLimit": 1,
+      "stopWhen": [
+        "acceptance criteria pass",
+        "required evaluators pass",
+        "no open high/medium findings"
+      ],
+      "requiredEvidence": []
+    },
+    "parallel": {
+      "maxAgents": 1
+    },
+    "maxReworkLoops": 2
+  },
+  "task": {
+    "id": "BASS-052",
+    "status": "ACTIVE",
+    "workflow_depth": "standard",
+    "allowed_transitions": [
+      "REVIEW",
+      "CAPTURED",
+      "BLOCKED",
+      "NEEDS_DECISION",
+      "NEEDS_EXPERT",
+      "FAILED",
+      "CANCELLED"
+    ],
+    "unresolved_human_decisions": [],
+    "suggested_next_actions": [
+      "Start one bounded attempt, implement the smallest change, and run only the planned affected checks."
+    ]
+  }
+}

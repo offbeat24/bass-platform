@@ -4,6 +4,8 @@ import { promptLibraryDir, policyPath, profilePath } from "../paths.js";
 import type { TaskFile } from "../task/taskFile.js";
 import type { LoadedConfig } from "../config/loader.js";
 import { findRequiredApprovals } from "../policy/policyEngine.js";
+import { loadRiskApprovals } from "../task/approvalRecord.js";
+import { buildExecutionPlan } from "../execution/planner.js";
 import { BASS_VERSION } from "../version.js";
 import { selectTaskContext } from "./context.js";
 
@@ -29,6 +31,7 @@ interface ComposedPart {
 export function composeInstructions(opts: ComposeOptions): string {
   const parts: ComposedPart[] = [];
   const lib = promptLibraryDir();
+  const plan = opts.task ? buildExecutionPlan(opts.config, opts.task) : undefined;
 
   // 1. base behavior
   parts.push(readPart("base behavior", path.join(lib, "base", "behavior.md")));
@@ -45,13 +48,12 @@ export function composeInstructions(opts: ComposeOptions): string {
   const profiles = opts.config.bassYaml.bass.profiles;
   const profileLines: string[] = [`active profiles: ${profiles.join(", ")}`];
   const checklist = opts.config.effective["discovery_checklist"];
-  if (Array.isArray(checklist)) {
+  if (opts.role === "discovery" && Array.isArray(checklist)) {
     profileLines.push("", "discovery checklist:");
     for (const item of checklist) profileLines.push(`- ${item}`);
   }
-  const critics = opts.config.effective["critics"];
-  if (Array.isArray(critics)) {
-    profileLines.push("", `configured critics: ${critics.join(", ")}`);
+  if (plan) {
+    profileLines.push("", `planned critics: ${plan.critics.join(", ") || "none"}`);
   }
   parts.push({
     label: "project-type profile",
@@ -65,11 +67,11 @@ export function composeInstructions(opts: ComposeOptions): string {
     opts.config.bassYaml.project.description ?? "",
   ].filter(Boolean);
   const designMd = path.join(opts.projectRoot, "DESIGN.md");
-  if (Boolean(opts.config.effective["design_profile"])) {
+  if (opts.critic === "design" || plan?.changedSurfaces.includes("ui")) {
     projectParts.push(
       fs.existsSync(designMd)
-        ? "UI 작업 전 반드시 프로젝트 루트의 DESIGN.md 를 읽어라. 디자인 의도의 단일 명세다."
-        : "WARNING: design_profile 이 활성인데 DESIGN.md 가 없다. `bass init` 으로 생성하라.",
+        ? "Use the relevant DESIGN.md sections for UI work; load more only when needed."
+        : "Before UI implementation, establish DESIGN.md from product and code evidence.",
     );
   }
   parts.push({
@@ -81,17 +83,20 @@ export function composeInstructions(opts: ComposeOptions): string {
   // 5. active policy
   const policyFile = policyPath("approval");
   const policyLines = [
-    "다음 조건에 해당하면 구현 전에 정지하고 인간 승인을 요청한다.",
-    "전체 목록: policies/approval.yaml",
+    "Apply policies/approval.yaml; reuse recorded approvals and honor rejections.",
   ];
   if (opts.task) {
     const triggered = findRequiredApprovals(opts.task.frontmatter);
-    policyLines.push(
-      "",
-      triggered.length > 0
-        ? `이 작업에서 이미 트리거된 승인 조건: ${triggered.map((t) => t.rule.id).join(", ")}`
-        : "이 작업의 frontmatter 기준으로 사전 트리거된 승인 조건은 없다.",
-    );
+    const recorded = loadRiskApprovals(opts.projectRoot, opts.task.frontmatter.id);
+    if (triggered.length === 0) policyLines.push("No policy approval is triggered for this task.");
+    for (const { rule } of triggered) {
+      const decision = recorded.find((entry) => entry.rule_id === rule.id)?.decision;
+      policyLines.push(`${rule.id}: ${decision === "approved"
+        ? "approved; do not ask again"
+        : decision === "rejected"
+          ? "rejected; do not proceed with the rejected action"
+          : "pending; obtain and record the missing human decision before the affected action"}.`);
+    }
   }
   parts.push({ label: "active policy", source: policyFile, content: policyLines.join("\n") });
 

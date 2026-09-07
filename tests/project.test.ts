@@ -177,7 +177,7 @@ describe("bass compose (지침 조합)", () => {
   it("base + role + profile + project + policy + task 를 출처 주석과 함께 조합한다", () => {
     const root = tempDir();
     initProject({ projectRoot: root, name: "demo", profiles: ["common", "web"], owner: "user", withDesign: true });
-    const taskPath = writeTask(root, "T-001", { riskReasons: ["touches-auth"] });
+    const taskPath = writeTask(root, "T-001", { riskReasons: ["touches-auth"], config: { changed_surfaces: ["ui"] } });
     const config = loadConfig({ projectRoot: root });
     const composed = composeInstructions({
       projectRoot: root,

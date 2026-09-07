@@ -1,0 +1,293 @@
+{
+  "record_version": 2,
+  "task_id": "BASS-052",
+  "execution_contract": {
+    "contract_version": 1,
+    "plan_fingerprint": "95e16c9f3fec6056f1c33992fca95e448016d5e5e04e782e17841ef8e0e35919",
+    "capability_calls": [
+      "ponytail:full"
+    ]
+  },
+  "capability_invocations": [
+    {
+      "call_id": "007c1b04097ae0553821e9a0811b8ea2eb1def833e93fcb0719f8629367350d4",
+      "attempt": 3,
+      "capability_call": "ponytail:full",
+      "host": "codex",
+      "status": "pass",
+      "summary": "Applied installed Ponytail full: task-scoped context, concise skills, reuse explicit decisions, preserve contracts; same-agent review recorded.",
+      "evidence_path": ".bass/evidence/BASS-052/implementation-review.md"
+    }
+  ],
+  "summary_of_changes": "Apply cross-profile instruction audit: role-scoped context, UI-only automatic design guidance, persisted approval states and six concise skills.",
+  "why": "Unrelated profile instructions and repeated choices added unnecessary context and ceremony across BASS domains.",
+  "files_changed": [
+    ".bass/events.jsonl",
+    ".bass/evidence/BASS-052/attempt-2/L1-typecheck.log",
+    ".bass/evidence/BASS-052/attempt-2/L2-build.log",
+    ".bass/evidence/BASS-052/attempt-2/L2-tests.log",
+    ".bass/evidence/BASS-052/baseline.json",
+    ".bass/evidence/BASS-052/evaluate.log",
+    ".bass/evidence/BASS-052/guide.json",
+    ".bass/evidence/BASS-052/implementation-review.md",
+    ".bass/evidence/BASS-052/metrics.json",
+    ".bass/evidence/BASS-052/plugin-validation-final.log",
+    ".bass/evidence/BASS-052/plugin-validation.log",
+    ".bass/evidence/BASS-052/skill-validation.log",
+    ".bass/evidence/BASS-052/tests-final.log",
+    ".bass/records/BASS-052.json",
+    ".bass/tasks/BASS-052.md",
+    "docs/agent-operations.md",
+    "docs/audit/instruction-audit.md",
+    "plugins/bass/skills/bass-game-runtime/SKILL.md",
+    "plugins/bass/skills/bass-html-report/SKILL.md",
+    "plugins/bass/skills/bass-setup/SKILL.md",
+    "plugins/bass/skills/bass-shape/SKILL.md",
+    "plugins/bass/skills/bass-ui-direction/SKILL.md",
+    "plugins/bass/skills/bass-work/SKILL.md",
+    "prompt-library/base/behavior.md",
+    "prompt-library/roles/discovery.md",
+    "prompt-library/roles/planner.md",
+    "src/agent/guide.ts",
+    "src/compose/composer.ts",
+    "src/compose/context.ts",
+    "tests/agent.test.ts",
+    "tests/context.test.ts",
+    "tests/project.test.ts"
+  ],
+  "models_used": [
+    {
+      "role": "worker",
+      "alias": "auto",
+      "followed_recommendation": true
+    },
+    {
+      "role": "critic",
+      "alias": "host-current",
+      "followed_recommendation": false,
+      "reason": "Same-agent implementation review; no independent agent was delegated."
+    }
+  ],
+  "verification": {
+    "evaluations_run": [
+      {
+        "name": "typecheck",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "tests",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "build",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "plugin-validation",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "six-skill-validation",
+        "level": 1,
+        "status": "pass"
+      }
+    ],
+    "not_verified": [
+      "Live Codex/Claude behavior, Windows host and independent-agent review were not exercised."
+    ]
+  },
+  "critic_findings": {
+    "total": 0,
+    "open_high_or_medium": 0,
+    "report_path": ".bass/evidence/BASS-052/implementation-review.md"
+  },
+  "known_limitations": [
+    "Local REVIEW only; final human approval remains pending.",
+    "Earlier failed logs/events retained; previous plan provider calls remain in events.",
+    "No global plugin or generated-project propagation."
+  ],
+  "out_of_scope_findings": [],
+  "docs_updated": {
+    "needed": true,
+    "updated": [
+      "docs/agent-operations.md",
+      "docs/audit/instruction-audit.md"
+    ]
+  },
+  "lessons": {
+    "recorded": false,
+    "candidates": []
+  },
+  "rollback": {
+    "method": "Revert only BASS-052 implementation files while preserving task/event/evidence history."
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "pass",
+      "started_at": "2026-09-07T07:03:09.068Z",
+      "completed_at": "2026-09-07T07:08:16.825Z"
+    },
+    {
+      "attempt": 2,
+      "status": "fail",
+      "started_at": "2026-09-07T07:08:17.043Z",
+      "completed_at": "2026-09-07T07:10:28.056Z",
+      "failure_fingerprint": "stale-web-design-fixture"
+    },
+    {
+      "attempt": 3,
+      "status": "pass",
+      "started_at": "2026-09-07T07:13:02.386Z",
+      "completed_at": "2026-09-07T07:15:11.937Z"
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-052/attempt-2/L1-typecheck.log",
+      "sha256": "094a2686f7511d44a308447344b07636d4e8b3f78801bc74dfa65a2bad3bf7ae",
+      "produced_by": "BASS-052 local implementation",
+      "at": "2026-09-07T07:15:43.345273Z"
+    },
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-052/attempt-2/L2-build.log",
+      "sha256": "d0c2758c9c39cee73da8af0c304f7d05976f236e517d6d5059a96d4b7b510353",
+      "produced_by": "BASS-052 local implementation",
+      "at": "2026-09-07T07:15:43.345273Z"
+    },
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-052/attempt-2/L2-tests.log",
+      "sha256": "da20b9e290983df4a218510ba2651e15e16f0425120633d1fcfc1a3b49e197d3",
+      "produced_by": "BASS-052 local implementation",
+      "at": "2026-09-07T07:15:43.345273Z"
+    },
+    {
+      "kind": "review",
+      "path": ".bass/evidence/BASS-052/baseline.json",
+      "sha256": "92107fe892e8b8fb72d89c2b0f61107a3efc9093fc558c8ffe48b36fc788c5e1",
+      "produced_by": "BASS-052 local implementation",
+      "at": "2026-09-07T07:15:43.345273Z"
+    },
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-052/evaluate.log",
+      "sha256": "ffa9f15e93013482bb34aa1e4275decd7604380dddabae7b328eb803045353cc",
+      "produced_by": "BASS-052 local implementation",
+      "at": "2026-09-07T07:15:43.345273Z"
+    },
+    {
+      "kind": "review",
+      "path": ".bass/evidence/BASS-052/guide.json",
+      "sha256": "41c3654652b6586396501b5ec2f18104ca754b88e92cdcc9d305b26c53f11e37",
+      "produced_by": "BASS-052 local implementation",
+      "at": "2026-09-07T07:15:43.345273Z"
+    },
+    {
+      "kind": "review",
+      "path": ".bass/evidence/BASS-052/implementation-review.md",
+      "sha256": "16d253b0de648a91f0593b9b7f854efc08931d0f8d69fd50f16323ad7a6bc9c2",
+      "produced_by": "BASS-052 local implementation",
+      "at": "2026-09-07T07:15:43.345273Z"
+    },
+    {
+      "kind": "review",
+      "path": ".bass/evidence/BASS-052/metrics.json",
+      "sha256": "a63385b7eab4c75c03aa49c6bc18a85b31bb85b5bb22985954f4aa8427eceeef",
+      "produced_by": "BASS-052 local implementation",
+      "at": "2026-09-07T07:15:43.345273Z"
+    },
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-052/plugin-validation-final.log",
+      "sha256": "e2c762d2d4f3587a6f665211c0819d8fcdc3001c4eec82efc2cc88829c2e340d",
+      "produced_by": "BASS-052 local implementation",
+      "at": "2026-09-07T07:15:43.345273Z"
+    },
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-052/plugin-validation.log",
+      "sha256": "9df9379b3f5d587938bd4f177f56ce149b291152fbcf2ab3224e9197e336a041",
+      "produced_by": "BASS-052 local implementation",
+      "at": "2026-09-07T07:15:43.345273Z"
+    },
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-052/skill-validation.log",
+      "sha256": "179478924ed9f1cb77f6d5e6e37015f42fbc23b2618fb05642ba624c4f90bc63",
+      "produced_by": "BASS-052 local implementation",
+      "at": "2026-09-07T07:15:43.345273Z"
+    },
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-052/tests-final.log",
+      "sha256": "5e1fc76d41e8d1b8001a02967763196ef2f6b8de767f60edd5acec11b765f977",
+      "produced_by": "BASS-052 local implementation",
+      "at": "2026-09-07T07:15:43.345273Z"
+    }
+  ],
+  "context": {
+    "sources": [
+      {
+        "path": "docs/workflows.md",
+        "sha256": "8361dd192d451ac8aad8c24a893ac8d3b7f1e6238e2fff1c489bf8d30efbada3",
+        "chars": 2738
+      },
+      {
+        "path": "profiles/common.yaml",
+        "sha256": "92a4f755e9f47e17527ba7ac4070061257ad43cda7b23479c3546a436b925ab7",
+        "chars": 718
+      }
+    ],
+    "total_chars": 3456,
+    "omitted": []
+  },
+  "usage": {
+    "attempts": 3,
+    "subagents": 0
+  },
+  "scope": {
+    "actual_files": [
+      ".bass/events.jsonl",
+      ".bass/evidence/BASS-052/attempt-2/L1-typecheck.log",
+      ".bass/evidence/BASS-052/attempt-2/L2-build.log",
+      ".bass/evidence/BASS-052/attempt-2/L2-tests.log",
+      ".bass/evidence/BASS-052/baseline.json",
+      ".bass/evidence/BASS-052/evaluate.log",
+      ".bass/evidence/BASS-052/guide.json",
+      ".bass/evidence/BASS-052/implementation-review.md",
+      ".bass/evidence/BASS-052/metrics.json",
+      ".bass/evidence/BASS-052/plugin-validation-final.log",
+      ".bass/evidence/BASS-052/plugin-validation.log",
+      ".bass/evidence/BASS-052/skill-validation.log",
+      ".bass/evidence/BASS-052/tests-final.log",
+      ".bass/records/BASS-052.json",
+      ".bass/tasks/BASS-052.md",
+      "docs/agent-operations.md",
+      "docs/audit/instruction-audit.md",
+      "plugins/bass/skills/bass-game-runtime/SKILL.md",
+      "plugins/bass/skills/bass-html-report/SKILL.md",
+      "plugins/bass/skills/bass-setup/SKILL.md",
+      "plugins/bass/skills/bass-shape/SKILL.md",
+      "plugins/bass/skills/bass-ui-direction/SKILL.md",
+      "plugins/bass/skills/bass-work/SKILL.md",
+      "prompt-library/base/behavior.md",
+      "prompt-library/roles/discovery.md",
+      "prompt-library/roles/planner.md",
+      "src/agent/guide.ts",
+      "src/compose/composer.ts",
+      "src/compose/context.ts",
+      "tests/agent.test.ts",
+      "tests/context.test.ts",
+      "tests/project.test.ts"
+    ],
+    "outside_allowed": [],
+    "forbidden_touched": []
+  }
+}

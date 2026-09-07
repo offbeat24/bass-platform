@@ -1,11 +1,17 @@
 # Agent operations
 
-## Start
+Read-only questions require inspection and an answer, not a new implementation task or finalization. Existing exploration tasks may collect findings without entering the implementation loop.
+
+## Start implementation
 
 1. Read repository-native instructions.
-2. Run `bass agent guide <task-id> --json`, preserve its `contractVersion` and `planFingerprint`, and inspect `bass task graph`.
+2. Run `bass agent guide <task-id> --json` and preserve its `contractVersion` and `planFingerprint`. Inspect `bass task graph` when diagnosing dependency/path conflicts.
 3. Verify only named external calls with `bass doctor --capabilities --host codex|claude` and current host capability discovery.
-4. Treat the ExecutionPlan as a ceiling, transition to ACTIVE, and start one recorded attempt.
+4. Treat the ExecutionPlan as a ceiling, transition to ACTIVE, and start one recorded attempt. Both CLI entrypoints enforce pre-task checks.
+
+Composition includes discovery checklists only for discovery and names critics selected by the current ExecutionPlan. UI guidance and automatic DESIGN.md sections require relevant task scope; a web profile alone does not turn server, documentation, or tooling work into UI work. Explicit context references remain available.
+
+Preserve existing user choices during shaping, setup, and runtime selection. An explicit request to perform a named action supplies that action's authorization; do not ask the same question again. Policy approvals still require their applicable records: approved decisions are reused, missing decisions are requested, and rejected actions remain blocked. Final product approval is separate from implementation authorization.
 
 ## Work and verify
 

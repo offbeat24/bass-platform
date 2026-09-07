@@ -1,0 +1,71 @@
+{
+  "skills": [
+    {
+      "file": "plugins/bass/skills/bass-game-runtime/SKILL.md",
+      "before": 1230,
+      "after": 1199
+    },
+    {
+      "file": "plugins/bass/skills/bass-html-report/SKILL.md",
+      "before": 934,
+      "after": 803
+    },
+    {
+      "file": "plugins/bass/skills/bass-setup/SKILL.md",
+      "before": 1681,
+      "after": 1580
+    },
+    {
+      "file": "plugins/bass/skills/bass-shape/SKILL.md",
+      "before": 1497,
+      "after": 1380
+    },
+    {
+      "file": "plugins/bass/skills/bass-ui-direction/SKILL.md",
+      "before": 1150,
+      "after": 974
+    },
+    {
+      "file": "plugins/bass/skills/bass-work/SKILL.md",
+      "before": 2636,
+      "after": 2577
+    }
+  ],
+  "descriptions": [
+    {
+      "name": "bass-game-runtime",
+      "before": 249,
+      "after": 96
+    },
+    {
+      "name": "bass-html-report",
+      "before": 215,
+      "after": 102
+    },
+    {
+      "name": "bass-setup",
+      "before": 248,
+      "after": 105
+    },
+    {
+      "name": "bass-shape",
+      "before": 243,
+      "after": 105
+    },
+    {
+      "name": "bass-ui-direction",
+      "before": 204,
+      "after": 125
+    },
+    {
+      "name": "bass-work",
+      "before": 203,
+      "after": 115
+    }
+  ],
+  "skill_bytes_before": 9128,
+  "skill_bytes_after": 8513,
+  "description_chars_before": 1362,
+  "description_chars_after": 648,
+  "limits": "File bytes and description characters only; not tokens or model performance."
+}

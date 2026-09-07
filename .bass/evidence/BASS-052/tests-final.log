@@ -1,0 +1,13 @@
+
+> @offbeat24/bass@0.5.0 test
+> vitest run
+
+
+ RUN  v4.1.10 /Users/okestro/croquis/deck/BASS/bass-platform
+
+
+ Test Files  21 passed (21)
+      Tests  201 passed (201)
+   Start at  16:13:13
+   Duration  1.72s (transform 974ms, setup 0ms, import 3.53s, tests 5.24s, environment 2ms)
+

@@ -1,11 +1,13 @@
 ---
 name: bass-html-report
-description: Generate a standalone HTML handoff report only when HTML is the requested final artifact and BASS execution_plan calls bass:html-report. Build from an existing run record without re-summarizing it through the model.
+description: Render an existing BASS run record as HTML when HTML is requested and the plan calls bass:html-report.
 ---
 
 # BASS HTML Report
 
-Resolve paths from this `SKILL.md`. The shared BASS launcher is `../../scripts/bass-launcher.cjs`; the deterministic renderer is `scripts/render-report.cjs`. Convert either path to an absolute path before execution.
+If CLI inspection is needed, resolve `../../scripts/bass-launcher.cjs` relative to this file and invoke it with Node.
+
+Resolve `scripts/render-report.cjs` relative to this file to an absolute path.
 
 1. Require an existing `.bass/records/<task-id>.json` or legacy `records/<task-id>.json`.
 2. Run `node <absolute renderer path> <record.json> <report.html>`.
