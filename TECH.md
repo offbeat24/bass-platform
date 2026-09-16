@@ -26,7 +26,7 @@ Typecheck, unit/integration tests, package tarball smoke, plugin manifest valida
 
 ## Delivery and operations
 
-Local changes prepare 0.5.0. Push, tag, and package publication are separate approved actions.
+Release 0.5.1 packages the approved instruction-context reduction. Push, tag, and package publication require explicit user approval.
 
 ## Constraints
 

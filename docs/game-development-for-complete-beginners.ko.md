@@ -4,7 +4,7 @@
 
 - 대상: 개발, 터미널, Git, GitHub를 처음 접하는 사람
 - 목표: 작은 브라우저 게임을 기획하고, 실제로 실행해 보고, 고치고, 안전하게 저장하기
-- 문서 기준: BASS `0.5.0`, 2026-08-19
+- 문서 기준: BASS `0.5.1`, 2026-09-16
 
 이 문서는 코드를 외우게 하는 교재가 아니다. 친구가 게임의 감독과 첫 번째 플레이어가 되고, Codex가 개발 작업을 수행하며, BASS가 그 작업이 엉뚱한 방향으로 새거나 확인 없이 끝나지 않도록 관리하게 만드는 사용 설명서다.
 
@@ -713,7 +713,7 @@ npm login --scope=@offbeat24 --auth-type=legacy --registry=https://npm.pkg.githu
 전역 CLI로 점검하고 싶을 때만 다음을 실행한다.
 
 ```bash
-npm install -g @offbeat24/bass@0.5.0
+npm install -g @offbeat24/bass@0.5.1
 bass --version
 ```
 
@@ -747,7 +747,7 @@ bass agent guide --json
 
 다음을 확인한다.
 
-- `bass.yaml`의 버전이 `0.5.0`이다.
+- `bass.yaml`의 버전이 `0.5.1`이다.
 - 프로파일이 `common`, `web`, `game`이다.
 - `AGENTS.md`의 BASS 관리 블록이 한 번만 존재한다.
 - `PRODUCT.md`, `TECH.md`, `DESIGN.md`가 있다.

@@ -2,7 +2,7 @@
 
 BASS는 아이디어를 제품·기술·디자인 명세로 구체화하고, 작은 작업으로 나눈 뒤 구현·검증·리뷰를 bounded loop로 관리한다. BASS가 Task Graph, 게이트, Run Record, evidence의 기준을 유지하고 Codex·Claude·Prime Agent와 외부 하네스는 선택형 실행 도구로만 사용한다.
 
-설치부터 업그레이드·개발·배포까지의 전체 절차는 [BASS 0.5.0 Release Notes](RELEASE_NOTES.md)에 정리되어 있다.
+설치부터 업그레이드·개발·배포까지의 전체 절차는 [BASS 0.5.1 Release Notes](RELEASE_NOTES.md)에 정리되어 있다.
 
 개발·터미널·GitHub를 처음 접하는 사람이 BASS로 첫 게임을 만드는 과정은 [코딩을 몰라도 시작하는 첫 게임 만들기](docs/game-development-for-complete-beginners.ko.md)를 따른다.
 
@@ -25,7 +25,7 @@ npm login --scope=@offbeat24 --auth-type=legacy --registry=https://npm.pkg.githu
 플러그인 launcher가 `bass.yaml`과 같은 버전을 npm cache에서 실행하므로 전역 설치는 선택이다.
 
 ```bash
-npm install -g @offbeat24/bass@0.5.0
+npm install -g @offbeat24/bass@0.5.1
 codex plugin marketplace add offbeat24/bass-platform
 ```
 
@@ -162,7 +162,7 @@ npm run verify
 claude plugin validate .
 ```
 
-릴리스는 PR 병합 후 `v0.5.0` GitHub Release를 발행하는 순서로 진행한다. `release.yml`이 검증과 GitHub Packages publish를 수행하므로 같은 릴리스에 `workflow_dispatch`를 중복 실행하지 않는다.
+릴리스는 PR 병합 후 해당 버전의 GitHub Release를 발행하는 순서로 진행한다. `release.yml`이 검증과 GitHub Packages publish를 수행하므로 같은 릴리스에 `workflow_dispatch`를 중복 실행하지 않는다.
 
 이벤트 reader는 schema v1·v2를 함께 읽는다. 0.2–0.4 task와 기존 Run Record도 기본값으로 읽으며 완료 이력을 일괄 재작성하지 않는다. 새 Run Record v2는 `execution_contract`와 `capability_invocations`를 기록한다. push와 package publish는 별도 승인 작업이다.
 

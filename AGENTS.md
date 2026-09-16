@@ -5,7 +5,7 @@ This repository builds the `@offbeat24/bass` CLI and the shared Codex/Claude plu
 For changes, run the smallest affected checks. Before release work, run `npm run verify`, the Codex plugin validator, and `claude plugin validate .`. Keep CLI, Codex manifest, Claude manifest, and marketplace versions identical.
 
 <!-- bass:managed:start -->
-BASS 0.5.0: use `bass agent guide --json` before work.
+BASS 0.5.1: use `bass agent guide --json` before work.
 - Humans own product direction, risk, and final judgment.
 - Inspect facts; implement the smallest accepted change.
 - Obey the plan fingerprint, task graph, scope, bounded loop, and gates.
