@@ -1,0 +1,261 @@
+{
+  "record_version": 2,
+  "execution_contract": {
+    "contract_version": 1,
+    "plan_fingerprint": "ca74528b8af778ea15e5525afa4840f137a13a648a1c7bbc9b021aca319807e6",
+    "capability_calls": [
+      "ponytail:full"
+    ]
+  },
+  "capability_invocations": [
+    {
+      "call_id": "03c92bf4304c79b4592ab92eb56d54804c1882039c1e40b5bc6c71946088f71b",
+      "attempt": 4,
+      "capability_call": "ponytail:full",
+      "host": "codex",
+      "status": "pass",
+      "summary": "Normalized CRLF at the fixture boundary with one standard-library line and no new dependency.",
+      "evidence_path": ".bass/evidence/BASS-054/release-review.md"
+    }
+  ],
+  "task_id": "BASS-054",
+  "summary_of_changes": "Released BASS 0.5.1 with task-scoped context selection, synchronized package and plugin metadata, deterministic measurements, and a Windows-safe package smoke fixture.",
+  "why": "The approved BASS-053 improvement needed a versioned release, and Windows CI exposed CRLF-sensitive fixture handling before publication.",
+  "files_changed": [
+    ".bass/events.jsonl",
+    ".bass/evidence/BASS-054/attempt-3/L1-typecheck.log",
+    ".bass/evidence/BASS-054/attempt-3/L2-build.log",
+    ".bass/evidence/BASS-054/attempt-3/L2-tests.log",
+    ".bass/evidence/BASS-054/attempt-4/L1-typecheck.log",
+    ".bass/evidence/BASS-054/attempt-4/L2-build.log",
+    ".bass/evidence/BASS-054/attempt-4/L2-tests.log",
+    ".bass/evidence/BASS-054/ponytail-attempt-1.md",
+    ".bass/evidence/BASS-054/ponytail-attempt-3.md",
+    ".bass/evidence/BASS-054/release-readiness.md",
+    ".bass/evidence/BASS-054/release-review.md",
+    ".bass/evidence/BASS-054/verification.md",
+    ".bass/records/BASS-054.json",
+    ".bass/tasks/BASS-054.md"
+  ],
+  "models_used": [
+    {
+      "role": "worker",
+      "alias": "host-current",
+      "actual_model": "gpt-6",
+      "followed_recommendation": false,
+      "reason": "The active Codex host model completed the authorized release; BASS recommended auto/gpt-5.5."
+    },
+    {
+      "role": "critic",
+      "alias": "host-current",
+      "actual_model": "gpt-6",
+      "followed_recommendation": false,
+      "reason": "Same-agent release review was backed by local validation and independent GitHub Actions on three operating systems."
+    }
+  ],
+  "verification": {
+    "evaluations_run": [
+      {
+        "name": "typecheck",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "tests-204",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "build",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "package-smoke",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "plugin-validation",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "performance-benchmark",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "claude-marketplace-validation",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "claude-plugin-validation",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "github-actions-ubuntu",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "github-actions-macos",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "github-actions-windows",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "github-package-publish",
+        "level": 3,
+        "status": "pass"
+      }
+    ],
+    "not_verified": [
+      "Live Codex/Claude token, cache, cost, and model-quality changes were not measured."
+    ]
+  },
+  "critic_findings": {
+    "total": 0,
+    "open_high_or_medium": 0,
+    "report_path": ".bass/evidence/BASS-054/release-review.md"
+  },
+  "known_limitations": [
+    "GitHub Actions warned that actions/checkout@v4 and actions/setup-node@v4 are being forced from their deprecated Node.js 20 runtime to Node.js 24; the release job still passed.",
+    "The deterministic benchmark does not represent live provider billing or quality."
+  ],
+  "out_of_scope_findings": [],
+  "docs_updated": {
+    "needed": true,
+    "updated": [
+      "README.md",
+      "RELEASE_NOTES.md",
+      "docs/configuration.md",
+      "docs/game-development-for-complete-beginners.ko.md"
+    ]
+  },
+  "lessons": {
+    "recorded": true,
+    "candidates": [
+      "Normalize generated text fixtures before line-oriented replacement so Windows CRLF output exercises the same contract as Unix output."
+    ]
+  },
+  "rollback": {
+    "method": "Do not move the published v0.5.1 tag; publish a follow-up patch reverting BASS-053 if a release regression is confirmed."
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "fail",
+      "started_at": "2026-09-16T07:13:48.330Z",
+      "completed_at": "2026-09-16T07:15:35.350Z",
+      "failure_fingerprint": "release-scope-expanded"
+    },
+    {
+      "attempt": 2,
+      "status": "fail",
+      "started_at": "2026-09-16T07:15:35.350Z",
+      "completed_at": "2026-09-16T07:16:10.000Z",
+      "failure_fingerprint": "release-scope-finalized"
+    },
+    {
+      "attempt": 3,
+      "status": "fail",
+      "started_at": "2026-09-16T07:16:24.233Z",
+      "completed_at": "2026-09-16T07:25:53.979Z",
+      "failure_fingerprint": "windows-crlf-smoke-fixture"
+    },
+    {
+      "attempt": 4,
+      "status": "pass",
+      "started_at": "2026-09-16T07:26:15.875Z",
+      "completed_at": "2026-09-16T07:31:02.929Z"
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-054/verification.md",
+      "sha256": "9ab07d4f77b6181859bce81fffaf706935d3289d1b757fb721d58a0957178588",
+      "produced_by": "BASS-054 release validation",
+      "at": "2026-09-16T07:31:02.929Z"
+    },
+    {
+      "kind": "release-readiness",
+      "path": ".bass/evidence/BASS-054/release-readiness.md",
+      "sha256": "7144182b95bb1ee072147217b911af1d3304da62e2c82a4d0927bf058ae5a2b1",
+      "produced_by": "BASS-054 GitHub release",
+      "at": "2026-09-16T07:30:00.000Z"
+    },
+    {
+      "kind": "review",
+      "path": ".bass/evidence/BASS-054/release-review.md",
+      "sha256": "8020878d7ac3e0ae0598285f1f4df6dcd0ecb828d7ae673b38a9c699825c2291",
+      "produced_by": "BASS-054 release review",
+      "at": "2026-09-16T07:31:02.929Z"
+    }
+  ],
+  "context": {
+    "sources": [
+      {
+        "path": "RELEASE_NOTES.md",
+        "sha256": "05e87a283d473d665623969ce10774608eb1df2292f2194ba695784a68b53991",
+        "chars": 7431
+      },
+      {
+        "path": "README.md",
+        "sha256": "6d1911036ae66ac73fea45cb5dc615ad75a3c798f8acfb3816ee458005ce74a6",
+        "chars": 6012
+      },
+      {
+        "path": "package.json",
+        "sha256": "5498deed6eb5b4b4bde4bdd8206234da7e8063e0924b612d063c765534c393d9",
+        "chars": 1412
+      }
+    ],
+    "total_chars": 14855,
+    "omitted": []
+  },
+  "usage": {
+    "turns": 13,
+    "attempts": 4,
+    "input_tokens": "unknown",
+    "output_tokens": "unknown",
+    "cached_input_tokens": "unknown",
+    "evaluator_tokens": "unknown",
+    "tool_calls": "unknown",
+    "subagents": 0,
+    "estimated_cost": "unknown"
+  },
+  "scope": {
+    "actual_files": [
+      ".bass/events.jsonl",
+      ".bass/evidence/BASS-054/attempt-3/L1-typecheck.log",
+      ".bass/evidence/BASS-054/attempt-3/L2-build.log",
+      ".bass/evidence/BASS-054/attempt-3/L2-tests.log",
+      ".bass/evidence/BASS-054/attempt-4/L1-typecheck.log",
+      ".bass/evidence/BASS-054/attempt-4/L2-build.log",
+      ".bass/evidence/BASS-054/attempt-4/L2-tests.log",
+      ".bass/evidence/BASS-054/ponytail-attempt-1.md",
+      ".bass/evidence/BASS-054/ponytail-attempt-3.md",
+      ".bass/evidence/BASS-054/release-readiness.md",
+      ".bass/evidence/BASS-054/release-review.md",
+      ".bass/evidence/BASS-054/verification.md",
+      ".bass/records/BASS-054.json",
+      ".bass/tasks/BASS-054.md"
+    ],
+    "outside_allowed": [],
+    "forbidden_touched": []
+  },
+  "human_approval": {
+    "approved": true,
+    "approver": "user",
+    "at": "2026-09-16T07:34:01.164Z",
+    "notes": "User explicitly approved the improvement and requested the BASS 0.5.1 release."
+  }
+}
