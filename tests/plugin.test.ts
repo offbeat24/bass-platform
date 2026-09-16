@@ -37,6 +37,15 @@ describe("team plugin", () => {
     expect(output.hookSpecificOutput.additionalContext).toBe(plain.stdout);
   });
 
+  it("bass-work는 상세 계약을 guide에 위임하되 안전 경계를 유지한다", () => {
+    const skill = fs.readFileSync(path.join(plugin, "skills", "bass-work", "SKILL.md"), "utf8");
+    expect(Buffer.byteLength(skill, "utf8")).toBeLessThan(1_900);
+    expect(skill).toContain("capability claim");
+    expect(skill).toContain("stop on `uncertain`");
+    expect(skill).toContain("explicit final approval");
+    expect(skill).toContain("implementation authorization is not final approval");
+  });
+
   it("PostToolUse는 Bash를 포함해 변경 도구를 같은 scope 훅으로 검사한다", () => {
     const hooks = JSON.parse(fs.readFileSync(path.join(plugin, "hooks", "hooks.json"), "utf8"));
     expect(hooks.hooks.PostToolUse[0].matcher.split("|")).toContain("Bash");

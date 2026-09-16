@@ -1,0 +1,64 @@
+{
+  "baselines": {
+    "historical": "97b8ab6",
+    "instruction_routing": "63f11db"
+  },
+  "static_instruction_bytes": {
+    "core_entrypoints": {
+      "baseline": 9160,
+      "current": 3399,
+      "reduction_percent": 62.9
+    },
+    "work_skill": {
+      "baseline": 2577,
+      "current": 1517,
+      "reduction_percent": 41.1
+    }
+  },
+  "composed_prompt_chars": {
+    "docsEvaluator": {
+      "baseline": 4526,
+      "current": 3618,
+      "reduction_percent": 20.1,
+      "automatic_context": []
+    },
+    "codeWorker": {
+      "baseline": 4810,
+      "current": 4480,
+      "reduction_percent": 6.9,
+      "automatic_context": [
+        "TECH.md#Stack",
+        "TECH.md#Architecture"
+      ]
+    },
+    "uiWorker": {
+      "baseline": 5464,
+      "current": 5464,
+      "reduction_percent": 0,
+      "automatic_context": [
+        "PRODUCT.md#Product intent",
+        "TECH.md#Stack",
+        "TECH.md#Architecture",
+        "DESIGN.md#Purpose",
+        "DESIGN.md#Design principles"
+      ]
+    },
+    "serverWorker": {
+      "baseline": 4801,
+      "current": 4801,
+      "reduction_percent": 0,
+      "automatic_context": [
+        "PRODUCT.md#Product intent",
+        "TECH.md#Stack",
+        "TECH.md#Architecture"
+      ]
+    }
+  },
+  "evaluator_critic_calls": {
+    "baseline": 8,
+    "fast": 1,
+    "fast_reduction_percent": 87.5,
+    "standard_worst_case": 4,
+    "standard_reduction_percent": 50
+  }
+}

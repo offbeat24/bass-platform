@@ -15,3 +15,11 @@ Full command output belongs under `.bass/evidence/<task-id>/` after common secre
 After a failure, rerun only the failed check and checks directly affected by the fix. A Hardened or release task may require one final full pass when its declared plan says so.
 
 Common performance metrics are context characters, turns, attempts, tokens, cached tokens, tool calls, subagents, estimated cost, evaluator reruns, critic count, and wall time. Record unavailable host metrics as `unknown`; do not estimate them from transcript length.
+
+Keep three instruction metrics separate:
+
+- **Static instruction bytes** measure stored entrypoints or skill files. They are a repository-size signal, not runtime context or token cost.
+- **Composed prompt characters** measure deterministic `bass compose` fixtures, including task and selected repository context. Compare only fixtures with the same paths and task text.
+- **Observed usage** comes from the host or Run Record: input/output/cached tokens, tool calls, attempts, elapsed time, and estimated cost. If the host does not expose a value, keep it `unknown`.
+
+`context.max_chars` limits task-selected repository documents. It does not include the task contract, base behavior, role, policy, or manifest, so do not report it as a total prompt limit. A smaller static or composed value is not proof of better live-agent quality; use equivalent real tasks to evaluate completion, rework, scope, and verification behavior.

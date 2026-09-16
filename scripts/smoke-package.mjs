@@ -29,6 +29,25 @@ function setupArgs(target, profiles = "common") {
   return ["setup", target, "--non-interactive", "--profiles", profiles, "--capability", "simplicity=builtin"];
 }
 
+function fillTaskContract(projectRoot, taskId) {
+  const file = path.join(projectRoot, ".bass", "tasks", `${taskId}.md`);
+  const values = {
+    Problem: "Exercise the installed package workflow.",
+    "What we are shipping": "A completed package smoke attempt.",
+    "What we are not shipping": "Repository feature changes.",
+    "Relevant context": "package.json",
+    "Acceptance criteria": "The packaged CLI completes one bounded attempt.",
+    Verification: "Package smoke assertions pass.",
+    Rollback: "Delete the temporary smoke repository.",
+  };
+  let task = fs.readFileSync(file, "utf8");
+  for (const [heading, value] of Object.entries(values)) {
+    const marker = `## ${heading}\n`;
+    task = task.replace(marker, `${marker}\n${value}\n`);
+  }
+  fs.writeFileSync(file, task, "utf8");
+}
+
 try {
   const packed = JSON.parse(runNpm(["pack", "--json", "--pack-destination", tempRoot]));
   const tarball = path.join(tempRoot, packed[0].filename);
@@ -73,6 +92,7 @@ try {
     assert.ok(fs.existsSync(path.join(nodeRepo, artifact)), `missing product artifact: ${artifact}`);
   }
   runBass(["task", "new", "PKG-1", "--title", "Package task"], nodeRepo);
+  fillTaskContract(nodeRepo, "PKG-1");
   const graph = JSON.parse(runBass(["task", "graph", "--json"], nodeRepo));
   assert.deepEqual(graph.ready, ["PKG-1"]);
   runBass(["task", "transition", "PKG-1", "ACTIVE"], nodeRepo);
@@ -126,6 +146,7 @@ try {
   };
   assert.match(runBass(["doctor", "--capabilities", "--host", "all"], providerRepo, providerEnv), /\[CODEX\]\[ACTUAL-PLUGIN\]/);
   runBass(["task", "new", "PKG-2", "--title", "External provider task"], providerRepo, providerEnv);
+  fillTaskContract(providerRepo, "PKG-2");
   runBass(["task", "transition", "PKG-2", "ACTIVE"], providerRepo, providerEnv);
   runBass(["task", "attempt", "start", "PKG-2"], providerRepo, providerEnv);
   const claimed = JSON.parse(runBass([
