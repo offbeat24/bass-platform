@@ -40,7 +40,7 @@ function fillTaskContract(projectRoot, taskId) {
     Verification: "Package smoke assertions pass.",
     Rollback: "Delete the temporary smoke repository.",
   };
-  let task = fs.readFileSync(file, "utf8");
+  let task = fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n");
   for (const [heading, value] of Object.entries(values)) {
     const marker = `## ${heading}\n`;
     task = task.replace(marker, `${marker}\n${value}\n`);
