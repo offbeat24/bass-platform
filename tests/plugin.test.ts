@@ -9,7 +9,7 @@ const root = path.resolve(import.meta.dirname, "..");
 const plugin = path.join(root, "plugins", "bass");
 
 describe("team plugin", () => {
-  it("CLI, Codex plugin, Claude plugin, 두 marketplace 버전이 0.5.0으로 일치한다", () => {
+  it("CLI, Codex plugin, Claude plugin, 두 marketplace 버전이 일치한다", () => {
     const codex = JSON.parse(fs.readFileSync(path.join(plugin, ".codex-plugin", "plugin.json"), "utf8"));
     const claude = JSON.parse(fs.readFileSync(path.join(plugin, ".claude-plugin", "plugin.json"), "utf8"));
     const claudeMarket = JSON.parse(fs.readFileSync(path.join(root, ".claude-plugin", "marketplace.json"), "utf8"));
@@ -37,6 +37,15 @@ describe("team plugin", () => {
     expect(output.hookSpecificOutput.additionalContext).toBe(plain.stdout);
   });
 
+  it("bass-work는 상세 계약을 guide에 위임하되 안전 경계를 유지한다", () => {
+    const skill = fs.readFileSync(path.join(plugin, "skills", "bass-work", "SKILL.md"), "utf8");
+    expect(Buffer.byteLength(skill, "utf8")).toBeLessThan(1_900);
+    expect(skill).toContain("capability claim");
+    expect(skill).toContain("stop on `uncertain`");
+    expect(skill).toContain("explicit final approval");
+    expect(skill).toContain("implementation authorization is not final approval");
+  });
+
   it("PostToolUse는 Bash를 포함해 변경 도구를 같은 scope 훅으로 검사한다", () => {
     const hooks = JSON.parse(fs.readFileSync(path.join(plugin, "hooks", "hooks.json"), "utf8"));
     expect(hooks.hooks.PostToolUse[0].matcher.split("|")).toContain("Bash");
@@ -48,7 +57,7 @@ describe("team plugin", () => {
     fs.mkdirSync(scripts, { recursive: true });
     fs.mkdirSync(path.join(dir, ".codex-plugin"));
     fs.copyFileSync(path.join(plugin, "scripts", "bass-launcher.cjs"), path.join(scripts, "bass-launcher.cjs"));
-    fs.writeFileSync(path.join(dir, ".codex-plugin", "plugin.json"), JSON.stringify({ version: "0.5.0+codex.test" }), "utf8");
+    fs.writeFileSync(path.join(dir, ".codex-plugin", "plugin.json"), JSON.stringify({ version: "0.5.1+codex.test" }), "utf8");
     const fakeNpm = path.join(dir, "fake-npm.cjs");
     fs.writeFileSync(fakeNpm, "console.log(JSON.stringify(process.argv.slice(2)));\n", "utf8");
     const launcherEnv = Object.fromEntries(
@@ -62,7 +71,7 @@ describe("team plugin", () => {
       env: launcherEnv,
     });
     expect(result.status, result.stderr || result.error?.message).toBe(0);
-    expect(JSON.parse(result.stdout)).toContain("--package=@offbeat24/bass@0.5.0");
+    expect(JSON.parse(result.stdout)).toContain("--package=@offbeat24/bass@0.5.1");
   });
 
   it("같은 diff의 scope 위반은 한 번만 경고한다", () => {

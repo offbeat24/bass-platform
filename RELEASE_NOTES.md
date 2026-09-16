@@ -1,3 +1,41 @@
+# BASS 0.5.1 — 필요한 지침만 조합하는 패치
+
+BASS 0.5.1은 task의 역할과 변경 표면에 맞춰 자동 context를 선택한다. 명시한
+`Relevant context`는 계속 우선하며, 신호가 모호한 작업은 기존의 보수적인
+PRODUCT/TECH fallback을 유지한다.
+
+## 주요 변경
+
+- 문서 전용 작업과 evaluator는 관련 없는 PRODUCT/TECH 자동 context를 생략한다.
+- 코드 작업은 TECH를, UI 작업은 필요한 DESIGN context를 계속 포함한다.
+- `bass-work` skill은 scope, provider idempotency, evidence, 최종 승인 경계를 유지하면서
+  agent guide와 중복되던 절차를 줄였다.
+- performance benchmark는 정적 지침 바이트와 실제 composed prompt 문자를 구분해
+  동일 fixture에서 재현할 수 있다.
+- package smoke fixture가 현재 pre-task 계약에 맞게 필수 task 내용을 채운다.
+
+## 측정 결과
+
+동일한 고정 fixture 기준으로 `bass-work`는 2,577바이트에서 1,517바이트로
+41.1% 줄었다. 문서 evaluator의 composed prompt는 4,526자에서 3,618자로
+20.1%, 코드 worker는 4,810자에서 4,480자로 6.9% 줄었다. UI와 server 시나리오는
+필요한 context를 보존해 변화가 없다.
+
+이 수치는 저장소의 결정적 benchmark 결과다. 실제 Codex/Claude token 사용량,
+cache hit, 비용 또는 live-model 품질 개선을 뜻하지 않는다.
+
+## 설치와 업그레이드
+
+```bash
+npm install -g @offbeat24/bass@0.5.1
+bass upgrade --check
+bass upgrade --apply
+```
+
+0.5.0의 실행 계약과 provider 동작은 그대로 호환된다.
+
+---
+
 # BASS 0.5.0 — Codex와 Claude를 위한 단일 실행 계약
 
 BASS 0.5.0은 Codex Desktop/CLI와 Claude Code가 하나의 BASS Core, plugin package, skills, hooks, launcher를 공유하는 첫 릴리스다.

@@ -35,10 +35,11 @@ export function selectTaskContext(opts: {
   projectRoot: string;
   task?: TaskFile;
   profiles: string[];
+  role?: string;
   maxChars: number;
 }): ContextSelection {
   const explicit = parseRelevantContext(opts.task?.sections.get("Relevant context") ?? "");
-  const automatic = automaticReferences(opts.projectRoot, opts.task);
+  const automatic = automaticReferences(opts.projectRoot, opts.task, opts.role);
   const references = dedupe([
     ...explicit.map((reference) => ({ ...reference, origin: "explicit" as const })),
     ...automatic,
@@ -99,26 +100,43 @@ function splitReference(value: string): { source: string; selector?: string } {
 function automaticReferences(
   projectRoot: string,
   task: TaskFile | undefined,
+  role: string | undefined,
 ): ContextReference[] {
   if (!task) return [];
-  const references: ContextReference[] = [
-    { source: "PRODUCT.md", selector: "Product intent", origin: "automatic" },
-    { source: "TECH.md", selector: "Stack", origin: "automatic" },
-    { source: "TECH.md", selector: "Architecture", origin: "automatic" },
-  ];
+  const references: ContextReference[] = [];
+  const surfaces = inferChangedSurfaces(task);
   const taskText = [
     task.sections.get("Allowed scope") ?? "",
     task.sections.get("What we are shipping") ?? "",
     ...(task.frontmatter.capabilities ?? []),
     ...configuredSurfaces(task),
   ].join(" ");
-  if (inferChangedSurfaces(task).includes("ui") || /\b(ui|ux|design|component|style|css|screen|화면|디자인)\b/i.test(taskText)) {
+  const docsOnly = surfaces.length > 0 && surfaces.every(isDocumentationSurface);
+  const ambiguous = surfaces.length === 0;
+  const evaluator = role === "evaluator";
+  const productRelevant = task.frontmatter.type.toLowerCase() === "feature"
+    || /\b(product|requirement|behavior|brand|name|제품|요구사항|동작|브랜드|이름)\b/i.test(taskText);
+
+  if (!evaluator && !docsOnly && (ambiguous || productRelevant)) {
+    references.push({ source: "PRODUCT.md", selector: "Product intent", origin: "automatic" });
+  }
+  if (!evaluator && !docsOnly) {
+    references.push(
+      { source: "TECH.md", selector: "Stack", origin: "automatic" },
+      { source: "TECH.md", selector: "Architecture", origin: "automatic" },
+    );
+  }
+  if (surfaces.includes("ui") || /\b(ui|ux|design|component|style|css|screen|화면|디자인)\b/i.test(taskText)) {
     references.push(
       { source: "DESIGN.md", selector: "Purpose", origin: "automatic" },
       { source: "DESIGN.md", selector: "Design principles", origin: "automatic" },
     );
   }
   return references.filter((reference) => fs.existsSync(path.join(projectRoot, reference.source)));
+}
+
+function isDocumentationSurface(surface: string): boolean {
+  return /^(docs?|documentation|readme(?:\.md)?|.+\.md)$/i.test(surface);
 }
 
 function configuredSurfaces(task: TaskFile): string[] {

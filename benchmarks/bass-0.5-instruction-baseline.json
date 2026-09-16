@@ -1,0 +1,12 @@
+{
+  "sourceCommit": "63f11db",
+  "staticInstructionBytes": {
+    "workSkill": 2577
+  },
+  "composedPromptChars": {
+    "docsEvaluator": 4526,
+    "codeWorker": 4810,
+    "uiWorker": 5464,
+    "serverWorker": 4801
+  }
+}

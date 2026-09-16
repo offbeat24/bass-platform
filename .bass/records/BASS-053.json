@@ -1,0 +1,233 @@
+{
+  "record_version": 2,
+  "execution_contract": {
+    "contract_version": 1,
+    "plan_fingerprint": "e46ffc35bed45f8e3b30b06248f621cf958026adc1f21a4c332164d9a6029f51",
+    "capability_calls": [
+      "ponytail:full"
+    ]
+  },
+  "capability_invocations": [
+    {
+      "call_id": "052becb184b3f6083fa81cfe19e1751a78fe96dc1da6fc99efaa5abd04fe2c24",
+      "attempt": 2,
+      "capability_call": "ponytail:full",
+      "host": "codex",
+      "status": "pass",
+      "summary": "Applied the smallest task-scoped context and skill changes; retained scope, provider, evidence, verification, and final-approval contracts.",
+      "evidence_path": ".bass/evidence/BASS-053/implementation-review.md"
+    }
+  ],
+  "task_id": "BASS-053",
+  "summary_of_changes": "Measure real composed instruction fixtures, select repository context by role and task surface, shorten bass-work, and repair the package-smoke task fixture exposed by full verification.",
+  "why": "BASS still labeled a static byte sum as context, loaded PRODUCT/TECH for unrelated evaluator and documentation work, and repeated dynamic guide details in the work skill.",
+  "files_changed": [
+    ".bass/events.jsonl",
+    ".bass/evidence/BASS-053/benchmark.json",
+    ".bass/evidence/BASS-053/implementation-review.md",
+    ".bass/evidence/BASS-053/verify.txt",
+    ".bass/records/BASS-053.json",
+    ".bass/tasks/BASS-053.md",
+    "benchmarks/bass-0.5-instruction-baseline.json",
+    "docs/audit/instruction-audit.md",
+    "docs/evaluation.md",
+    "plugins/bass/skills/bass-work/SKILL.md",
+    "scripts/benchmark-performance.mjs",
+    "scripts/smoke-package.mjs",
+    "src/compose/composer.ts",
+    "src/compose/context.ts",
+    "tests/context.test.ts",
+    "tests/plugin.test.ts"
+  ],
+  "models_used": [
+    {
+      "role": "worker",
+      "alias": "host-current",
+      "actual_model": "gpt-5",
+      "followed_recommendation": false,
+      "reason": "The active Codex host model was used; BASS recommended balanced/gpt-5.5."
+    },
+    {
+      "role": "critic",
+      "alias": "host-current",
+      "actual_model": "gpt-5",
+      "followed_recommendation": false,
+      "reason": "Same-agent implementation review; no independent agent was delegated."
+    }
+  ],
+  "verification": {
+    "evaluations_run": [
+      {
+        "name": "typecheck",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "tests-204",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "build",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "package-smoke",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "plugin-validation",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "performance-benchmark",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "git-diff-check",
+        "level": 1,
+        "status": "pass"
+      }
+    ],
+    "not_verified": [
+      "Equivalent live Codex and Claude A/B tasks, host token/cache/cost telemetry, and independent-agent review were not exercised."
+    ]
+  },
+  "critic_findings": {
+    "total": 0,
+    "open_high_or_medium": 0,
+    "report_path": ".bass/evidence/BASS-053/implementation-review.md"
+  },
+  "known_limitations": [
+    "Local REVIEW only; explicit final human approval remains pending.",
+    "Attempt 1 retained a started Ponytail event and failed when the original time budget expired; attempt 2 contains the completed invocation and passing evidence.",
+    "Task-file projection and lead/sidekick execution were deliberately deferred to separate evidence-backed experiments."
+  ],
+  "out_of_scope_findings": [],
+  "docs_updated": {
+    "needed": true,
+    "updated": [
+      "docs/audit/instruction-audit.md",
+      "docs/evaluation.md"
+    ]
+  },
+  "lessons": {
+    "recorded": false,
+    "candidates": []
+  },
+  "rollback": {
+    "method": "Revert only BASS-053 implementation files while preserving task, event, record, and evidence history."
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "fail",
+      "started_at": "2026-09-16T05:48:03.073Z",
+      "completed_at": "2026-09-16T07:05:03.136Z",
+      "failure_fingerprint": "package-smoke-empty-task-contract"
+    },
+    {
+      "attempt": 2,
+      "status": "pass",
+      "started_at": "2026-09-16T07:05:49.075Z",
+      "completed_at": "2026-09-16T07:06:52.770Z"
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-053/verify.txt",
+      "sha256": "72244b94e8846ec5d9c1b9e8ce280688987cb9715fab9732525c391ea048fe06",
+      "produced_by": "BASS-053 local implementation",
+      "at": "2026-09-16T07:06:52.770Z"
+    },
+    {
+      "kind": "benchmark",
+      "path": ".bass/evidence/BASS-053/benchmark.json",
+      "sha256": "a6ba39f9fdf9c0dcb730c98784ea6fd61a272c5c35a89e60b609b50e8bce234b",
+      "produced_by": "BASS-053 local implementation",
+      "at": "2026-09-16T07:06:52.770Z"
+    },
+    {
+      "kind": "review",
+      "path": ".bass/evidence/BASS-053/implementation-review.md",
+      "sha256": "992dc8bc4eb8e554d2f7d9a0a4b565bc410f1d3b0469c879636e504f4898efe9",
+      "produced_by": "BASS-053 local implementation",
+      "at": "2026-09-16T07:06:52.770Z"
+    }
+  ],
+  "context": {
+    "sources": [
+      {
+        "path": "docs/audit/instruction-audit.md",
+        "sha256": "703e67962876b0b7179f570b4ed31b674f0a2f76fff16b37e1d06cc7484ce246",
+        "chars": 6147
+      },
+      {
+        "path": "docs/evaluation.md",
+        "sha256": "9dd3ee83232bbab112068dcf0bc033c077f01798a9848f7e22a9087ddff26986",
+        "chars": 2501
+      },
+      {
+        "path": "TECH.md",
+        "sha256": "886d3782baecbc262e675de5d665689be318a24374cb82d52185c99a27c11533",
+        "chars": 101
+      },
+      {
+        "path": "TECH.md",
+        "sha256": "886d3782baecbc262e675de5d665689be318a24374cb82d52185c99a27c11533",
+        "chars": 557
+      }
+    ],
+    "total_chars": 9306,
+    "omitted": [
+      "src/compose/context.ts: context budget 12000 chars exceeded",
+      "src/compose/composer.ts: context budget 12000 chars exceeded",
+      "scripts/benchmark-performance.mjs: context budget 12000 chars exceeded",
+      "scripts/smoke-package.mjs: context budget 12000 chars exceeded"
+    ]
+  },
+  "usage": {
+    "turns": "unknown",
+    "attempts": 2,
+    "input_tokens": "unknown",
+    "output_tokens": "unknown",
+    "cached_input_tokens": "unknown",
+    "evaluator_tokens": "unknown",
+    "tool_calls": "unknown",
+    "subagents": 0,
+    "estimated_cost": "unknown"
+  },
+  "scope": {
+    "actual_files": [
+      ".bass/events.jsonl",
+      ".bass/evidence/BASS-053/benchmark.json",
+      ".bass/evidence/BASS-053/implementation-review.md",
+      ".bass/evidence/BASS-053/verify.txt",
+      ".bass/records/BASS-053.json",
+      ".bass/tasks/BASS-053.md",
+      "benchmarks/bass-0.5-instruction-baseline.json",
+      "docs/audit/instruction-audit.md",
+      "docs/evaluation.md",
+      "plugins/bass/skills/bass-work/SKILL.md",
+      "scripts/benchmark-performance.mjs",
+      "scripts/smoke-package.mjs",
+      "src/compose/composer.ts",
+      "src/compose/context.ts",
+      "tests/context.test.ts",
+      "tests/plugin.test.ts"
+    ],
+    "outside_allowed": [],
+    "forbidden_touched": []
+  },
+  "human_approval": {
+    "approved": true,
+    "approver": "user",
+    "at": "2026-09-16T07:11:45.079Z",
+    "notes": "Approved for release by the user."
+  }
+}

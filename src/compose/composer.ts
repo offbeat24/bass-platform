@@ -114,6 +114,7 @@ export function composeInstructions(opts: ComposeOptions): string {
     projectRoot: opts.projectRoot,
     task: opts.task,
     profiles,
+    ...(opts.role ? { role: opts.role } : {}),
     maxChars: opts.config.bassYaml.context.max_chars,
   });
   for (const item of selected.loaded) {

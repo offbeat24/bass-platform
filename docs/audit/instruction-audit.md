@@ -27,3 +27,13 @@ The external [six-category checklist](https://x.com/Gencoin8/status/209681911859
 Regression tests cover composition and read-only guidance across common, CLI, server, web, game and nan2026; approved/pending/rejected decisions; UI versus non-UI work; explicit and inferred DESIGN references. Existing security, gate and evidence tests remain required. Skill review includes setup, shaping, HTML, UI, runtime and implementation scenarios rather than a game-only walkthrough.
 
 Counts and checksums are recorded in `.bass/evidence/BASS-052/`. Text reduction is not a token-cost benchmark or proof of improved live Codex/Claude behavior. This audit does not edit globally installed plugins or automatically propagate changes into previously generated repositories.
+
+## 2026-09-16 follow-up: measured task-scoped context
+
+The official OpenAI article [Rethinking skills and prompts for GPT-6 Astra](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra) prompted a narrower follow-up. BASS-053 does not repeat the full audit or add a routing runtime. It makes the existing selection measurable and removes two demonstrated sources of unused context:
+
+- `benchmark:performance` now separates static instruction bytes from composed prompt characters and uses stable docs, code, UI, and server fixtures. The earlier four-file sum remains a historical static metric; it is no longer labeled runtime context.
+- Automatic repository context now considers role and changed surfaces. Documentation-only work and evaluators do not receive unrelated PRODUCT/TECH sections. Code fixes retain TECH; feature, UI, and ambiguous work retain the conservative product/technical/design defaults.
+- `bass-work` delegates the current plan details to `agent guide` and keeps the scope, provider idempotency, evidence, verification, and explicit final-approval boundaries at the skill entrypoint.
+
+The fixed fixtures show instruction size and composed-character changes only. They do not establish token savings, prompt-cache gains, lower billing, or improved live-model quality. Task-file projection and lead/sidekick execution remain separate work because this repository currently recommends models but does not run them.

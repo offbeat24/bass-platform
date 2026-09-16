@@ -60,10 +60,41 @@ describe("selective task context", () => {
     const select = (task: ReturnType<typeof parseTaskFile>) => selectTaskContext({ projectRoot: root, task, profiles: ["web"], maxChars: 12_000 });
     const docs = parseTaskFile(writeTask(root, "CTX-105", { sections: { "Allowed scope": "docs/" }, config: { changed_surfaces: ["docs"] } }));
     expect(select(docs).loaded.some((item) => item.source === "DESIGN.md")).toBe(false);
+    expect(select(docs).loaded).toEqual([]);
     const explicit = parseTaskFile(writeTask(root, "CTX-106", { sections: { "Allowed scope": "docs/", "Relevant context": "DESIGN.md#Purpose" } }));
     expect(select(explicit).loaded.find((item) => item.source === "DESIGN.md")?.origin).toBe("explicit");
     const ui = parseTaskFile(writeTask(root, "CTX-107", { sections: { "Allowed scope": "src/components/" } }));
     expect(select(ui).loaded.some((item) => item.source === "DESIGN.md" && item.origin === "automatic")).toBe(true);
+  });
+
+  it("role과 작업 표면에 필요한 자동 context만 선택한다", () => {
+    const root = projectWithDocs();
+    const task = parseTaskFile(writeTask(root, "CTX-108", {
+      taskType: "fix",
+      config: { changed_surfaces: ["src/compose/context.ts"] },
+      sections: { "Relevant context": "none" },
+    }));
+    const worker = selectTaskContext({ projectRoot: root, task, profiles: ["common", "cli"], role: "worker", maxChars: 12_000 });
+    expect(worker.loaded.map((item) => `${item.source}#${item.selector ?? ""}`)).toEqual([
+      "TECH.md#Stack",
+      "TECH.md#Architecture",
+    ]);
+    const evaluator = selectTaskContext({ projectRoot: root, task, profiles: ["common", "cli"], role: "evaluator", maxChars: 12_000 });
+    expect(evaluator.loaded).toEqual([]);
+  });
+
+  it("작업 표면이 불명확하면 PRODUCT와 TECH의 안전한 기본값을 유지한다", () => {
+    const root = projectWithDocs();
+    const task = parseTaskFile(writeTask(root, "CTX-109", {
+      taskType: "fix",
+      sections: { "Allowed scope": "", "Relevant context": "none" },
+    }));
+    const selected = selectTaskContext({ projectRoot: root, task, profiles: ["common"], role: "worker", maxChars: 12_000 });
+    expect(selected.loaded.map((item) => `${item.source}#${item.selector ?? ""}`)).toEqual([
+      "PRODUCT.md#Product intent",
+      "TECH.md#Stack",
+      "TECH.md#Architecture",
+    ]);
   });
 
   it("명시한 heading과 작업 표면에 관련된 루트 명세만 선택한다", () => {
