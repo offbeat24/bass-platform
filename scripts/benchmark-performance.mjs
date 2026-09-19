@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
 import { parse } from "yaml";
 import { composeInstructions } from "../dist/compose/composer.js";
 import { loadConfig } from "../dist/config/loader.js";
@@ -18,11 +19,17 @@ const sum = (values) => values.reduce((total, value) => total + value, 0);
 const reduction = (before, after) => Number((((before - after) / before) * 100).toFixed(1));
 
 const historicalEntrypointBytes = sum(Object.values(historical.context));
+const hookEnv = { ...process.env };
+delete hookEnv.PLUGIN_DATA;
+const hook = spawnSync(process.execPath, [path.join(root, "plugins/bass/hooks/session-start.cjs")], {
+  cwd: root, input: JSON.stringify({ cwd: root }), encoding: "utf8", env: hookEnv,
+});
+assert.equal(hook.status, 0, hook.stderr);
 const currentEntrypointBytes = sum([
   bytes("AGENTS.md"),
   bytes("prompt-library/base/behavior.md"),
   bytes("prompt-library/roles/worker.md"),
-  bytes("plugins/bass/hooks/session-start.cjs"),
+  Buffer.byteLength(hook.stdout, "utf8"),
 ]);
 const currentWorkSkillBytes = bytes("plugins/bass/skills/bass-work/SKILL.md");
 const scenarios = {
@@ -41,6 +48,7 @@ const fastCalls = countEvaluators(1);
 const standardWorstCaseCalls = countEvaluators(1, 2) + 1;
 
 const result = {
+  measurement: "Static UTF-8 instruction bytes including emitted session context, not hook JavaScript; composed prompt characters, not model tokens or runtime quality.",
   baselines: {
     historical: historical.sourceCommit,
     instruction_routing: instructionBaseline.sourceCommit,

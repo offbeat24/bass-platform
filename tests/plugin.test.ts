@@ -37,6 +37,25 @@ describe("team plugin", () => {
     expect(output.hookSpecificOutput.additionalContext).toBe(plain.stdout);
   });
 
+  it("SessionStart is silent outside BASS and resolves the hook cwd from nested directories", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bass-session-"));
+    const hook = path.join(plugin, "hooks", "session-start.cjs");
+    const run = (input: string) => spawnSync(process.execPath, [hook], { cwd: dir, input, encoding: "utf8" });
+    try {
+      expect(run(JSON.stringify({ cwd: dir })).stdout).toBe("");
+      expect(run("invalid JSON").stdout).toBe("");
+      fs.writeFileSync(path.join(dir, "bass.yaml"), "bass: {}\n");
+      const nested = path.join(dir, "src");
+      fs.mkdirSync(nested);
+      const result = run(JSON.stringify({ cwd: nested }));
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("BASS project");
+      expect(result.stdout).not.toContain("agent guide --json");
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("bass-work는 상세 계약을 guide에 위임하되 안전 경계를 유지한다", () => {
     const skill = fs.readFileSync(path.join(plugin, "skills", "bass-work", "SKILL.md"), "utf8");
     expect(Buffer.byteLength(skill, "utf8")).toBeLessThan(1_900);

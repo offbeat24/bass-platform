@@ -1,6 +1,6 @@
 ---
 name: bass-setup
-description: Set up or upgrade BASS in a repository while preserving existing files and explicitly selected providers.
+description: Connect a repository to BASS or upgrade its BASS contract when setup or upgrade is requested. Not for ordinary work in an existing BASS project.
 ---
 
 # BASS Setup

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import type { TaskFile } from "../task/taskFile.js";
-import { inferChangedSurfaces } from "../execution/planner.js";
+import { inferChangedSurfaces, isDocumentationSurface } from "../execution/planner.js";
 
 export interface SelectedContext {
   source: string;
@@ -135,10 +135,6 @@ function automaticReferences(
   return references.filter((reference) => fs.existsSync(path.join(projectRoot, reference.source)));
 }
 
-function isDocumentationSurface(surface: string): boolean {
-  return /^(docs?|documentation|readme(?:\.md)?|.+\.md)$/i.test(surface);
-}
-
 function configuredSurfaces(task: TaskFile): string[] {
   const value = task.frontmatter.config?.["changed_surfaces"];
   return Array.isArray(value) ? value.map(String) : [];
@@ -146,8 +142,11 @@ function configuredSurfaces(task: TaskFile): string[] {
 
 function dedupe(references: ContextReference[]): ContextReference[] {
   const seen = new Set<string>();
+  const wholeFiles = new Set(references.filter((reference) => !reference.selector).map((reference) => path.normalize(reference.source)));
   return references.filter((reference) => {
-    const key = `${reference.source}#${reference.selector ?? ""}`;
+    const source = path.normalize(reference.source);
+    if (reference.selector && wholeFiles.has(source)) return false;
+    const key = `${source}#${reference.selector ?? ""}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -173,6 +172,7 @@ function readReference(
   if (!realRelative || realRelative.startsWith("..") || path.isAbsolute(realRelative)) {
     return { reason: "resolved path is outside project root" };
   }
+  if (isSensitivePath(realRelative)) return { reason: "sensitive files are never loaded automatically" };
 
   const fullContent = fs.readFileSync(realCandidate, "utf8");
   const content = reference.selector ? markdownSection(fullContent, reference.selector) : fullContent;

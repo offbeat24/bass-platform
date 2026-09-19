@@ -114,6 +114,8 @@ bass gate pre-review TASK-001
 bass status --watch
 ```
 
+세션 훅은 BASS 저장소에서만 짧은 안내를 제공한다. 읽기 전용 질문은 관련 근거만 확인하고, 구현할 때 해당 task의 guide를 읽는다. 이미 정해진 작업은 요구사항 정리를 다시 시작하지 않고 구현과 영향받은 검증까지 진행한다.
+
 `bass compose`는 base·역할·현재 task 다음에 `Relevant context`의 명시 경로와 직접 관련된 PRODUCT·TECH·DESIGN 섹션만 조합한다. 기본 한도는 12,000자이며, 생략된 항목과 이유·checksum을 표시한다. 프로젝트 밖 경로, 비밀 파일, 전체 과거 기록은 자동 로드하지 않는다.
 
 ## 실행 깊이와 루프 예산
@@ -130,7 +132,7 @@ bass status --watch
 
 ## 외부 하네스 경계
 
-- Ponytail: 실제 설치 플러그인. Fast는 `lite`, Standard/Hardened는 `full`; BASS simplicity critic은 중복하지 않는다.
+- Ponytail: 실제 설치 플러그인. 코드 변경 또는 명시적인 simplicity 요청에만 호출한다. Fast는 `lite`, Standard/Hardened는 `full`; 읽기 전용·문서 작업에는 자동 호출하지 않는다.
 - Ouroboros: 고비용 명세 모호성에 seed/interview 1회, Hardened 의미 평가 1회만 허용한다.
 - Prime Agent: 선택형 runner. BASS task·scope·loop·evidence 계약 안에서만 실행한다.
 - Graft: 반복적인 대형 저장소 탐색이 확인된 task에서만 context provider로 호출한다.

@@ -8,6 +8,23 @@ import { planEvaluators, selectEvaluatorPlans } from "../src/evaluators/runner.j
 import { makeTempProject, writeTask } from "./helpers.js";
 
 describe("ExecutionPlan", () => {
+  it("does not schedule providers before a task exists", () => {
+    const root = makeTempProject({ extraYaml: `adapters:\n  runner: prime-agent\n  collaboration_provider: buzz\n` });
+    expect(buildExecutionPlan(loadConfig({ projectRoot: root })).capabilityCalls).toEqual([]);
+  });
+
+  it.each(["common", "cli", "server", "web", "game", "nan2026"])("%s routes read-only and documentation tasks without automatic code providers", (profile) => {
+    const root = makeTempProject({ profiles: [profile], extraYaml: `adapters:\n  runner: prime-agent\n  collaboration_provider: buzz\n` });
+    const config = loadConfig({ projectRoot: root });
+    const explore = parseTaskFile(writeTask(root, "ROUTE-401", { taskType: "explore" }));
+    expect(buildExecutionPlan(config, explore).capabilityCalls).toEqual([]);
+    const docs = parseTaskFile(writeTask(root, "ROUTE-402", { taskType: "fix", sections: { "Allowed scope": "docs/guide.txt\nREADME.md" } }));
+    expect(buildExecutionPlan(config, docs).capabilityCalls).not.toContain("ponytail:full");
+    expect(buildExecutionPlan(config, docs).capabilityCalls).not.toContain("ponytail:lite");
+    const explicit = parseTaskFile(writeTask(root, "ROUTE-403", { taskType: "explore", capabilities: ["ponytail", "large-repo-context"] }));
+    expect(buildExecutionPlan(config, explicit).capabilityCalls).toEqual([expect.stringMatching(/^ponytail:(lite|full)$/)]);
+  });
+
   it("Codex와 Claude의 같은 입력은 동일한 정규화 계획과 fingerprint를 만든다", () => {
     const codexRoot = makeTempProject({
       extraYaml: `adapters:\n  primary: codex\n  compatibility: [claude]\n`,

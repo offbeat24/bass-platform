@@ -1,0 +1,289 @@
+{
+  "record_version": 2,
+  "execution_contract": {
+    "contract_version": 1,
+    "plan_fingerprint": "c18bcc44bb23a1a2754f1022eac6aa26ad83fffa58c279e5df00fae9b71cd590",
+    "capability_calls": [
+      "ponytail:full"
+    ]
+  },
+  "capability_invocations": [
+    {
+      "call_id": "443539ac2128877d59a64d779add88425e703fb01f033a0722bf94d5ac847f97",
+      "attempt": 1,
+      "capability_call": "ponytail:full",
+      "host": "codex",
+      "status": "pass",
+      "summary": "Applied task-scoped minimal routing changes; retained approval, provider, evidence and verification contracts.",
+      "evidence_path": ".bass/evidence/BASS-055/implementation-review.md"
+    }
+  ],
+  "task_id": "BASS-055",
+  "summary_of_changes": "Route instructions and providers by actual task; project evaluator narrative, deduplicate context and block sensitive symlink targets.",
+  "why": "Avoid unconditional workflow/provider activation and repeated prompt content while retaining existing gates.",
+  "files_changed": [
+    ".bass/events.jsonl",
+    ".bass/evidence/BASS-055/benchmark-after.json",
+    ".bass/evidence/BASS-055/build.log",
+    ".bass/evidence/BASS-055/claude-plugin.log",
+    ".bass/evidence/BASS-055/comparison.json",
+    ".bass/evidence/BASS-055/full-tests-first.log",
+    ".bass/evidence/BASS-055/guide-before.json",
+    ".bass/evidence/BASS-055/implementation-review.md",
+    ".bass/evidence/BASS-055/package-smoke.log",
+    ".bass/evidence/BASS-055/plugin-validation.log",
+    ".bass/evidence/BASS-055/project-tests.log",
+    ".bass/evidence/BASS-055/verification.md",
+    ".bass/records/BASS-055.json",
+    ".bass/tasks/BASS-055.md",
+    ".cursor/rules/bass.mdc",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "README.md",
+    "docs/audit/lean-instruction-routing.md",
+    "docs/evaluation.md",
+    "plugins/bass/hooks/session-start.cjs",
+    "plugins/bass/skills/bass-setup/SKILL.md",
+    "plugins/bass/skills/bass-shape/SKILL.md",
+    "plugins/bass/skills/bass-work/SKILL.md",
+    "plugins/bass/skills/bass-work/agents/openai.yaml",
+    "prompt-library/roles/worker.md",
+    "scripts/benchmark-performance.mjs",
+    "src/compose/composer.ts",
+    "src/compose/context.ts",
+    "src/execution/planner.ts",
+    "src/project/init.ts",
+    "tests/context.test.ts",
+    "tests/execution.test.ts",
+    "tests/plugin.test.ts",
+    "tests/project.test.ts"
+  ],
+  "models_used": [
+    {
+      "role": "worker",
+      "alias": "host-current",
+      "reason": "Used the active Codex session; same-agent review only."
+    }
+  ],
+  "verification": {
+    "evaluations_run": [
+      {
+        "name": "typecheck",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "tests-215-with-affected-rerun",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "build",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "package-smoke",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "plugin-and-skill-validation",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "performance-budget",
+        "level": 2,
+        "status": "pass"
+      }
+    ],
+    "not_verified": []
+  },
+  "critic_findings": {
+    "total": 0,
+    "open_high_or_medium": 0,
+    "report_path": ".bass/evidence/BASS-055/implementation-review.md"
+  },
+  "known_limitations": [
+    "Live Codex/Claude token, cost and quality A/B not measured.",
+    "Windows and independent-agent review not run.",
+    "Installed global plugins are unchanged; changes remain local on the branch.",
+    "Final human acceptance remains pending."
+  ],
+  "out_of_scope_findings": [],
+  "docs_updated": {
+    "needed": true,
+    "updated": [
+      "README.md",
+      "docs/evaluation.md",
+      "docs/audit/lean-instruction-routing.md"
+    ]
+  },
+  "lessons": {
+    "recorded": false,
+    "candidates": []
+  },
+  "rollback": {
+    "method": "Revert BASS-055 source changes; preserve task and evidence history."
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "pass",
+      "started_at": "2026-09-18T08:10:44.668Z",
+      "completed_at": "2026-09-18T08:17:52.090Z"
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "supporting",
+      "path": ".bass/evidence/BASS-055/benchmark-after.json",
+      "sha256": "a873e339efb6cb4c5cedcbc421592be62071739d2b4e763dfbf15f11e3a9eb3c",
+      "produced_by": "BASS-055 local implementation",
+      "at": "2026-09-18T08:18:39.292Z"
+    },
+    {
+      "kind": "supporting",
+      "path": ".bass/evidence/BASS-055/build.log",
+      "sha256": "be2d733e1946134268ec4d3234a472831b5e192d230b0f7f104b4bb50cfbc7e2",
+      "produced_by": "BASS-055 local implementation",
+      "at": "2026-09-18T08:18:39.293Z"
+    },
+    {
+      "kind": "supporting",
+      "path": ".bass/evidence/BASS-055/claude-plugin.log",
+      "sha256": "29fb8273a259451e4d27bbf8ff7badc50b00d8d8e76b6716ee0930a49fadd85b",
+      "produced_by": "BASS-055 local implementation",
+      "at": "2026-09-18T08:18:39.293Z"
+    },
+    {
+      "kind": "supporting",
+      "path": ".bass/evidence/BASS-055/comparison.json",
+      "sha256": "0416bd23988aba78f2e31f1e78828970ec6ea71099c20f5fb98c1192de4af1cd",
+      "produced_by": "BASS-055 local implementation",
+      "at": "2026-09-18T08:18:39.294Z"
+    },
+    {
+      "kind": "supporting",
+      "path": ".bass/evidence/BASS-055/full-tests-first.log",
+      "sha256": "2933940aa4b2ac36ac53f202d357d0e0c2add2d13c3b5dca0d4270e932ff99a4",
+      "produced_by": "BASS-055 local implementation",
+      "at": "2026-09-18T08:18:39.294Z"
+    },
+    {
+      "kind": "supporting",
+      "path": ".bass/evidence/BASS-055/guide-before.json",
+      "sha256": "518310658fb430026c482768b09c969a970e9106495c347ac91e96cf4cca8101",
+      "produced_by": "BASS-055 local implementation",
+      "at": "2026-09-18T08:18:39.294Z"
+    },
+    {
+      "kind": "review",
+      "path": ".bass/evidence/BASS-055/implementation-review.md",
+      "sha256": "abed3d161f22bc969b7b0d9c94c6d46ed4433cfc5ca9f27c07daa8c51e572b63",
+      "produced_by": "BASS-055 local implementation",
+      "at": "2026-09-18T08:18:39.294Z"
+    },
+    {
+      "kind": "supporting",
+      "path": ".bass/evidence/BASS-055/package-smoke.log",
+      "sha256": "8dbae1095b42dc0ed8750a4b4dc9e5879bd67d48c4515b80caf80df359463b10",
+      "produced_by": "BASS-055 local implementation",
+      "at": "2026-09-18T08:18:39.295Z"
+    },
+    {
+      "kind": "supporting",
+      "path": ".bass/evidence/BASS-055/plugin-validation.log",
+      "sha256": "130550790b2dd7d0464c0130950096bf2f937acbc0ddbcb8a20e627820c151d4",
+      "produced_by": "BASS-055 local implementation",
+      "at": "2026-09-18T08:18:39.295Z"
+    },
+    {
+      "kind": "supporting",
+      "path": ".bass/evidence/BASS-055/project-tests.log",
+      "sha256": "51e73c0e9b0144e3f8d711cbf00edd432eb86280c6503b202b921eb19a849ffd",
+      "produced_by": "BASS-055 local implementation",
+      "at": "2026-09-18T08:18:39.295Z"
+    },
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-055/verification.md",
+      "sha256": "08356d9a9c0352b9d23a6d1822a5a16520d2481f302fa37c8660ec1a753ed3d1",
+      "produced_by": "BASS-055 local implementation",
+      "at": "2026-09-18T08:18:39.295Z"
+    }
+  ],
+  "context": {
+    "sources": [
+      {
+        "path": "src/execution/planner.ts",
+        "sha256": "0e22a650648a7a374229b24067413d90971121b499b813b26a978d116600da4b",
+        "chars": 11444
+      },
+      {
+        "path": "TECH.md",
+        "sha256": "156f8453368c399d7728479d69ec2ba092913395e422a6a9effd8bf9b853b1a1",
+        "chars": 101
+      }
+    ],
+    "total_chars": 11545,
+    "omitted": [
+      "src/compose/composer.ts: context budget 12000 chars exceeded",
+      "src/compose/context.ts: context budget 12000 chars exceeded",
+      "TECH.md#Architecture: context budget 12000 chars exceeded"
+    ]
+  },
+  "usage": {
+    "turns": "unknown",
+    "attempts": 1,
+    "input_tokens": "unknown",
+    "output_tokens": "unknown",
+    "cached_input_tokens": "unknown",
+    "evaluator_tokens": "unknown",
+    "tool_calls": "unknown",
+    "subagents": 0,
+    "estimated_cost": "unknown"
+  },
+  "scope": {
+    "actual_files": [
+      ".bass/events.jsonl",
+      ".bass/evidence/BASS-055/benchmark-after.json",
+      ".bass/evidence/BASS-055/build.log",
+      ".bass/evidence/BASS-055/claude-plugin.log",
+      ".bass/evidence/BASS-055/comparison.json",
+      ".bass/evidence/BASS-055/full-tests-first.log",
+      ".bass/evidence/BASS-055/guide-before.json",
+      ".bass/evidence/BASS-055/implementation-review.md",
+      ".bass/evidence/BASS-055/package-smoke.log",
+      ".bass/evidence/BASS-055/plugin-validation.log",
+      ".bass/evidence/BASS-055/project-tests.log",
+      ".bass/evidence/BASS-055/verification.md",
+      ".bass/records/BASS-055.json",
+      ".bass/tasks/BASS-055.md",
+      ".cursor/rules/bass.mdc",
+      "AGENTS.md",
+      "CLAUDE.md",
+      "README.md",
+      "docs/audit/lean-instruction-routing.md",
+      "docs/evaluation.md",
+      "plugins/bass/hooks/session-start.cjs",
+      "plugins/bass/skills/bass-setup/SKILL.md",
+      "plugins/bass/skills/bass-shape/SKILL.md",
+      "plugins/bass/skills/bass-work/SKILL.md",
+      "plugins/bass/skills/bass-work/agents/openai.yaml",
+      "prompt-library/roles/worker.md",
+      "scripts/benchmark-performance.mjs",
+      "src/compose/composer.ts",
+      "src/compose/context.ts",
+      "src/execution/planner.ts",
+      "src/project/init.ts",
+      "tests/context.test.ts",
+      "tests/execution.test.ts",
+      "tests/plugin.test.ts",
+      "tests/project.test.ts"
+    ],
+    "outside_allowed": [],
+    "forbidden_touched": []
+  }
+}

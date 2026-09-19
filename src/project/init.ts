@@ -204,21 +204,19 @@ evaluators:
 }
 
 export function renderAgentsBlock(): string {
-  return `BASS ${BASS_VERSION}: use \`bass agent guide --json\` before work.
-- Humans own product direction, risk, and final judgment.
-- Inspect facts; implement the smallest accepted change.
-- Obey the plan fingerprint, task graph, scope, bounded loop, and gates.
-- Claim named providers only after host-specific doctor confirmation.
-- Run affected checks once; reuse unchanged passing evidence.
-- Load selected product context only; keep full logs in task evidence.`;
+  return `BASS ${BASS_VERSION}: for implementation, use \`bass agent guide <task-id> --json\` and follow its contract.
+Read-only questions need only relevant evidence; do not start an implementation workflow.
+Continue authorized local work through affected verification; ask only for missing product/risk decisions.
+Reuse recorded approvals, honor rejections, and leave final acceptance to the human.
+Load task-relevant context only; keep full logs in task evidence.`;
 }
 
 export function renderClaudeShim(): string {
-  return `Read the BASS managed block in \`AGENTS.md\`. Use \`bass agent guide --json\` as the dynamic execution contract. Do not copy the full BASS workflow here.`;
+  return `Follow the BASS routing in \`AGENTS.md\`; load the task guide only for implementation. Do not copy the workflow here.`;
 }
 
 export function renderCursorShim(): string {
-  return `Read the BASS managed block in AGENTS.md and use \`bass agent guide --json\`.`;
+  return `Follow the BASS routing in AGENTS.md; load the task guide only for implementation.`;
 }
 
 function updateGitignore(root: string, result: InitResult): void {

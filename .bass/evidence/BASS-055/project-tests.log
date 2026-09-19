@@ -1,0 +1,9 @@
+
+ RUN  v4.1.10 /Users/okestro/croquis/deck/BASS/bass-platform
+
+
+ Test Files  1 passed (1)
+      Tests  13 passed (13)
+   Start at  17:15:51
+   Duration  397ms (transform 115ms, setup 0ms, import 208ms, tests 104ms, environment 0ms)
+

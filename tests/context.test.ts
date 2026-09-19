@@ -55,6 +55,53 @@ describe("task-scoped instruction composition", () => {
 });
 
 describe("selective task context", () => {
+  it("whole-document references suppress overlapping automatic sections", () => {
+    const root = projectWithDocs();
+    const task = parseTaskFile(writeTask(root, "CTX-110", { sections: { "Relevant context": "./TECH.md\nTECH.md#Stack" } }));
+    const selected = selectTaskContext({ projectRoot: root, task, profiles: ["common"], maxChars: 12_000 });
+    const tech = selected.loaded.filter((item) => item.source === "TECH.md");
+    expect(tech).toHaveLength(1);
+    expect(tech[0]!.selector).toBeUndefined();
+    expect(tech[0]!.content).toContain("TypeScript");
+    expect(tech[0]!.content).toContain("CLI");
+  });
+
+  it.skipIf(process.platform === "win32")("does not load a sensitive file through a harmless symlink", () => {
+    const root = projectWithDocs();
+    fs.writeFileSync(path.join(root, ".env"), "TOKEN=hidden");
+    fs.symlinkSync(path.join(root, ".env"), path.join(root, "notes.md"));
+    const task = parseTaskFile(writeTask(root, "CTX-111", { sections: { "Relevant context": "notes.md" } }));
+    const selected = selectTaskContext({ projectRoot: root, task, profiles: ["common"], maxChars: 12_000 });
+    expect(JSON.stringify(selected)).not.toContain("TOKEN=hidden");
+    expect(selected.omitted).toContainEqual({ source: "notes.md", reason: "sensitive files are never loaded automatically" });
+  });
+
+  it("evaluator projection retains constraints and metadata while leaving narrative on disk", () => {
+    const root = projectWithDocs();
+    const file = writeTask(root, "CTX-112", { sections: {
+      Problem: "History ".repeat(1_000),
+      Decisions: "Only use disposable fixtures",
+      "Acceptance criteria": "Verify the requested result",
+      "Forbidden scope": "production/",
+      "Verification": "npm test",
+      "Custom constraint": "Never touch customer data\n\n### Nested requirement\nKeep this too",
+    } });
+    const raw = fs.readFileSync(file, "utf8");
+    const task = parseTaskFile(file);
+    const config = loadConfig({ projectRoot: root });
+    const evaluator = composeInstructions({ projectRoot: root, config, task, role: "evaluator" });
+    expect(evaluator).not.toContain("History History");
+    for (const constraint of ["id: CTX-112", "risk:", "Only use disposable fixtures", "Verify the requested result", "production/", "npm test", "Never touch customer data", "Keep this too"]) {
+      expect(evaluator).toContain(constraint);
+    }
+    expect(evaluator).toContain("Omitted narrative: Problem");
+    expect(composeInstructions({ projectRoot: root, config, task, role: "worker" })).toContain(raw.trim());
+    expect(fs.readFileSync(file, "utf8")).toBe(raw);
+    fs.appendFileSync(file, "\n## Example\n\n```md\n## Problem\nPreserve fenced evidence\n```\n");
+    const fenced = fs.readFileSync(file, "utf8");
+    expect(composeInstructions({ projectRoot: root, config, task: parseTaskFile(file), role: "evaluator" })).toContain(fenced.trim());
+  });
+
   it("web profile alone does not load DESIGN; explicit context and inferred UI scope still do", () => {
     const root = projectWithDocs();
     const select = (task: ReturnType<typeof parseTaskFile>) => selectTaskContext({ projectRoot: root, task, profiles: ["web"], maxChars: 12_000 });

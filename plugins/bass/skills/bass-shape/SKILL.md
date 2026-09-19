@@ -1,13 +1,13 @@
 ---
 name: bass-shape
-description: Shape product requirements and delivery tasks before implementation, using existing repository decisions.
+description: Turn an undefined product or feature request into BASS requirements and tasks. Use when scope or acceptance needs shaping; not for an already defined task.
 ---
 
 # BASS Shape
 
 Resolve `../../scripts/bass-launcher.cjs` from this `SKILL.md` to an absolute path before any BASS CLI step. `<BASS>` below means `node <absolute launcher path>`.
 
-1. Inspect existing code, documents, product behavior, and validation before proposing direction. Mark facts, decisions, assumptions, and open questions separately.
+1. Inspect only evidence needed to resolve the requested scope. Reuse existing task contracts and decisions; do not repeat discovery for an already defined change. Mark facts, decisions, assumptions, and open questions separately.
 2. Fill only relevant sections of `PRODUCT.md`, `TECH.md`, and `DESIGN.md`; preserve existing confirmed decisions and never overwrite the files with blank templates.
 3. Preserve the user's existing product and visual choices. Record only undecided name, brand, concept, or logo directions as candidates.
 4. Create `specs/<feature>.md` only when work crosses multiple surfaces, needs staged delivery, or cannot fit one reviewable task. Small changes use one task directly.
