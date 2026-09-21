@@ -1,11 +1,11 @@
 bass:
-  version: 0.5.1
-  profiles: [common, cli]
-
+  version: 0.6.0
+  profiles:
+    - common
+    - cli
 project:
   name: bass-platform
   description: Portable BASS CLI and team plugin runtime
-
 execution:
   depth: adaptive
   verification: affected
@@ -13,29 +13,26 @@ execution:
     no_progress_limit: 1
   parallel:
     max_agents: 2
-
 context:
   max_chars: 12000
-
 capabilities:
   specification: builtin
   simplicity: ponytail
   ui_direction: off
   ui_canvas: off
   html_report: bass
-
 adapters:
   primary: codex
-  compatibility: [claude, cursor]
+  compatibility:
+    - claude
+    - cursor
   runner: host
   context_provider: bass
   workspace_executor: host
   collaboration_provider: events
-
 workflow:
   max_active_tasks: 1
   reviewer_required: true
-
 evaluators:
   level1:
     - name: typecheck
@@ -48,10 +45,15 @@ evaluators:
   level3:
     - name: package-smoke
       command: npm run smoke:package
-      surfaces: [release]
+      surfaces:
+        - release
     - name: plugin-manifest
       command: npm run validate:plugin
-      surfaces: [release]
+      surfaces:
+        - release
     - name: performance-budget
       command: npm run benchmark:performance
-      surfaces: [release]
+      surfaces:
+        - release
+semantic:
+  mode: off

@@ -4,6 +4,7 @@ import type { ExecutionDepth, ExecutionPlan, TaskKind } from "../types.js";
 import type { TaskFile } from "../task/taskFile.js";
 import { listTasks } from "../task/taskFile.js";
 import { buildTaskGraph } from "../task/taskGraph.js";
+import { readStage, semanticGate, stageHash } from "../semantic/workflow.js";
 
 const TASK_KINDS = new Set<TaskKind>(["explore", "delete", "fix", "feature", "refactor", "release"]);
 
@@ -32,6 +33,11 @@ export function buildExecutionPlan(config: LoadedConfig, task?: TaskFile): Execu
   const adapters = config.bassYaml.adapters;
 
   const plan: Omit<ExecutionPlan, "contractVersion" | "planFingerprint"> = {
+    ...(task && config.bassYaml.semantic.mode === "enforce" ? {
+      semanticPrepareHash: semanticGate(config.projectRoot, task, config, "prepare").status === "pass"
+        ? stageHash(readStage(config.projectRoot, task.frontmatter.id, "prepare")!)
+        : "unprepared",
+    } : {}),
     taskKind,
     depth,
     changedSurfaces,
@@ -54,7 +60,7 @@ export function buildExecutionPlan(config: LoadedConfig, task?: TaskFile): Execu
     },
     maxReworkLoops: Math.max(0, loop.maxAttempts - 1),
   };
-  const contractVersion = 1 as const;
+  const contractVersion = config.bassYaml.semantic.mode === "enforce" ? 2 as const : 1 as const;
   const planFingerprint = createHash("sha256")
     .update(stableStringify({ contractVersion, ...plan }))
     .digest("hex");

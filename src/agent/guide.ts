@@ -75,6 +75,10 @@ export function buildAgentGuide(
       "Preserve repository-native instructions and avoid a second source of truth.",
       "Invoke an external provider only when execution_plan.capabilityCalls names it and host-specific doctor confirms it active; claim before invocation, complete afterward, reuse completed calls, and stop on uncertain calls.",
       "Never auto-install, emulate, copy, or silently substitute an external provider.",
+      ...(config.bassYaml.semantic.mode === "enforce" ? [
+        "Run BASS semantic prepare before ACTIVE and semantic verify after evidence collection; these BASS API commands are separate from host plugin capability claims.",
+        "Address semantic findings or record a specific human resolution. Missing or failed judgments never count as passing evidence.",
+      ] : []),
     ],
     execution_plan: plan,
   };

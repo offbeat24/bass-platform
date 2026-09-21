@@ -181,6 +181,9 @@ execution:
 context:
   max_chars: 12000
 
+semantic:
+  mode: off
+
 capabilities:
   specification: ${capabilities.specification}
   simplicity: ${capabilities.simplicity}
@@ -223,7 +226,7 @@ function updateGitignore(root: string, result: InitResult): void {
   const relative = ".gitignore";
   const absolute = path.join(root, relative);
   const current = fs.existsSync(absolute) ? fs.readFileSync(absolute, "utf8") : "";
-  const lines = [".bass/cache/", ".bass/local.yaml", "!.bass/evidence/**/*.log"];
+  const lines = [".bass/cache/", ".bass/semantic/cache/", ".bass/semantic/usage.json", ".bass/semantic/*.lock/", ".bass/semantic/slots/", ".bass/local.yaml", "!.bass/evidence/**/*.log"];
   const missing = lines.filter((line) => !current.split(/\r?\n/).includes(line));
   if (missing.length === 0) return;
   const next = `${current.trimEnd()}${current.trim().length ? "\n" : ""}${missing.join("\n")}\n`;

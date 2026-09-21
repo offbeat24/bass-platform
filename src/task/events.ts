@@ -17,6 +17,8 @@ export const EVENT_KINDS = [
   "evidence.recorded",
   "task.blocked",
   "task.completed",
+  "semantic.completed",
+  "semantic.resolved",
 ] as const;
 
 export const EVENT_STATUSES = ["running", "pass", "fail", "no-progress", "blocked", "skipped", "error"] as const;
@@ -24,7 +26,7 @@ export const EVENT_STATUSES = ["running", "pass", "fail", "no-progress", "blocke
 const summarySchema = z.string().min(1).max(500).refine((value) => !/[\r\n]/.test(value), "summary must be one line");
 
 export const bassEventSchema = z.object({
-  schema_version: z.union([z.literal(1), z.literal(2)]),
+  schema_version: z.union([z.literal(1), z.literal(2), z.literal(3)]),
   at: z.iso.datetime(),
   task_id: z.string().regex(/^[A-Z][A-Z0-9]*-\d+$/),
   attempt: z.number().int().positive().optional(),
@@ -43,7 +45,7 @@ export const bassEventSchema = z.object({
   plan_fingerprint: z.string().regex(/^[a-f0-9]{64}$/).optional(),
 }).superRefine((event, context) => {
   if (event.kind !== "capability.started" && event.kind !== "capability.completed") return;
-  if (event.schema_version !== 2) {
+  if (event.schema_version < 2) {
     context.addIssue({ code: "custom", path: ["schema_version"], message: "capability events require schema v2" });
   }
   for (const field of ["attempt", "call_id", "host", "capability_call"] as const) {
@@ -81,7 +83,7 @@ export function eventLogPath(projectRoot: string): string {
 
 export function appendEvent(projectRoot: string, event: NewBassEvent): BassEvent {
   const parsed = bassEventSchema.parse({
-    schema_version: 2,
+    schema_version: event.kind.startsWith("semantic.") ? 3 : 2,
     at: event.at ?? new Date().toISOString(),
     ...event,
     summary: normalizeEventSummary(event.summary),

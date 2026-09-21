@@ -8,6 +8,7 @@ import { loadRiskApprovals } from "../task/approvalRecord.js";
 import { buildExecutionPlan } from "../execution/planner.js";
 import { BASS_VERSION } from "../version.js";
 import { selectTaskContext } from "./context.js";
+import { preparedReferences } from "../semantic/workflow.js";
 
 export interface ComposeOptions {
   projectRoot: string;
@@ -116,6 +117,7 @@ export function composeInstructions(opts: ComposeOptions): string {
     profiles,
     ...(opts.role ? { role: opts.role } : {}),
     maxChars: opts.config.bassYaml.context.max_chars,
+    semanticReferences: opts.task ? preparedReferences(opts.projectRoot, opts.config, opts.task) : [],
   });
   for (const item of selected.loaded) {
     parts.push({

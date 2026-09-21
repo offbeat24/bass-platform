@@ -9,8 +9,9 @@ Resolve `../../scripts/bass-launcher.cjs` relative to this file. `<BASS>` means 
 
 Reuse the current task and decisions. Use bass-shape only if scope or acceptance still needs definition.
 
-- Read `<BASS> agent guide <task-id> --json` for the plan, scope, approvals, limits and capability calls. Transition to ACTIVE and start an attempt; inspect the graph only for dependency or ownership conflicts.
+- Read `<BASS> agent guide <task-id> --json` for the plan, scope, approvals, limits and capability calls. If `bass.yaml` enables `semantic.mode: enforce`, run `<BASS> semantic prepare <task-id>` and resolve findings before transitioning to ACTIVE; inspect the graph only for dependency or ownership conflicts.
 - For named providers, use host-specific doctor and capability claim. Invoke on `run`, reuse on `reuse`, stop on `uncertain`; complete with the real status. Never install, emulate or substitute providers.
 - Continue through acceptance and affected verification, fixing change-caused failures within the plan budget. Evaluate after meaningful changes; reuse unchanged passing evidence and store full logs in `.bass/evidence/<task-id>/`.
-- Finish the attempt and write a proportional run record v2 from the plan and events; unavailable usage stays `unknown`.
+- If semantic mode is enabled, write `.bass/semantic/<task-id>/claims.json` with one exact acceptance criterion, claim, and quoted `.bass/evidence/<task-id>/` source per criterion. Run `<BASS> semantic verify <task-id>` after verification and resolve findings. Never mark a failed or missing semantic judgment as a pass.
+- Finish the attempt and write a proportional run record (v3 with semantic hashes and resolutions when enabled, otherwise v2) from the plan and events; unavailable usage stays `unknown`.
 - Pass pre-review before REVIEW. Present results, evidence, limitations and human judgment. Finalize only after explicit final approval is recorded; implementation authorization is not final approval.

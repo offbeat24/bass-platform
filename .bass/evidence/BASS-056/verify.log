@@ -1,0 +1,104 @@
+
+> @offbeat24/bass@0.6.0 verify
+> npm run typecheck && npm test && npm run build && npm run smoke:package && npm run validate:plugin && npm run benchmark:performance
+
+
+> @offbeat24/bass@0.6.0 typecheck
+> tsc --noEmit
+
+
+> @offbeat24/bass@0.6.0 test
+> vitest run
+
+
+ RUN  v4.1.10 /Users/okestro/croquis/deck/BASS/bass-platform
+
+
+ Test Files  22 passed (22)
+      Tests  229 passed (229)
+   Start at  10:12:33
+   Duration  1.84s (transform 1.17s, setup 0ms, import 3.74s, tests 5.76s, environment 2ms)
+
+
+> @offbeat24/bass@0.6.0 build
+> tsc
+
+
+> @offbeat24/bass@0.6.0 smoke:package
+> node scripts/smoke-package.mjs
+
+package smoke PASS: @offbeat24/bass@0.6.0
+
+> @offbeat24/bass@0.6.0 validate:plugin
+> node scripts/validate-plugin.mjs
+
+plugin validation PASS: bass@0.6.0
+
+> @offbeat24/bass@0.6.0 benchmark:performance
+> node scripts/benchmark-performance.mjs
+
+{
+  "measurement": "Static UTF-8 instruction bytes including emitted session context, not hook JavaScript; composed prompt characters, not model tokens or runtime quality.",
+  "baselines": {
+    "historical": "97b8ab6",
+    "instruction_routing": "63f11db"
+  },
+  "static_instruction_bytes": {
+    "core_entrypoints": {
+      "baseline": 9160,
+      "current": 2992,
+      "reduction_percent": 67.3
+    },
+    "work_skill": {
+      "baseline": 2577,
+      "current": 1877,
+      "reduction_percent": 27.2
+    }
+  },
+  "composed_prompt_chars": {
+    "docsEvaluator": {
+      "baseline": 4526,
+      "current": 3589,
+      "reduction_percent": 20.7,
+      "automatic_context": []
+    },
+    "codeWorker": {
+      "baseline": 4810,
+      "current": 4401,
+      "reduction_percent": 8.5,
+      "automatic_context": [
+        "TECH.md#Stack",
+        "TECH.md#Architecture"
+      ]
+    },
+    "uiWorker": {
+      "baseline": 5464,
+      "current": 5385,
+      "reduction_percent": 1.4,
+      "automatic_context": [
+        "PRODUCT.md#Product intent",
+        "TECH.md#Stack",
+        "TECH.md#Architecture",
+        "DESIGN.md#Purpose",
+        "DESIGN.md#Design principles"
+      ]
+    },
+    "serverWorker": {
+      "baseline": 4801,
+      "current": 4722,
+      "reduction_percent": 1.6,
+      "automatic_context": [
+        "PRODUCT.md#Product intent",
+        "TECH.md#Stack",
+        "TECH.md#Architecture"
+      ]
+    }
+  },
+  "evaluator_critic_calls": {
+    "baseline": 8,
+    "fast": 1,
+    "fast_reduction_percent": 87.5,
+    "standard_worst_case": 4,
+    "standard_reduction_percent": 50
+  }
+}

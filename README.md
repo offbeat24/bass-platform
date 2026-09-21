@@ -2,7 +2,9 @@
 
 BASS는 아이디어를 제품·기술·디자인 명세로 구체화하고, 작은 작업으로 나눈 뒤 구현·검증·리뷰를 bounded loop로 관리한다. BASS가 Task Graph, 게이트, Run Record, evidence의 기준을 유지하고 Codex·Claude·Prime Agent와 외부 하네스는 선택형 실행 도구로만 사용한다.
 
-설치부터 업그레이드·개발·배포까지의 전체 절차는 [BASS 0.5.1 Release Notes](RELEASE_NOTES.md)에 정리되어 있다.
+설치부터 업그레이드·개발·배포까지의 전체 절차는 [BASS Release Notes](RELEASE_NOTES.md)에 정리되어 있다.
+
+BASS 0.6.0은 선택형 TypeSafe 판단을 제공한다. 기존 프로젝트는 기본적으로 API를 호출하지 않는다. 활성화 방법과 근거 목록 형식은 [Semantic guide](docs/semantic.md)를 참고한다.
 
 개발·터미널·GitHub를 처음 접하는 사람이 BASS로 첫 게임을 만드는 과정은 [코딩을 몰라도 시작하는 첫 게임 만들기](docs/game-development-for-complete-beginners.ko.md)를 따른다.
 
@@ -25,7 +27,7 @@ npm login --scope=@offbeat24 --auth-type=legacy --registry=https://npm.pkg.githu
 플러그인 launcher가 `bass.yaml`과 같은 버전을 npm cache에서 실행하므로 전역 설치는 선택이다.
 
 ```bash
-npm install -g @offbeat24/bass@0.5.1
+npm install -g @offbeat24/bass@0.6.0
 codex plugin marketplace add offbeat24/bass-platform
 ```
 

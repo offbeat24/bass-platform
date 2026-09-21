@@ -27,8 +27,9 @@ export type TaskKind = "explore" | "delete" | "fix" | "feature" | "refactor" | "
 export type ExecutionDepth = "fast" | "standard" | "hardened";
 
 export interface ExecutionPlan {
-  contractVersion: 1;
+  contractVersion: 1 | 2;
   planFingerprint: string;
+  semanticPrepareHash?: string;
   taskKind: TaskKind;
   depth: ExecutionDepth;
   changedSurfaces: string[];

@@ -37,12 +37,14 @@ export function selectTaskContext(opts: {
   profiles: string[];
   role?: string;
   maxChars: number;
+  semanticReferences?: Array<{ source: string; selector?: string; sha256: string }>;
 }): ContextSelection {
   const explicit = parseRelevantContext(opts.task?.sections.get("Relevant context") ?? "");
   const automatic = automaticReferences(opts.projectRoot, opts.task, opts.role);
   const references = dedupe([
     ...explicit.map((reference) => ({ ...reference, origin: "explicit" as const })),
     ...automatic,
+    ...(opts.semanticReferences ?? []).map(({ source, selector }) => ({ source, ...(selector ? { selector } : {}), origin: "automatic" as const })),
   ]);
   const loaded: SelectedContext[] = [];
   const omitted: OmittedContext[] = [];
@@ -182,6 +184,11 @@ function readReference(
     content: content.trim(),
     sha256: createHash("sha256").update(fullContent).digest("hex"),
   };
+}
+
+/** Apply the same boundary and sensitive-file checks before sending text to a provider. */
+export function readSafeProjectText(projectRoot: string, source: string, selector?: string) {
+  return readReference(projectRoot, { source, ...(selector ? { selector } : {}), origin: "automatic" });
 }
 
 function markdownSection(content: string, selector: string): string | null {

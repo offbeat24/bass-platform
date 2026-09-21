@@ -54,6 +54,8 @@ try {
   const packedPaths = packed[0].files.map((file) => file.path);
   for (const required of [
     "dist/cli/main.js",
+    "dist/semantic/client.js",
+    "dist/semantic/workflow.js",
     "profiles/game.yaml",
     "plugins/bass/.codex-plugin/plugin.json",
     "plugins/bass/.claude-plugin/plugin.json",
@@ -78,6 +80,7 @@ try {
   const bassCli = path.join(host, "node_modules", packageJson.name, packageJson.bin.bass);
   const runBass = (args, cwd = host, extraEnv = {}) => run(process.execPath, [bassCli, ...args], cwd, extraEnv);
   assert.equal(runBass(["--version"]), packageJson.version);
+  assert.match(runBass(["semantic", "--help"]), /prepare/);
 
   const nodeRepo = path.join(tempRoot, "node-web");
   fs.mkdirSync(nodeRepo);
@@ -92,6 +95,7 @@ try {
     assert.ok(fs.existsSync(path.join(nodeRepo, artifact)), `missing product artifact: ${artifact}`);
   }
   runBass(["task", "new", "PKG-1", "--title", "Package task"], nodeRepo);
+  assert.equal(JSON.parse(runBass(["semantic", "report", "PKG-1", "--json"], nodeRepo)).prepare, null);
   fillTaskContract(nodeRepo, "PKG-1");
   const graph = JSON.parse(runBass(["task", "graph", "--json"], nodeRepo));
   assert.deepEqual(graph.ready, ["PKG-1"]);

@@ -76,7 +76,7 @@ describe("team plugin", () => {
     fs.mkdirSync(scripts, { recursive: true });
     fs.mkdirSync(path.join(dir, ".codex-plugin"));
     fs.copyFileSync(path.join(plugin, "scripts", "bass-launcher.cjs"), path.join(scripts, "bass-launcher.cjs"));
-    fs.writeFileSync(path.join(dir, ".codex-plugin", "plugin.json"), JSON.stringify({ version: "0.5.1+codex.test" }), "utf8");
+    fs.writeFileSync(path.join(dir, ".codex-plugin", "plugin.json"), JSON.stringify({ version: `${BASS_VERSION}+codex.test` }), "utf8");
     const fakeNpm = path.join(dir, "fake-npm.cjs");
     fs.writeFileSync(fakeNpm, "console.log(JSON.stringify(process.argv.slice(2)));\n", "utf8");
     const launcherEnv = Object.fromEntries(
@@ -90,7 +90,7 @@ describe("team plugin", () => {
       env: launcherEnv,
     });
     expect(result.status, result.stderr || result.error?.message).toBe(0);
-    expect(JSON.parse(result.stdout)).toContain("--package=@offbeat24/bass@0.5.1");
+    expect(JSON.parse(result.stdout)).toContain(`--package=@offbeat24/bass@${BASS_VERSION}`);
   });
 
   it("같은 diff의 scope 위반은 한 번만 경고한다", () => {

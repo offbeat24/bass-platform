@@ -13,6 +13,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const historical = json("benchmarks/bass-0.2-baseline.json");
 const instructionBaseline = json("benchmarks/bass-0.5-instruction-baseline.json");
 const config = parse(fs.readFileSync(path.join(root, "bass.yaml"), "utf8"));
+const packageVersion = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).version;
 
 const bytes = (relativePath) => Buffer.byteLength(fs.readFileSync(path.join(root, relativePath), "utf8"));
 const sum = (values) => values.reduce((total, value) => total + value, 0);
@@ -96,7 +97,7 @@ process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 function composeFixture({ profile, id, type, risk = "low", surface, role }) {
   const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "bass-053-baseline-"));
   try {
-    fs.writeFileSync(path.join(projectRoot, "bass.yaml"), `bass:\n  version: 0.5.1\n  profiles:\n    - common\n    - ${profile}\nproject:\n  name: fixture\n`, "utf8");
+    fs.writeFileSync(path.join(projectRoot, "bass.yaml"), `bass:\n  version: ${packageVersion}\n  profiles:\n    - common\n    - ${profile}\nproject:\n  name: fixture\n`, "utf8");
     fs.writeFileSync(path.join(projectRoot, "PRODUCT.md"), "# Product\n\n## Product intent\n\nBuild the requested behavior.\n", "utf8");
     fs.writeFileSync(path.join(projectRoot, "TECH.md"), "# Tech\n\n## Stack\n\nTypeScript\n\n## Architecture\n\nSmall CLI modules.\n", "utf8");
     fs.writeFileSync(path.join(projectRoot, "DESIGN.md"), "# Design\n\n## Purpose\n\nClear UI.\n\n## Design principles\n\nAccessible and simple.\n", "utf8");

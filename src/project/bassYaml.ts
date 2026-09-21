@@ -19,6 +19,19 @@ const capabilitySchema = z.object({
   html_report: z.enum(["bass", "off"]).default("bass"),
 });
 
+const semanticSchema = z.object({
+  mode: z.enum(["off", "enforce"]).default("off"),
+  provider: z.literal("typesafe").default("typesafe"),
+  model: z.string().min(1).default("jev-1.13.0"),
+  input_usd_per_million: z.number().positive().max(100).optional(),
+  document_paths: z.array(z.string().min(1)).default([]),
+  max_usd: z.number().positive().max(100).default(0.05),
+}).superRefine((value, context) => {
+  if (value.model !== "jev-1.13.0" && value.input_usd_per_million === undefined) {
+    context.addIssue({ code: "custom", path: ["input_usd_per_million"], message: "set the current price explicitly for a different model" });
+  }
+}).default({ mode: "off", provider: "typesafe", model: "jev-1.13.0", document_paths: [], max_usd: 0.05 });
+
 export const bassYamlSchema = z.object({
   bass: z.object({
     version: z.string(),
@@ -57,6 +70,7 @@ export const bassYamlSchema = z.object({
       max_chars: z.number().int().positive().max(100_000).default(12_000),
     })
     .default({ max_chars: 12_000 }),
+  semantic: semanticSchema,
   capabilities: capabilitySchema.default({
     specification: "builtin",
     simplicity: "ponytail",

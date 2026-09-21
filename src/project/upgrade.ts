@@ -37,6 +37,7 @@ export function upgradeProject(projectRoot: string, apply = false): UpgradePlan 
   if (fromVersion !== BASS_VERSION) changes.push(`bass.version: ${fromVersion} -> ${BASS_VERSION}`);
   if (!raw["execution"]) changes.push("add adaptive execution policy");
   if (!raw["context"]) changes.push("add selective context budget");
+  if (!raw["semantic"]) changes.push("add optional semantic mode (off)");
   if (!raw["capabilities"]) changes.push("add explicit capability selections");
   if (!raw["adapters"]) changes.push("add Codex primary and Claude/Cursor compatibility adapters");
   else if (["runner", "context_provider", "workspace_executor", "collaboration_provider"].some((key) => existingAdapters[key] === undefined)) {
@@ -91,6 +92,7 @@ export function upgradeProject(projectRoot: string, apply = false): UpgradePlan 
       parallel: currentExecution["parallel"] ?? { max_agents: 2 },
     },
     context: raw["context"] ?? { max_chars: 12_000 },
+    semantic: raw["semantic"] ?? { mode: "off" },
     capabilities: raw["capabilities"] ?? DEFAULT_CAPABILITIES,
     adapters: { ...DEFAULT_ADAPTERS, ...existingAdapters },
   };
