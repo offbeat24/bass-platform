@@ -3,5 +3,10 @@ dist/
 *.log
 .DS_Store
 .bass/cache/
+.bass/semantic/cache/
+.bass/semantic/usage.json
+.bass/semantic/*.lock/
+.bass/semantic/slots/
+.bass/semantic/evaluation-root/
 .bass/local.yaml
 !.bass/evidence/**/*.log

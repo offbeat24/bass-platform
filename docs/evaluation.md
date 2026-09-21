@@ -18,8 +18,10 @@ Common performance metrics are context characters, turns, attempts, tokens, cach
 
 Keep three instruction metrics separate:
 
-- **Static instruction bytes** measure stored entrypoints or skill files. They are a repository-size signal, not runtime context or token cost.
+- **Static instruction bytes** measure entrypoint and skill text; the session hook contributes its emitted context, not its JavaScript implementation. They are a repository-size signal, not runtime context or token cost.
 - **Composed prompt characters** measure deterministic `bass compose` fixtures, including task and selected repository context. Compare only fixtures with the same paths and task text.
 - **Observed usage** comes from the host or Run Record: input/output/cached tokens, tool calls, attempts, elapsed time, and estimated cost. If the host does not expose a value, keep it `unknown`.
 
 `context.max_chars` limits task-selected repository documents. It does not include the task contract, base behavior, role, policy, or manifest, so do not report it as a total prompt limit. A smaller static or composed value is not proof of better live-agent quality; use equivalent real tasks to evaluate completion, rework, scope, and verification behavior.
+
+Evaluator composition omits only the standard Problem, What we are shipping, Facts and Rollback narrative, listing omitted headings with the source task path. Raw frontmatter, decisions, assumptions, scope, acceptance, verification and custom sections remain. Tasks containing fenced examples fall back to full text. Other roles always receive the full task. Explicit whole-file context suppresses overlapping section references.

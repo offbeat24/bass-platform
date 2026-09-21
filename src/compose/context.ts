@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import type { TaskFile } from "../task/taskFile.js";
-import { inferChangedSurfaces } from "../execution/planner.js";
+import { inferChangedSurfaces, isDocumentationSurface } from "../execution/planner.js";
 
 export interface SelectedContext {
   source: string;
@@ -37,12 +37,14 @@ export function selectTaskContext(opts: {
   profiles: string[];
   role?: string;
   maxChars: number;
+  semanticReferences?: Array<{ source: string; selector?: string; sha256: string }>;
 }): ContextSelection {
   const explicit = parseRelevantContext(opts.task?.sections.get("Relevant context") ?? "");
   const automatic = automaticReferences(opts.projectRoot, opts.task, opts.role);
   const references = dedupe([
     ...explicit.map((reference) => ({ ...reference, origin: "explicit" as const })),
     ...automatic,
+    ...(opts.semanticReferences ?? []).map(({ source, selector }) => ({ source, ...(selector ? { selector } : {}), origin: "automatic" as const })),
   ]);
   const loaded: SelectedContext[] = [];
   const omitted: OmittedContext[] = [];
@@ -135,10 +137,6 @@ function automaticReferences(
   return references.filter((reference) => fs.existsSync(path.join(projectRoot, reference.source)));
 }
 
-function isDocumentationSurface(surface: string): boolean {
-  return /^(docs?|documentation|readme(?:\.md)?|.+\.md)$/i.test(surface);
-}
-
 function configuredSurfaces(task: TaskFile): string[] {
   const value = task.frontmatter.config?.["changed_surfaces"];
   return Array.isArray(value) ? value.map(String) : [];
@@ -146,8 +144,11 @@ function configuredSurfaces(task: TaskFile): string[] {
 
 function dedupe(references: ContextReference[]): ContextReference[] {
   const seen = new Set<string>();
+  const wholeFiles = new Set(references.filter((reference) => !reference.selector).map((reference) => path.normalize(reference.source)));
   return references.filter((reference) => {
-    const key = `${reference.source}#${reference.selector ?? ""}`;
+    const source = path.normalize(reference.source);
+    if (reference.selector && wholeFiles.has(source)) return false;
+    const key = `${source}#${reference.selector ?? ""}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -173,6 +174,7 @@ function readReference(
   if (!realRelative || realRelative.startsWith("..") || path.isAbsolute(realRelative)) {
     return { reason: "resolved path is outside project root" };
   }
+  if (isSensitivePath(realRelative)) return { reason: "sensitive files are never loaded automatically" };
 
   const fullContent = fs.readFileSync(realCandidate, "utf8");
   const content = reference.selector ? markdownSection(fullContent, reference.selector) : fullContent;
@@ -182,6 +184,11 @@ function readReference(
     content: content.trim(),
     sha256: createHash("sha256").update(fullContent).digest("hex"),
   };
+}
+
+/** Apply the same boundary and sensitive-file checks before sending text to a provider. */
+export function readSafeProjectText(projectRoot: string, source: string, selector?: string) {
+  return readReference(projectRoot, { source, ...(selector ? { selector } : {}), origin: "automatic" });
 }
 
 function markdownSection(content: string, selector: string): string | null {

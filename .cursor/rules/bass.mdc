@@ -4,5 +4,5 @@ alwaysApply: true
 ---
 
 <!-- bass:managed:start -->
-Read the BASS managed block in AGENTS.md and use `bass agent guide --json`.
+Follow the BASS routing in AGENTS.md; load the task guide only for implementation.
 <!-- bass:managed:end -->

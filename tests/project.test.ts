@@ -89,7 +89,8 @@ describe("bass init (shim 생성)", () => {
       collaboration_provider: "events",
     });
     expect(agents).toContain(BASS_VERSION);
-    expect(agents).toContain("smallest accepted change");
+    expect(agents).toContain("bass agent guide <task-id> --json");
+    expect(agents).not.toContain("agent guide --json");
   });
 
   it("기존 AGENTS.md는 보존하고 관리 블록만 추가한다", () => {
@@ -192,7 +193,7 @@ describe("bass compose (지침 조합)", () => {
     expect(composed).toContain("auth-and-permissions");
     expect(composed).toContain("DESIGN.md");
     expect(composed).toContain("Call an external provider only when `capabilityCalls` names it");
-    expect(composed).toContain("Ponytail은 승인된 범위에만 적용한다");
+    expect(composed).toContain("smallest accepted change inside its scope");
     // 출처 추적
     expect(composed).toContain("source:");
   });

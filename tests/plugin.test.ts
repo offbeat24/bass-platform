@@ -37,6 +37,25 @@ describe("team plugin", () => {
     expect(output.hookSpecificOutput.additionalContext).toBe(plain.stdout);
   });
 
+  it("SessionStart is silent outside BASS and resolves the hook cwd from nested directories", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bass-session-"));
+    const hook = path.join(plugin, "hooks", "session-start.cjs");
+    const run = (input: string) => spawnSync(process.execPath, [hook], { cwd: dir, input, encoding: "utf8" });
+    try {
+      expect(run(JSON.stringify({ cwd: dir })).stdout).toBe("");
+      expect(run("invalid JSON").stdout).toBe("");
+      fs.writeFileSync(path.join(dir, "bass.yaml"), "bass: {}\n");
+      const nested = path.join(dir, "src");
+      fs.mkdirSync(nested);
+      const result = run(JSON.stringify({ cwd: nested }));
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("BASS project");
+      expect(result.stdout).not.toContain("agent guide --json");
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("bass-work는 상세 계약을 guide에 위임하되 안전 경계를 유지한다", () => {
     const skill = fs.readFileSync(path.join(plugin, "skills", "bass-work", "SKILL.md"), "utf8");
     expect(Buffer.byteLength(skill, "utf8")).toBeLessThan(1_900);
@@ -57,7 +76,7 @@ describe("team plugin", () => {
     fs.mkdirSync(scripts, { recursive: true });
     fs.mkdirSync(path.join(dir, ".codex-plugin"));
     fs.copyFileSync(path.join(plugin, "scripts", "bass-launcher.cjs"), path.join(scripts, "bass-launcher.cjs"));
-    fs.writeFileSync(path.join(dir, ".codex-plugin", "plugin.json"), JSON.stringify({ version: "0.5.1+codex.test" }), "utf8");
+    fs.writeFileSync(path.join(dir, ".codex-plugin", "plugin.json"), JSON.stringify({ version: `${BASS_VERSION}+codex.test` }), "utf8");
     const fakeNpm = path.join(dir, "fake-npm.cjs");
     fs.writeFileSync(fakeNpm, "console.log(JSON.stringify(process.argv.slice(2)));\n", "utf8");
     const launcherEnv = Object.fromEntries(
@@ -71,7 +90,7 @@ describe("team plugin", () => {
       env: launcherEnv,
     });
     expect(result.status, result.stderr || result.error?.message).toBe(0);
-    expect(JSON.parse(result.stdout)).toContain("--package=@offbeat24/bass@0.5.1");
+    expect(JSON.parse(result.stdout)).toContain(`--package=@offbeat24/bass@${BASS_VERSION}`);
   });
 
   it("같은 diff의 scope 위반은 한 번만 경고한다", () => {

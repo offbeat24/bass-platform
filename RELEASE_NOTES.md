@@ -1,3 +1,21 @@
+# BASS 0.6.0 — 선택형 TypeSafe 판단
+
+`semantic.mode: enforce`인 프로젝트는 작업 명세, 관련 문맥, 완료 주장과 텍스트 근거를 TypeSafe Jev로 평가한다. 기본 모드는 `off`이며 외부 요청을 만들지 않는다. Codex와 Claude는 같은 저장된 판단을 읽고, 판단이 바뀌는 입력은 해시로 식별한다. 기존 필수 검증과 최종 사람 승인은 유지된다.
+
+이번 릴리스는 BASS-055의 조건부 지침 라우팅도 포함한다. 기존 BASS 0.5.x 작업·Run Record는 읽을 수 있으며 `bass upgrade --check`에서 변경 내용을 확인한 후 `--apply`로 관리 영역과 버전을 갱신한다. 활성화한 프로젝트는 Run Record v3에 준비·근거 판단 해시와 해결 기록을 포함한다.
+
+TypeSafe 사용에는 별도 `TYPESAFE_API_KEY`가 필요하고 API 호출 비용이 발생한다. 현재 공식 모델 단가는 입력 100만 토큰당 $0.042이다. API 키는 환경변수에 두고 저장소나 대화에 기록하지 않는다. 준비, 증거 목록, 동작과 제한은 [Semantic guide](docs/semantic.md)에 정리했다.
+
+```bash
+npm install -g @offbeat24/bass@0.6.0
+bass upgrade --check
+bass upgrade --apply
+```
+
+출시 전 실모델 평가와 게시 검증 결과는 BASS-056 근거에 기록한다. 검증이 끝나기 전에는 이 문서를 출시 완료 주장으로 해석하지 않는다.
+
+---
+
 # BASS 0.5.1 — 필요한 지침만 조합하는 패치
 
 BASS 0.5.1은 task의 역할과 변경 표면에 맞춰 자동 context를 선택한다. 명시한

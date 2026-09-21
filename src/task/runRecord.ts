@@ -7,7 +7,7 @@ const sha256Schema = z.string().regex(/^[a-f0-9]{64}$/);
 const usageMetricSchema = z.union([z.number().nonnegative(), z.literal("unknown")]);
 
 const executionContractSchema = z.object({
-  contract_version: z.literal(1),
+  contract_version: z.union([z.literal(1), z.literal(2)]),
   plan_fingerprint: sha256Schema,
   capability_calls: z.array(z.string()),
 });
@@ -38,6 +38,11 @@ export const runRecordSchema = z.object({
   record_version: z.number().int().min(0).default(0),
   execution_contract: executionContractSchema.optional(),
   capability_invocations: z.array(capabilityInvocationSchema).default([]),
+  semantic: z.object({
+    prepare_hash: sha256Schema,
+    verify_hash: sha256Schema,
+    resolved_findings: z.array(z.string()).default([]),
+  }).optional(),
   task_id: z.string(),
   summary_of_changes: z.string().min(1),
   why: z.string().min(1),

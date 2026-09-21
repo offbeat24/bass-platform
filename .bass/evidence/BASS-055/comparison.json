@@ -1,0 +1,34 @@
+{
+  "source_commit": "252b9f6b4cb045c45914e161a08505a00dc54472",
+  "measurement": "Same fixture paths and emitted session text; not tokens, cost, latency, or quality.",
+  "session_context_bytes": {
+    "before": 169,
+    "after": 141
+  },
+  "entrypoint_bytes": {
+    "before": 3124,
+    "after": 2992
+  },
+  "work_skill_bytes": {
+    "before": 1517,
+    "after": 1391
+  },
+  "composed_prompt_chars": {
+    "docsEvaluator": {
+      "before": 3618,
+      "after": 3589
+    },
+    "codeWorker": {
+      "before": 4480,
+      "after": 4401
+    },
+    "uiWorker": {
+      "before": 5464,
+      "after": 5385
+    },
+    "serverWorker": {
+      "before": 4801,
+      "after": 4722
+    }
+  }
+}

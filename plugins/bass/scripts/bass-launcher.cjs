@@ -9,8 +9,8 @@ const installedPluginVersion = pluginVersion();
 const version = pluginCommands.has(args[0])
   ? packageVersion(installedPluginVersion)
   : findVersion(process.cwd()) || packageVersion(installedPluginVersion);
-if (!/^0\.5\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
-  console.error(`BASS 0.5 cannot run project version ${version}. Run the 0.5 launcher with \`upgrade --check\` first.`);
+if (!/^0\.(?:5|6)\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
+  console.error(`BASS plugin cannot run project version ${version}. Run \`upgrade --check\` with the installed launcher first.`);
   process.exit(1);
 }
 

@@ -8,6 +8,7 @@ import { loadRiskApprovals } from "../task/approvalRecord.js";
 import { buildExecutionPlan } from "../execution/planner.js";
 import { BASS_VERSION } from "../version.js";
 import { selectTaskContext } from "./context.js";
+import { preparedReferences } from "../semantic/workflow.js";
 
 export interface ComposeOptions {
   projectRoot: string;
@@ -105,7 +106,7 @@ export function composeInstructions(opts: ComposeOptions): string {
     parts.push({
       label: `task: ${opts.task.frontmatter.id}`,
       source: opts.task.filePath,
-      content: fs.readFileSync(opts.task.filePath, "utf8"),
+      content: taskContent(opts.task, opts.role),
     });
   }
 
@@ -116,6 +117,7 @@ export function composeInstructions(opts: ComposeOptions): string {
     profiles,
     ...(opts.role ? { role: opts.role } : {}),
     maxChars: opts.config.bassYaml.context.max_chars,
+    semanticReferences: opts.task ? preparedReferences(opts.projectRoot, opts.config, opts.task) : [],
   });
   for (const item of selected.loaded) {
     parts.push({
@@ -144,6 +146,30 @@ export function composeInstructions(opts: ComposeOptions): string {
     header,
     ...parts.map((p) => `\n<!-- section: ${p.label} | source: ${p.source} -->\n\n${p.content.trim()}`),
   ].join("\n");
+}
+
+function taskContent(task: TaskFile, role?: string): string {
+  const raw = fs.readFileSync(task.filePath, "utf8");
+  if (role !== "evaluator") return raw;
+  // Preserve raw metadata and custom constraints; omit only known narrative sections.
+  // Keep source slices rather than rebuilding Markdown: nested headings and preambles matter.
+  const frontmatter = raw.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
+  if (!frontmatter) return raw;
+  const body = raw.slice(frontmatter[0].length);
+  // Fenced examples can contain apparent section headings; preserve them verbatim.
+  if (/^ {0,3}(`{3,}|~{3,})/m.test(body)) return raw;
+  const headings = [...body.matchAll(/^##\s+(.+)$/gm)];
+  const narrative = new Set(["Problem", "What we are shipping", "Facts", "Rollback"]);
+  const omitted: string[] = [];
+  const parts = [frontmatter[0], body.slice(0, headings[0]?.index ?? body.length)];
+  for (let i = 0; i < headings.length; i++) {
+    const heading = headings[i]!;
+    const name = heading[1]!.trim();
+    if (narrative.has(name)) omitted.push(name);
+    else parts.push(body.slice(heading.index, headings[i + 1]?.index ?? body.length));
+  }
+  if (omitted.length) parts.push(`\nOmitted narrative: ${omitted.join(", ")}; available in source task.\n`);
+  return parts.join("");
 }
 
 function readPart(label: string, file: string): ComposedPart {

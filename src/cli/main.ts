@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { Command } from "commander";
 import { findProjectRoot, templatesDir } from "../paths.js";
@@ -33,6 +34,7 @@ import { buildTaskGraph, formatTaskGraph } from "../task/taskGraph.js";
 import { appendEvent, currentAttempt, EVENT_KINDS, EVENT_STATUSES, finishAttempt, readEvents, startAttempt } from "../task/events.js";
 import { claimCapability, completeCapability, type CapabilityCompletionStatus } from "../task/capability.js";
 import { buildProjectStatus, formatProjectStatus, watchProjectStatus } from "../task/status.js";
+import { prepareSemantic, verifySemantic, semanticReport, resolveFinding } from "../semantic/workflow.js";
 
 const program = new Command();
 program
@@ -51,7 +53,7 @@ function requireProject(): { projectRoot: string; config: LoadedConfig } {
 
 function requirePreTask(projectRoot: string, config: LoadedConfig, task: TaskFile) {
   const plan = buildExecutionPlan(config, task);
-  const report = preTaskGate(task, { projectRoot, effective: config.effective, executionPlan: plan });
+  const report = preTaskGate(task, { projectRoot, effective: config.effective, executionPlan: plan, config });
   if (!report.passed) throw new Error(formatGateReport(report));
   return plan;
 }
@@ -300,7 +302,7 @@ taskCmd
       console.log(`unchanged: ${taskId} is already DONE`);
       return;
     }
-    const report = preCompleteGate(task, { projectRoot, effective: config.effective, executionPlan: buildExecutionPlan(config, task) });
+    const report = preCompleteGate(task, { projectRoot, effective: config.effective, executionPlan: buildExecutionPlan(config, task), config });
     console.log(formatGateReport(report));
     if (!report.passed) {
       process.exitCode = 1;
@@ -436,6 +438,30 @@ taskCmd
   });
 
 // ---------- gate ----------
+const semanticCmd = program.command("semantic").description("선택형 TypeSafe 판단과 근거 보고서");
+semanticCmd.command("prepare <taskId>").option("--dry-run", "전송 대상과 호출 상한만 표시", false)
+  .action(async (taskId, opts) => {
+    const { projectRoot, config } = requireProject();
+    const result = await prepareSemantic(projectRoot, config, findTask(projectRoot, taskId), Boolean(opts.dryRun));
+    console.log(JSON.stringify(result, null, 2));
+    if ("status" in result && result.status !== "pass") process.exitCode = 1;
+  });
+semanticCmd.command("verify <taskId>").option("--dry-run", "전송 대상과 호출 상한만 표시", false)
+  .action(async (taskId, opts) => {
+    const { projectRoot, config } = requireProject();
+    const result = await verifySemantic(projectRoot, config, findTask(projectRoot, taskId), Boolean(opts.dryRun));
+    console.log(JSON.stringify(result, null, 2));
+    if ("status" in result && result.status !== "pass") process.exitCode = 1;
+  });
+semanticCmd.command("report <taskId>").option("--json", "기계 판독 JSON", false)
+  .action((taskId) => { const { projectRoot } = requireProject(); findTask(projectRoot, taskId); console.log(JSON.stringify(semanticReport(projectRoot, taskId), null, 2)); });
+semanticCmd.command("resolve <taskId> <findingId>").requiredOption("--reason <reason>").requiredOption("--approver <approver>")
+  .action((taskId, findingId, opts) => {
+    const { projectRoot, config } = requireProject();
+    resolveFinding(projectRoot, findTask(projectRoot, taskId), config, findingId, String(opts.reason), String(opts.approver));
+    console.log(`recorded resolution for ${findingId}`);
+  });
+
 const gateCmd = program.command("gate").description("인간 감독 게이트");
 gateCmd
   .command("pre-task <taskId>")
@@ -443,7 +469,7 @@ gateCmd
   .action((taskId) => {
     const { projectRoot, config } = requireProject();
     const task = findTask(projectRoot, taskId);
-    const report = preTaskGate(task, { projectRoot, effective: config.effective, executionPlan: buildExecutionPlan(config, task) });
+    const report = preTaskGate(task, { projectRoot, effective: config.effective, executionPlan: buildExecutionPlan(config, task), config });
     console.log(formatGateReport(report));
     process.exit(report.passed ? 0 : 1);
   });
@@ -453,7 +479,7 @@ gateCmd
   .action((taskId) => {
     const { projectRoot, config } = requireProject();
     const task = findTask(projectRoot, taskId);
-    const report = preReviewGate(task, { projectRoot, effective: config.effective, executionPlan: buildExecutionPlan(config, task) });
+    const report = preReviewGate(task, { projectRoot, effective: config.effective, executionPlan: buildExecutionPlan(config, task), config });
     console.log(formatGateReport(report));
     process.exit(report.passed ? 0 : 1);
   });
@@ -463,7 +489,7 @@ gateCmd
   .action((taskId) => {
     const { projectRoot, config } = requireProject();
     const task = findTask(projectRoot, taskId);
-    const report = preCompleteGate(task, { projectRoot, effective: config.effective, executionPlan: buildExecutionPlan(config, task) });
+    const report = preCompleteGate(task, { projectRoot, effective: config.effective, executionPlan: buildExecutionPlan(config, task), config });
     console.log(formatGateReport(report));
     process.exit(report.passed ? 0 : 1);
   });
@@ -796,7 +822,8 @@ program
   .description("연결 상태와 선택 capability의 실제 호스트 상태 검사")
   .option("--capabilities", "capability 상태만 자세히 표시", false)
   .option("--host <host>", "codex | claude | all (기본: primary host)")
-  .action((opts) => {
+  .option("--semantic-api", "TypeSafe 모델 목록으로 인증을 실제 확인", false)
+  .action(async (opts) => {
     const { projectRoot, config } = requireProject();
     const hosts = resolveDoctorHosts(config, opts.host ? String(opts.host) : undefined);
     const strictActivation = opts.host === "all";
@@ -804,9 +831,29 @@ program
       host,
       allowGenericEnv: !strictActivation,
     }));
+    if (config.bassYaml.semantic.mode === "enforce") {
+      const skillInstalled = fs.existsSync(path.join(projectRoot, ".agents", "skills", "typesafe-ai", "SKILL.md"))
+        || fs.existsSync(path.join(os.homedir(), ".codex", "skills", "typesafe-ai", "SKILL.md"))
+        || fs.existsSync(path.join(os.homedir(), ".claude", "skills", "typesafe-ai", "SKILL.md"));
+      console.log(`  [${skillInstalled ? "PASS" : "WARN"}] semantic-skill — ${skillInstalled ? "installed" : "not found; CLI API integration works independently"}`);
+      console.log(`  [${process.env["TYPESAFE_API_KEY"] ? "WARN" : "FAIL"}] semantic:typesafe — ${process.env["TYPESAFE_API_KEY"] ? "key present; authentication unverified until first API response" : "TYPESAFE_API_KEY missing"}`);
+      if (!process.env["TYPESAFE_API_KEY"]) process.exitCode = 1;
+      if (opts.semanticApi && process.env["TYPESAFE_API_KEY"]) {
+        try {
+          const response = await fetch("https://api.typesafe.ai/v1/models", {
+            headers: { Authorization: `Bearer ${process.env["TYPESAFE_API_KEY"]}` }, signal: AbortSignal.timeout(10_000),
+          });
+          console.log(`  [${response.ok ? "PASS" : "FAIL"}] semantic-api — HTTP ${response.status}`);
+          if (!response.ok) process.exitCode = 1;
+        } catch (error) {
+          console.log(`  [FAIL] semantic-api — ${error instanceof Error ? error.message : String(error)}`);
+          process.exitCode = 1;
+        }
+      }
+    }
     if (opts.capabilities) {
       console.log(formatCapabilityStatuses(providersForHosts));
-      process.exit(providerFailed(providersForHosts, strictActivation) ? 1 : 0);
+      process.exit(providerFailed(providersForHosts, strictActivation) || process.exitCode === 1 ? 1 : 0);
       return;
     }
     const checks = doctor(projectRoot, config.effective);
@@ -826,7 +873,7 @@ program
           : "PASS";
       console.log(`  [${state}] provider:${provider.host}:${provider.capability} — ${provider.detail}`);
     }
-    process.exit(checks.some((c) => c.status === "fail") || providerFailed(providers, strictActivation) ? 1 : 0);
+    process.exit(checks.some((c) => c.status === "fail") || providerFailed(providers, strictActivation) || process.exitCode === 1 ? 1 : 0);
   });
 
 function providerFailed(statuses: ReturnType<typeof inspectProviders>, strictActivation = false): boolean {

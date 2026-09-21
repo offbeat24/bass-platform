@@ -4,6 +4,7 @@ import type { ExecutionDepth, ExecutionPlan, TaskKind } from "../types.js";
 import type { TaskFile } from "../task/taskFile.js";
 import { listTasks } from "../task/taskFile.js";
 import { buildTaskGraph } from "../task/taskGraph.js";
+import { readStage, semanticGate, stageHash } from "../semantic/workflow.js";
 
 const TASK_KINDS = new Set<TaskKind>(["explore", "delete", "fix", "feature", "refactor", "release"]);
 
@@ -32,6 +33,11 @@ export function buildExecutionPlan(config: LoadedConfig, task?: TaskFile): Execu
   const adapters = config.bassYaml.adapters;
 
   const plan: Omit<ExecutionPlan, "contractVersion" | "planFingerprint"> = {
+    ...(task && config.bassYaml.semantic.mode === "enforce" ? {
+      semanticPrepareHash: semanticGate(config.projectRoot, task, config, "prepare").status === "pass"
+        ? stageHash(readStage(config.projectRoot, task.frontmatter.id, "prepare")!)
+        : "unprepared",
+    } : {}),
     taskKind,
     depth,
     changedSurfaces,
@@ -54,7 +60,7 @@ export function buildExecutionPlan(config: LoadedConfig, task?: TaskFile): Execu
     },
     maxReworkLoops: Math.max(0, loop.maxAttempts - 1),
   };
-  const contractVersion = 1 as const;
+  const contractVersion = config.bassYaml.semantic.mode === "enforce" ? 2 as const : 1 as const;
   const planFingerprint = createHash("sha256")
     .update(stableStringify({ contractVersion, ...plan }))
     .digest("hex");
@@ -114,19 +120,21 @@ function dependsTransitively(
 }
 
 function providerCalls(config: LoadedConfig, task: TaskFile | undefined, maxAgents: number): string[] {
+  if (!task) return [];
   const adapters = config.bassYaml.adapters;
   const requested = new Set((task?.frontmatter.capabilities ?? []).map((item) => item.toLowerCase()));
   const reasons = (task?.frontmatter.risk.reasons ?? []).join(" ").toLowerCase();
   const calls: string[] = [];
-  if (adapters.runner === "prime-agent") calls.push("prime-agent:run");
+  const implementing = inferTaskKind(task) !== "explore";
+  if (adapters.runner === "prime-agent" && implementing) calls.push("prime-agent:run");
   const repeatedLargeRepoExploration = requested.has("graft")
     || requested.has("large-repo-context")
     || /repeated[- ]large[- ]repo[- ]exploration/.test(reasons);
   if (adapters.context_provider === "graft" && repeatedLargeRepoExploration) calls.push("graft:context");
-  if (adapters.workspace_executor !== "host" && maxAgents > 1) {
+  if (implementing && adapters.workspace_executor !== "host" && maxAgents > 1) {
     calls.push(`${adapters.workspace_executor}:workspace`);
   }
-  if (adapters.collaboration_provider === "buzz") calls.push("buzz:events");
+  if (adapters.collaboration_provider === "buzz" && implementing) calls.push("buzz:events");
   return calls;
 }
 
@@ -224,6 +232,7 @@ function capabilityCalls(
   depth: ExecutionDepth,
   surfaces: string[],
 ): string[] {
+  if (!task) return [];
   const selected = config.bassYaml.capabilities;
   const requested = new Set((task?.frontmatter.capabilities ?? []).map((item) => item.toLowerCase()));
   const reasons = (task?.frontmatter.risk.reasons ?? []).join(" ").toLowerCase();
@@ -234,7 +243,10 @@ function capabilityCalls(
     calls.push(`${selected.specification}:seed`);
     if (depth === "hardened") calls.push(`${selected.specification}:semantic-evaluation`);
   }
-  if (selected.simplicity === "ponytail") calls.push(`ponytail:${depth === "fast" ? "lite" : "full"}`);
+  const docsOnly = surfaces.length > 0 && surfaces.every(isDocumentationSurface);
+  const simplicityRelevant = requested.has("simplicity") || requested.has("ponytail")
+    || (inferTaskKind(task) !== "explore" && !docsOnly);
+  if (selected.simplicity === "ponytail" && simplicityRelevant) calls.push(`ponytail:${depth === "fast" ? "lite" : "full"}`);
 
   const uiDirection = requested.has("ui-direction") || requested.has("new-ui") || requested.has("redesign");
   if (surfaces.includes("ui") && uiDirection && selected.ui_direction === "bass") calls.push("bass:ui-direction");
@@ -245,6 +257,10 @@ function capabilityCalls(
 
 function asStrings(value: unknown): string[] {
   return Array.isArray(value) ? value.map(String) : [];
+}
+
+export function isDocumentationSurface(surface: string): boolean {
+  return /^(docs?|documentation)(\/|$)/i.test(surface) || /\.md$/i.test(surface) || /^readme$/i.test(surface);
 }
 
 function unique<T>(values: T[]): T[] {

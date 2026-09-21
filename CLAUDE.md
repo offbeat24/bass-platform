@@ -1,3 +1,3 @@
 <!-- bass:managed:start -->
-Read the BASS managed block in `AGENTS.md`. Use `bass agent guide --json` as the dynamic execution contract. Do not copy the full BASS workflow here.
+Follow the BASS routing in `AGENTS.md`; load the task guide only for implementation. Do not copy the workflow here.
 <!-- bass:managed:end -->

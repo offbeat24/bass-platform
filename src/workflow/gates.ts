@@ -12,6 +12,8 @@ import { inferChangedSurfaces } from "../execution/planner.js";
 import { normalizeEventSummary, readEvents } from "../task/events.js";
 import { capabilityCallId } from "../task/capability.js";
 import { providerForCapabilityCall } from "../project/providerCatalog.js";
+import type { LoadedConfig } from "../config/loader.js";
+import { readStage, semanticGate, semanticReport, stageHash } from "../semantic/workflow.js";
 
 /** CAPTURED 상태에서 ACTIVE로 들어가기 전에 필요한 최소 작업 계약. */
 const CAPTURED_SECTIONS = [
@@ -28,6 +30,7 @@ export interface GateContext {
   projectRoot: string;
   effective: Record<string, unknown>;
   executionPlan?: ExecutionPlan;
+  config?: LoadedConfig;
 }
 
 /**
@@ -119,6 +122,11 @@ export function preTaskGate(task: TaskFile, ctx: GateContext): GateReport {
     });
   }
 
+  if ((ctx.effective["semantic"] as { mode?: string } | undefined)?.mode === "enforce") {
+    const semantic = ctx.config ? semanticGate(ctx.projectRoot, task, ctx.config, "prepare")
+      : { status: "fail" as const, detail: "semantic config missing from gate context" };
+    checks.push({ id: "semantic-prepare", description: "현재 명세 판단 및 보완 완료", ...semantic });
+  }
   return buildReport("pre-task", fm.id, checks, unresolvedApprovals);
 }
 
@@ -147,6 +155,11 @@ export function preReviewGate(task: TaskFile, ctx: GateContext): GateReport {
 export function preCompleteGate(task: TaskFile, ctx: GateContext): GateReport {
   const checks: GateCheck[] = [];
   const fm = task.frontmatter;
+  if ((ctx.effective["semantic"] as { mode?: string } | undefined)?.mode === "enforce") {
+    const semantic = ctx.config ? semanticGate(ctx.projectRoot, task, ctx.config, "verify")
+      : { status: "fail" as const, detail: "semantic config missing from gate context" };
+    checks.push({ id: "semantic-verify", description: "완료 주장과 근거 대조 완료", ...semantic });
+  }
 
   checks.push({
     id: "status-review",
@@ -166,6 +179,20 @@ export function preCompleteGate(task: TaskFile, ctx: GateContext): GateReport {
     return buildReport("pre-complete", fm.id, checks, []);
   }
   checks.push({ id: "run-record", description: "run record 존재 및 스키마 유효", status: "pass" });
+
+  if ((ctx.effective["semantic"] as { mode?: string } | undefined)?.mode === "enforce") {
+    const prepare = readStage(ctx.projectRoot, fm.id, "prepare");
+    const verify = readStage(ctx.projectRoot, fm.id, "verify");
+    const resolutions = semanticReport(ctx.projectRoot, fm.id).resolutions;
+    const valid = record.record_version >= 3 && Boolean(record.semantic)
+      && record.semantic?.prepare_hash === (prepare ? stageHash(prepare) : undefined)
+      && record.semantic?.verify_hash === (verify ? stageHash(verify) : undefined)
+      && JSON.stringify([...(record.semantic?.resolved_findings ?? [])].sort()) === JSON.stringify(resolutions
+        .filter((item) => item.input_hash === prepare?.input_hash || item.input_hash === verify?.input_hash)
+        .map((item) => item.finding_id).sort());
+    checks.push({ id: "semantic-record", description: "Run Record v3가 현재 판단과 해제 기록을 참조한다",
+      status: valid ? "pass" : "fail", detail: valid ? undefined : "semantic hashes or resolutions differ from current stage" });
+  }
 
   if (record.record_version >= 2) {
     const contractIssues: string[] = [];

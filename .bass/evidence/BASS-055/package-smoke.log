@@ -1,0 +1,5 @@
+
+> @offbeat24/bass@0.5.1 smoke:package
+> node scripts/smoke-package.mjs
+
+package smoke PASS: @offbeat24/bass@0.5.1
