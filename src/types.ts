@@ -98,6 +98,7 @@ export interface AliasResolution {
   channel: "stable" | "candidate" | "pinned";
   provider: string;
   model: string;
+  reasoningEffort?: string;
   capabilities: Capability[];
   /** fallback 체인을 거쳤다면 그 경로 */
   fallbackChain: string[];

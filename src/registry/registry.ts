@@ -7,6 +7,7 @@ import { registryPath } from "../paths.js";
 const mappingSchema = z.object({
   provider: z.string(),
   model: z.string(),
+  reasoning_effort: z.string().trim().min(1).optional(),
 });
 
 const aliasSchema = z.object({
@@ -91,6 +92,7 @@ export function resolveAlias(
         channel: usedChannel,
         provider: mapping.provider,
         model: mapping.model,
+        ...(mapping.reasoning_effort ? { reasoningEffort: mapping.reasoning_effort } : {}),
         capabilities: caps,
         fallbackChain: chain.length > 1 ? chain : [],
         ...(channel === "candidate" && !entry.candidate

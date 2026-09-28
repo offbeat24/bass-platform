@@ -36,7 +36,7 @@ The plugin launcher resolves from each `SKILL.md`, reads `bass.yaml`, and runs n
 
 `buildExecutionPlan` derives a ceiling from task kind, risk, changed surfaces, loop overrides, selected providers, profile, and evaluator metadata. `contractVersion` identifies the normalized schema and `planFingerprint` is a SHA-256 over the host-neutral plan. Host-local installation, authentication, model, token, duration, and prose do not enter the fingerprint.
 
-The default is one active worker. Parallel capacity appears only for Hardened tasks with literal owned paths; the graph rejects cycles, missing dependencies, and overlapping independent ownership.
+The default is one active worker. Standard and Hardened tasks can use parallel capacity when they declare literal owned paths and the graph contains another unblocked, independent task with owned paths. The configured `max_agents` remains the ceiling; the graph rejects cycles, missing dependencies, and overlapping independent ownership.
 
 ## External providers
 

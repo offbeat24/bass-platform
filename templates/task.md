@@ -31,6 +31,8 @@ loop:
   required_evidence: []
 ---
 
+<!-- Eligible Fast, low-risk work can keep only Problem, shipping, acceptance, and verification populated. Fill exclusions, context, task-level rollback, and custom loop fields when they affect the task. Implementation tasks need literal Allowed scope paths; read-only exploration can omit them. -->
+
 ## Problem
 
 ## What we are shipping

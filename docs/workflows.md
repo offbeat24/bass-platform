@@ -8,7 +8,9 @@ Recovery states are `BLOCKED`, `NEEDS_DECISION`, `NEEDS_EXPERT`, `FAILED`, `ROLL
 
 ## Shape and capture
 
-Start with PRODUCT, TECH, and DESIGN. Use `specs/<feature>.md` only for a large cross-surface outcome. A task must state shipping and excluded scope, acceptance, relevant context, allowed/forbidden paths, rollback, dependencies, ownership, stop conditions, and required evidence.
+Start with PRODUCT, TECH, and DESIGN. Use `specs/<feature>.md` only for a large cross-surface outcome. Every task needs a clear problem, shipping outcome, acceptance criteria, and verification. When BASS computes an eligible Fast plan (low risk, at most two changed surfaces, no policy approval; not delete/release), those four sections are enough. Implementation tasks also name literal `Allowed scope` paths before starting. Standard/Hardened plans, delete/release tasks, and tasks needing a policy approval retain the full capture contract: excluded scope, relevant context, and a task-level rollback plan. Read-only exploration can omit path scope; if it changes project files, add allowed paths before review.
+
+Add forbidden paths, dependencies, owned paths, custom stop conditions, and task-specific evidence only when they constrain the work; the execution plan supplies general loop limits and stop conditions. A Fast task may omit its task-level rollback narrative, but its completion record still states the recovery method or that no special rollback was needed.
 
 `bass task graph` blocks missing dependencies, cycles, and independent owned-path overlap before work starts.
 

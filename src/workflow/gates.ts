@@ -8,14 +8,22 @@ import { findRequiredApprovals } from "../policy/policyEngine.js";
 import { loadRiskApprovals } from "../task/approvalRecord.js";
 import { normalizeWorkflowState } from "./stateMachine.js";
 import { buildTaskGraph } from "../task/taskGraph.js";
-import { inferChangedSurfaces } from "../execution/planner.js";
+import { inferChangedSurfaces, inferTaskKind } from "../execution/planner.js";
 import { normalizeEventSummary, readEvents } from "../task/events.js";
 import { capabilityCallId } from "../task/capability.js";
 import { providerForCapabilityCall } from "../project/providerCatalog.js";
 import type { LoadedConfig } from "../config/loader.js";
 import { readStage, semanticGate, semanticReport, stageHash } from "../semantic/workflow.js";
 
-/** CAPTURED 상태에서 ACTIVE로 들어가기 전에 필요한 최소 작업 계약. */
+/** Fast·저위험 작업은 결과와 검증에 집중하는 최소 계약을 사용한다. */
+const FAST_CAPTURED_SECTIONS = [
+  "Problem",
+  "What we are shipping",
+  "Acceptance criteria",
+  "Verification",
+] as const;
+
+/** Standard/Hardened와 정책 승인이 필요한 작업은 전체 시작 계약을 유지한다. */
 const CAPTURED_SECTIONS = [
   "Problem",
   "What we are shipping",
@@ -25,6 +33,18 @@ const CAPTURED_SECTIONS = [
   "Verification",
   "Rollback",
 ] as const;
+
+export function requiredCaptureSections(task: TaskFile, plan?: ExecutionPlan): readonly string[] {
+  const taskKind = plan?.taskKind ?? inferTaskKind(task);
+  const lowRiskFast = task.frontmatter.risk.level === "low"
+    && plan?.depth === "fast"
+    && taskKind !== "delete"
+    && taskKind !== "release"
+    && plan.changedSurfaces.length <= 2
+    && findRequiredApprovals(task.frontmatter).length === 0;
+  const base = lowRiskFast ? FAST_CAPTURED_SECTIONS : CAPTURED_SECTIONS;
+  return taskKind === "explore" ? base : [...base, "Allowed scope"];
+}
 
 export interface GateContext {
   projectRoot: string;
@@ -48,7 +68,7 @@ export function preTaskGate(task: TaskFile, ctx: GateContext): GateReport {
     detail: `current status: ${fm.status}`,
   });
 
-  for (const c of checkSections(task, CAPTURED_SECTIONS)) {
+  for (const c of checkSections(task, requiredCaptureSections(task, ctx.executionPlan))) {
     checks.push({
       id: `section:${c.section}`,
       description: `"${c.section}" 섹션 존재 및 내용`,
@@ -468,7 +488,7 @@ function evaluateScope(
   const recorded = uniquePaths(recordedFiles);
   const actual = uniquePaths(actualFiles);
   const issues: string[] = [];
-  if (allowed.length === 0) issues.push("Allowed scope has no literal project-relative paths");
+  if (actual.length > 0 && allowed.length === 0) issues.push("Allowed scope has no literal project-relative paths");
   if (!samePaths(recorded, actual)) issues.push(`files_changed and scope.actual_files differ`);
   for (const file of actual) {
     if (allowed.length > 0 && !allowed.some((scope) => pathMatches(file, scope))) issues.push(`outside allowed scope: ${file}`);
