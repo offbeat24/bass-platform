@@ -21,10 +21,7 @@ aliases:
     capabilities: [deep-reasoning, tool-use, long-context]
     stable:
       provider: openai
-      model: gpt-5.6
-    candidate:
-      provider: anthropic
-      model: claude-4.5-opus
+      model: gpt-6-astra
     fallback: balanced
 
   balanced:
@@ -32,10 +29,7 @@ aliases:
     capabilities: [tool-use, long-context]
     stable:
       provider: openai
-      model: gpt-5.5
-    candidate:
-      provider: anthropic
-      model: claude-4.5-sonnet
+      model: gpt-6-sol
     fallback: fast-reliable
 
   fast-reliable:
@@ -43,7 +37,8 @@ aliases:
     capabilities: [fast, cheap, tool-use]
     stable:
       provider: openai
-      model: gpt-5.4
+      model: gpt-6-luna
+      reasoning_effort: max
     fallback: null
 
   auto:
@@ -51,8 +46,8 @@ aliases:
     capabilities: [tool-use]
     stable:
       provider: openai
-      model: gpt-5.5
+      model: gpt-6-sol
     fallback: fast-reliable
 
 # 명시적 pinning: 프로젝트/작업이 특정 모델을 고정해야 할 때만 사용.
-# bass.yaml 에서 models.<role>: "pin:openai/gpt-5.6" 형식으로 지정한다.
+# bass.yaml 에서 models.<role>: "pin:openai/gpt-6-sol" 형식으로 지정한다.

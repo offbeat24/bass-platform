@@ -1,18 +1,42 @@
-# BASS 0.6.0 — 선택형 TypeSafe 판단
+# BASS 0.7.0 — 작업 계약과 검증 기준 개선
 
-`semantic.mode: enforce`인 프로젝트는 작업 명세, 관련 문맥, 완료 주장과 텍스트 근거를 TypeSafe Jev로 평가한다. 기본 모드는 `off`이며 외부 요청을 만들지 않는다. Codex와 Claude는 같은 저장된 판단을 읽고, 판단이 바뀌는 입력은 해시로 식별한다. 기존 필수 검증과 최종 사람 승인은 유지된다.
+BASS 0.7.0은 `v0.6.0` 이후의 작업 계약·모델 라우팅·material UI 검증 변경을 묶는다.
 
-이번 릴리스는 BASS-055의 조건부 지침 라우팅도 포함한다. 기존 BASS 0.5.x 작업·Run Record는 읽을 수 있으며 `bass upgrade --check`에서 변경 내용을 확인한 후 `--apply`로 관리 영역과 버전을 갱신한다. 활성화한 프로젝트는 Run Record v3에 준비·근거 판단 해시와 해결 기록을 포함한다.
+## 주요 변경
 
-TypeSafe 사용에는 별도 `TYPESAFE_API_KEY`가 필요하고 API 호출 비용이 발생한다. 현재 공식 모델 단가는 입력 100만 토큰당 $0.042이다. API 키는 환경변수에 두고 저장소나 대화에 기록하지 않는다. 준비, 증거 목록, 동작과 제한은 [Semantic guide](docs/semantic.md)에 정리했다.
+- **작업 계약을 위험도와 실행 깊이에 맞춘다.** 정책 승인이 필요하지 않고, 삭제·릴리스가 아니며, 변경 표면이 2개 이하인 저위험 Fast 작업은 Problem, 제공 범위, 수락 기준, 검증을 우선 작성한다. 필요한 경우에만 제외 범위·문맥·작업별 롤백 설명을 추가한다. Standard/Hardened 및 정책 승인이 필요한 작업은 전체 계약을 유지한다. 구현 작업은 literal `Allowed scope` 경로를 계속 요구한다.
+- **병렬 실행과 모델 라우팅 권고를 갱신한다.** 독립 작업과 소유 경로가 있는 Standard/Hardened 계획은 사용 가능한 병렬 실행을 고려한다. 기본 alias는 GPT-6 Astra/Sol/Luna 계열을 사용하며, fast-reliable은 Luna와 `max` reasoning effort를 권고한다. 설정된 reasoning effort도 라우팅 결과에 함께 기록한다.
+- **material UI의 콘솔 오류를 변경 전후 비교한다.** 렌더링·viewport·스크린샷 근거는 계속 필요하다. 오류가 남으면 동일 조건의 변경 전후 캡처, 비밀값을 제거해 정규화한 SHA-256 서명(발생 건마다 하나), evidence manifest 경로를 기록한다. 기준선에 있던 오류만 같은 횟수 이하로 남으면 경고로 리뷰를 진행할 수 있고, 새 오류·증가·불완전한 비교 근거는 게이트 실패다.
 
-```bash
-npm install -g @offbeat24/bass@0.6.0
-bass upgrade --check
-bass upgrade --apply
-```
+## 호환성과 적용
 
-출시 전 실모델 평가와 게시 검증 결과는 BASS-056 근거에 기록한다. 검증이 끝나기 전에는 이 문서를 출시 완료 주장으로 해석하지 않는다.
+- 콘솔 오류가 0인 기존 Run Record는 `console_errors: 0`으로 계속 통과한다. Run Record 스키마에 새 비교 필드는 선택 사항이지만, material UI 완료 시 오류가 남아 있으면 변경 전후 비교 근거가 필요하다.
+- 새 설정이나 외부 서비스는 필요하지 않다. 모델 실행은 계속 호스트가 담당하며, BASS는 alias와 reasoning effort를 권고한다.
+
+## 검증 상태
+
+로컬 typecheck, build, Codex plugin validation, Claude plugin validation은 통과했다. 테스트 스위트는 실행하지 않았다. GitHub Release와 패키지 배포는 별도 승인 및 완료 처리를 기다린다.
+
+---
+
+# BASS 0.6.0 — 작업 명세와 완료 근거를 함께 점검
+
+BASS 0.6.0은 TypeSafe Jev를 이용한 선택형 의미 판단을 추가한다. 활성화하면 작업 시작 전에 명세의 모순과 검증 누락을 찾고, 작업에 필요한 문서 섹션을 추천하며, 리뷰 전에 완료 주장과 텍스트 근거를 대조한다. 판단 결과는 BASS 게이트에 반영된다. 기존 필수 검사와 사람의 최종 승인은 그대로 적용된다.
+
+## 주요 변경
+
+- `bass semantic prepare <task-id>`가 수락 기준의 관찰 가능성, 제공·제외 범위의 충돌, 검증 계획의 누락을 점검한다. 관련 문서 후보에서 최대 5개 섹션을 추가 문맥으로 고르며, 명시 문맥과 기존 문자 예산을 우선한다.
+- `bass semantic verify <task-id>`가 수락 기준별 완료 주장과 근거 파일의 인용 부분을 대조한다. 근거 부족·모순·불확실한 판단은 리뷰 진입을 보류한다. `report --json`으로 판단·출처·비용을 확인하고, `resolve`로 특정 오탐에 대한 사람의 판단을 기록할 수 있다.
+- 동일한 입력의 판단을 재사용하고, 입력·문서·근거가 바뀌면 오래된 결과와 해제 기록을 거부한다. Codex와 Claude는 같은 프로젝트에 저장된 판단을 사용한다.
+- BASS-055의 조건부 지침 라우팅을 포함한다. 프로젝트와 작업에 관련된 지침만 전달하며, 필요한 필수 문맥은 유지한다.
+
+## 적용과 호환성
+
+기본 설정은 `semantic.mode: off`다. 기존 프로젝트는 TypeSafe API 키나 추가 비용 없이 동작한다. 사용하려면 `bass.yaml`에서 `semantic.mode: enforce`로 바꾸고 실행 환경에 `TYPESAFE_API_KEY`를 설정한다. 활성화된 작업의 판단에는 API 비용이 발생하며, 프로젝트별 호출 예산을 설정할 수 있다. `prepare`와 `verify`의 `--dry-run`은 전송 대상과 호출 상한을 먼저 보여준다.
+
+0.5.x 프로젝트는 `bass upgrade --check`로 변경을 확인한 뒤 `bass upgrade --apply`로 갱신할 수 있다. 이전 작업과 Run Record는 계속 읽으며, 의미 판단을 활성화한 새 작업은 Run Record v3에 판단 해시와 사람의 해제 기록을 연결한다. 자세한 설정과 근거 목록 형식은 [TypeSafe 사용 안내](docs/semantic.md)를 참고한다.
+
+현재 이 문서는 **출시 후보 문안**이다. 로컬 229개 테스트와 Ubuntu·macOS·Windows CI는 통과했지만, 합의한 120개 한국어·영어 실모델 평가와 게시 패키지 설치 검증은 아직 완료되지 않았다. 안정판 출시는 해당 결과와 사람의 최종 인수 판단 후에 진행한다.
 
 ---
 

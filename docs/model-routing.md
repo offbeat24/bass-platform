@@ -42,6 +42,8 @@
 
 Evaluator는 기계 검증 결과를 판정하고 구현을 하지 않으므로 빠르고 신뢰 가능한 alias를 사용한다. 프로젝트에는 실제 모델명을 복제하지 않는다.
 
+레지스트리 매핑에 `reasoning_effort`가 설정되면 라우팅 권고 결과에 함께 표시한다. BASS는 모델을 직접 호출하지 않으므로 실행 주체가 권고된 모델과 reasoning effort 를 적용한다.
+
 ## 비용 판단 기준 (§9)
 
 겉보기 난이도나 토큰 단가만으로 모델을 제한하지 않는다.
@@ -52,8 +54,8 @@ Expected total cost =
   + regression cost + recovery cost + trust loss
 ```
 
-## 초기 매핑 상태
+## 현재 매핑 상태
 
-현재 stable 매핑(gpt-5.x)은 COL 핀에서 가져온 **제안값**이며, candidate 로
-등록된 Claude 계열과의 비교 평가 전까지는 확정이 아니다.
-갱신은 `registry/models.yaml` 에서만 한다.
+stable 매핑은 현재 기본 선택값으로 유지한다. candidate 는 표준 평가에서 stable 과
+품질·비용·지연·도구 사용·지시 준수를 비교하고 인간 승인받기 전까지 stable 을
+대체하지 않는다. 매핑의 source of truth 는 `registry/models.yaml` 이다.

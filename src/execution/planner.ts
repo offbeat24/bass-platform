@@ -88,7 +88,7 @@ function parallelAgentLimit(
   task: TaskFile | undefined,
   depth: ExecutionDepth,
 ): number {
-  if (depth !== "hardened" || !task?.frontmatter.coordination.owned_paths.length) return 1;
+  if (depth === "fast" || !task?.frontmatter.coordination.owned_paths.length) return 1;
   const tasks = listTasks(config.projectRoot);
   const graph = buildTaskGraph(tasks);
   if (!graph.valid) return 1;
@@ -162,7 +162,7 @@ function loopBudget(
   };
 }
 
-function inferTaskKind(task?: TaskFile): TaskKind {
+export function inferTaskKind(task?: TaskFile): TaskKind {
   const raw = task?.frontmatter.type?.toLowerCase() as TaskKind | undefined;
   if (raw && TASK_KINDS.has(raw)) return raw;
   const text = `${task?.frontmatter.title ?? ""} ${task?.sections.get("What we are shipping") ?? ""}`.toLowerCase();

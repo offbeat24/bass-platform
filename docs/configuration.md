@@ -16,7 +16,7 @@ execution:
   loop:
     no_progress_limit: 1
   parallel:
-    max_agents: 2          # default capacity; actual plan remains single unless Hardened + owned paths
+    max_agents: 2          # capacity ceiling; Standard/Hardened need owned paths and another independent task
 
 context:
   max_chars: 12000

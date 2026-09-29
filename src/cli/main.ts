@@ -8,7 +8,7 @@ import { loadConfig, explainConfig, parseSetArgs, type LoadedConfig } from "../c
 import { loadRegistry, resolveAlias } from "../registry/registry.js";
 import { routeTask } from "../router/router.js";
 import { findTask, listTasks, checkSections, TASK_SECTIONS, taskDirectory, transitionTask, type TaskFile } from "../task/taskFile.js";
-import { preTaskGate, preReviewGate, preCompleteGate, formatGateReport } from "../workflow/gates.js";
+import { preTaskGate, preReviewGate, preCompleteGate, formatGateReport, requiredCaptureSections } from "../workflow/gates.js";
 import { allowedTransitions } from "../workflow/stateMachine.js";
 import { planEvaluators, runEvaluators, formatEvaluatorResults, selectEvaluatorPlans } from "../evaluators/runner.js";
 import { validateFindingsFile, shouldStopIteration, findingsFileSchema } from "../critics/findings.js";
@@ -414,7 +414,7 @@ taskCmd
   .command("validate [taskId]")
   .description("작업 파일 스키마·섹션 검증 (미지정 시 전체)")
   .action((taskId) => {
-    const { projectRoot } = requireProject();
+    const { projectRoot, config } = requireProject();
     const tasks = taskId ? [findTask(projectRoot, taskId)] : listTasks(projectRoot);
     if (tasks.length === 0) console.log("no tasks found under .bass/tasks/ or legacy tasks/");
     let failed = false;
@@ -427,7 +427,7 @@ taskCmd
         console.log(`  missing sections: ${missing.map((m) => m.section).join(", ")}`);
       }
       if (status === "CAPTURED") {
-        const empty = checkSections(t, ["Problem", "What we are shipping", "What we are not shipping", "Acceptance criteria"]).filter((c) => !c.nonEmpty);
+        const empty = checkSections(t, requiredCaptureSections(t, buildExecutionPlan(config, t))).filter((c) => !c.nonEmpty);
         if (empty.length > 0) {
           failed = true;
           console.log(`  CAPTURED 위반: 비어 있는 필수 섹션 — ${empty.map((e) => e.section).join(", ")}`);

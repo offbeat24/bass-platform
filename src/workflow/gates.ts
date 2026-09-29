@@ -3,19 +3,27 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import type { ExecutionPlan, GateCheck, GateReport } from "../types.js";
 import { checkSections, listTasks, TASK_SECTIONS, type TaskFile } from "../task/taskFile.js";
-import { loadRunRecord, verifyContextSources, verifyEvidenceEntries } from "../task/runRecord.js";
+import { loadRunRecord, verifyContextSources, verifyEvidenceEntries, type RunRecord } from "../task/runRecord.js";
 import { findRequiredApprovals } from "../policy/policyEngine.js";
 import { loadRiskApprovals } from "../task/approvalRecord.js";
 import { normalizeWorkflowState } from "./stateMachine.js";
 import { buildTaskGraph } from "../task/taskGraph.js";
-import { inferChangedSurfaces } from "../execution/planner.js";
+import { inferChangedSurfaces, inferTaskKind } from "../execution/planner.js";
 import { normalizeEventSummary, readEvents } from "../task/events.js";
 import { capabilityCallId } from "../task/capability.js";
 import { providerForCapabilityCall } from "../project/providerCatalog.js";
 import type { LoadedConfig } from "../config/loader.js";
 import { readStage, semanticGate, semanticReport, stageHash } from "../semantic/workflow.js";
 
-/** CAPTURED 상태에서 ACTIVE로 들어가기 전에 필요한 최소 작업 계약. */
+/** Fast·저위험 작업은 결과와 검증에 집중하는 최소 계약을 사용한다. */
+const FAST_CAPTURED_SECTIONS = [
+  "Problem",
+  "What we are shipping",
+  "Acceptance criteria",
+  "Verification",
+] as const;
+
+/** Standard/Hardened와 정책 승인이 필요한 작업은 전체 시작 계약을 유지한다. */
 const CAPTURED_SECTIONS = [
   "Problem",
   "What we are shipping",
@@ -26,11 +34,83 @@ const CAPTURED_SECTIONS = [
   "Rollback",
 ] as const;
 
+export function requiredCaptureSections(task: TaskFile, plan?: ExecutionPlan): readonly string[] {
+  const taskKind = plan?.taskKind ?? inferTaskKind(task);
+  const lowRiskFast = task.frontmatter.risk.level === "low"
+    && plan?.depth === "fast"
+    && taskKind !== "delete"
+    && taskKind !== "release"
+    && plan.changedSurfaces.length <= 2
+    && findRequiredApprovals(task.frontmatter).length === 0;
+  const base = lowRiskFast ? FAST_CAPTURED_SECTIONS : CAPTURED_SECTIONS;
+  return taskKind === "explore" ? base : [...base, "Allowed scope"];
+}
+
 export interface GateContext {
   projectRoot: string;
   effective: Record<string, unknown>;
   executionPlan?: ExecutionPlan;
   config?: LoadedConfig;
+}
+
+function evaluateConsoleErrors(
+  design: RunRecord["design"],
+  evidencePaths: ReadonlySet<string>,
+): { status: "pass" | "warn" | "fail"; detail: string } {
+  const count = design?.console_errors;
+  if (!design || count === undefined) return { status: "fail", detail: "console_errors=missing" };
+
+  const comparison = design.console_error_comparison;
+  if (!comparison) {
+    return count === 0
+      ? { status: "pass", detail: "console_errors=0" }
+      : { status: "fail", detail: `console_errors=${count}; before/after comparison evidence missing` };
+  }
+
+  const missingPaths = [
+    ...comparison.before_evidence_paths,
+    ...comparison.after_evidence_paths,
+  ].filter((evidencePath) => !evidencePaths.has(evidencePath));
+  if (missingPaths.length > 0) {
+    return { status: "fail", detail: `console comparison evidence not listed: ${missingPaths.join(", ")}` };
+  }
+  if (comparison.after_signatures.length !== count) {
+    return {
+      status: "fail",
+      detail: `console_errors=${count}; after_signatures=${comparison.after_signatures.length}`,
+    };
+  }
+
+  const baselineCounts = new Map<string, number>();
+  for (const signature of comparison.before_signatures) {
+    baselineCounts.set(signature, (baselineCounts.get(signature) ?? 0) + 1);
+  }
+  const finalCounts = new Map<string, number>();
+  const newOrIncreased = new Set<string>();
+  for (const signature of comparison.after_signatures) {
+    const occurrences = (finalCounts.get(signature) ?? 0) + 1;
+    finalCounts.set(signature, occurrences);
+    if (occurrences > (baselineCounts.get(signature) ?? 0)) newOrIncreased.add(signature);
+  }
+
+  if (newOrIncreased.size > 0) {
+    return {
+      status: "fail",
+      detail: `console_errors=${count}; new_or_increased_signatures=${newOrIncreased.size}`,
+    };
+  }
+  if (count === 0) {
+    return {
+      status: "pass",
+      detail: comparison.before_signatures.length > 0
+        ? `console_errors=0; resolved_baseline_errors=${comparison.before_signatures.length}`
+        : "console_errors=0",
+    };
+  }
+  return {
+    status: "warn",
+    detail: `console_errors=${count}; unchanged_baseline_errors=${count}`,
+  };
 }
 
 /**
@@ -48,7 +128,7 @@ export function preTaskGate(task: TaskFile, ctx: GateContext): GateReport {
     detail: `current status: ${fm.status}`,
   });
 
-  for (const c of checkSections(task, CAPTURED_SECTIONS)) {
+  for (const c of checkSections(task, requiredCaptureSections(task, ctx.executionPlan))) {
     checks.push({
       id: `section:${c.section}`,
       description: `"${c.section}" 섹션 존재 및 내용`,
@@ -408,20 +488,26 @@ export function preCompleteGate(task: TaskFile, ctx: GateContext): GateReport {
     const design = record.design;
     const evidencePaths = new Set(record.evidence.map((entry) => entry.path));
     const missingPaths = design?.evidence_paths.filter((evidencePath) => !evidencePaths.has(evidencePath)) ?? [];
-    const valid = Boolean(
+    const visualValid = Boolean(
       design?.rendered_verification
       && design.evidence_paths.length > 0
       && design.viewports.length > 0
-      && design.console_errors === 0
       && missingPaths.length === 0,
     );
+    const consoleErrors = evaluateConsoleErrors(design, evidencePaths);
     checks.push({
       id: "design-rendered-verification",
       description: "material UI의 screenshot, viewport, console evidence가 유효하다",
-      status: valid ? "pass" : "fail",
-      detail: valid
-        ? `${design!.viewports.join(", ")}; evidence=${design!.evidence_paths.length}; console_errors=0`
-        : `rendered=${design?.rendered_verification ?? false}; evidence=${design?.evidence_paths.length ?? 0}; viewports=${design?.viewports.length ?? 0}; console_errors=${design?.console_errors ?? "missing"}${missingPaths.length ? `; unlisted=${missingPaths.join(",")}` : ""}`,
+      status: !visualValid || consoleErrors.status === "fail"
+        ? "fail"
+        : consoleErrors.status,
+      detail: [
+        `rendered=${design?.rendered_verification ?? false}`,
+        `evidence=${design?.evidence_paths.length ?? 0}`,
+        `viewports=${design?.viewports.join(", ") || "missing"}`,
+        consoleErrors.detail,
+        missingPaths.length ? `unlisted=${missingPaths.join(",")}` : undefined,
+      ].filter(Boolean).join("; "),
     });
   } else if (record.record_version === 0 && designProfile) {
     checks.push({
@@ -468,7 +554,7 @@ function evaluateScope(
   const recorded = uniquePaths(recordedFiles);
   const actual = uniquePaths(actualFiles);
   const issues: string[] = [];
-  if (allowed.length === 0) issues.push("Allowed scope has no literal project-relative paths");
+  if (actual.length > 0 && allowed.length === 0) issues.push("Allowed scope has no literal project-relative paths");
   if (!samePaths(recorded, actual)) issues.push(`files_changed and scope.actual_files differ`);
   for (const file of actual) {
     if (allowed.length > 0 && !allowed.some((scope) => pathMatches(file, scope))) issues.push(`outside allowed scope: ${file}`);

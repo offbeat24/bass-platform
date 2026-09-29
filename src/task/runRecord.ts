@@ -106,6 +106,13 @@ export const runRecordSchema = z.object({
       evidence_paths: z.array(z.string()).default([]),
       viewports: z.array(z.string()).default([]),
       console_errors: z.number().int().nonnegative().optional(),
+      console_error_comparison: z.object({
+        conditions: z.string().trim().min(1).max(1000),
+        before_signatures: z.array(sha256Schema),
+        after_signatures: z.array(sha256Schema),
+        before_evidence_paths: z.array(z.string().min(1)).min(1),
+        after_evidence_paths: z.array(z.string().min(1)).min(1),
+      }).optional(),
     })
     .optional(),
   attempts: z
