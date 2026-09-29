@@ -36,6 +36,7 @@ function fillTaskContract(projectRoot, taskId) {
     "What we are shipping": "A completed package smoke attempt.",
     "What we are not shipping": "Repository feature changes.",
     "Relevant context": "package.json",
+    "Allowed scope": `.bass/tasks/${taskId}.md`,
     "Acceptance criteria": "The packaged CLI completes one bounded attempt.",
     Verification: "Package smoke assertions pass.",
     Rollback: "Delete the temporary smoke repository.",
@@ -151,6 +152,9 @@ try {
   assert.match(runBass(["doctor", "--capabilities", "--host", "all"], providerRepo, providerEnv), /\[CODEX\]\[ACTUAL-PLUGIN\]/);
   runBass(["task", "new", "PKG-2", "--title", "External provider task"], providerRepo, providerEnv);
   fillTaskContract(providerRepo, "PKG-2");
+  const providerTask = path.join(providerRepo, ".bass", "tasks", "PKG-2.md");
+  const providerTaskText = fs.readFileSync(providerTask, "utf8").replace("\nhuman:\n", "\ncapabilities:\n  - simplicity\nhuman:\n");
+  fs.writeFileSync(providerTask, providerTaskText, "utf8");
   runBass(["task", "transition", "PKG-2", "ACTIVE"], providerRepo, providerEnv);
   runBass(["task", "attempt", "start", "PKG-2"], providerRepo, providerEnv);
   const claimed = JSON.parse(runBass([
