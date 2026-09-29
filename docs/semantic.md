@@ -1,6 +1,6 @@
 # Optional TypeSafe judgments
 
-BASS 0.6.0 keeps `semantic.mode: off` by default. To use Jev, add this to a project's `bass.yaml` after upgrading it to 0.6.0:
+BASS 0.7.0 keeps `semantic.mode: off` by default. To use Jev, add this to a project's `bass.yaml` after upgrading it to BASS 0.6.0 or newer:
 
 ```yaml
 semantic:

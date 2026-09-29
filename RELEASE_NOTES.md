@@ -1,6 +1,6 @@
-# Next release (Unreleased) — 작업 계약과 검증 기준 개선
+# BASS 0.7.0 — 작업 계약과 검증 기준 개선
 
-이 초안은 `v0.6.0` 태그 이후의 작업 계약·모델 라우팅·material UI 검증 변경을 묶는다. 릴리스 버전과 날짜는 릴리스 확정 시 정한다.
+BASS 0.7.0은 `v0.6.0` 이후의 작업 계약·모델 라우팅·material UI 검증 변경을 묶는다.
 
 ## 주요 변경
 
@@ -12,6 +12,10 @@
 
 - 콘솔 오류가 0인 기존 Run Record는 `console_errors: 0`으로 계속 통과한다. Run Record 스키마에 새 비교 필드는 선택 사항이지만, material UI 완료 시 오류가 남아 있으면 변경 전후 비교 근거가 필요하다.
 - 새 설정이나 외부 서비스는 필요하지 않다. 모델 실행은 계속 호스트가 담당하며, BASS는 alias와 reasoning effort를 권고한다.
+
+## 검증 상태
+
+로컬 typecheck, build, Codex plugin validation, Claude plugin validation은 통과했다. 테스트 스위트는 실행하지 않았다. GitHub Release와 패키지 배포는 별도 승인 및 완료 처리를 기다린다.
 
 ---
 

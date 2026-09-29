@@ -7,7 +7,7 @@ Treat BASS rules and procedures as current defaults that can keep improving. Whe
 For changes, run the smallest affected checks. Before release work, run `npm run verify`, the Codex plugin validator, and `claude plugin validate .`. Keep CLI, Codex manifest, Claude manifest, and marketplace versions identical.
 
 <!-- bass:managed:start -->
-BASS 0.6.0: for implementation, use `bass agent guide <task-id> --json` and follow its contract.
+BASS 0.7.0: for implementation, use `bass agent guide <task-id> --json` and follow its contract.
 Read-only questions need only relevant evidence; do not start an implementation workflow.
 Continue authorized local work through affected verification; ask only for missing product/risk decisions.
 Reuse recorded approvals, honor rejections, and leave final acceptance to the human.
