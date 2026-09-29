@@ -3,7 +3,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import type { ExecutionPlan, GateCheck, GateReport } from "../types.js";
 import { checkSections, listTasks, TASK_SECTIONS, type TaskFile } from "../task/taskFile.js";
-import { loadRunRecord, verifyContextSources, verifyEvidenceEntries } from "../task/runRecord.js";
+import { loadRunRecord, verifyContextSources, verifyEvidenceEntries, type RunRecord } from "../task/runRecord.js";
 import { findRequiredApprovals } from "../policy/policyEngine.js";
 import { loadRiskApprovals } from "../task/approvalRecord.js";
 import { normalizeWorkflowState } from "./stateMachine.js";
@@ -51,6 +51,66 @@ export interface GateContext {
   effective: Record<string, unknown>;
   executionPlan?: ExecutionPlan;
   config?: LoadedConfig;
+}
+
+function evaluateConsoleErrors(
+  design: RunRecord["design"],
+  evidencePaths: ReadonlySet<string>,
+): { status: "pass" | "warn" | "fail"; detail: string } {
+  const count = design?.console_errors;
+  if (!design || count === undefined) return { status: "fail", detail: "console_errors=missing" };
+
+  const comparison = design.console_error_comparison;
+  if (!comparison) {
+    return count === 0
+      ? { status: "pass", detail: "console_errors=0" }
+      : { status: "fail", detail: `console_errors=${count}; before/after comparison evidence missing` };
+  }
+
+  const missingPaths = [
+    ...comparison.before_evidence_paths,
+    ...comparison.after_evidence_paths,
+  ].filter((evidencePath) => !evidencePaths.has(evidencePath));
+  if (missingPaths.length > 0) {
+    return { status: "fail", detail: `console comparison evidence not listed: ${missingPaths.join(", ")}` };
+  }
+  if (comparison.after_signatures.length !== count) {
+    return {
+      status: "fail",
+      detail: `console_errors=${count}; after_signatures=${comparison.after_signatures.length}`,
+    };
+  }
+
+  const baselineCounts = new Map<string, number>();
+  for (const signature of comparison.before_signatures) {
+    baselineCounts.set(signature, (baselineCounts.get(signature) ?? 0) + 1);
+  }
+  const finalCounts = new Map<string, number>();
+  const newOrIncreased = new Set<string>();
+  for (const signature of comparison.after_signatures) {
+    const occurrences = (finalCounts.get(signature) ?? 0) + 1;
+    finalCounts.set(signature, occurrences);
+    if (occurrences > (baselineCounts.get(signature) ?? 0)) newOrIncreased.add(signature);
+  }
+
+  if (newOrIncreased.size > 0) {
+    return {
+      status: "fail",
+      detail: `console_errors=${count}; new_or_increased_signatures=${newOrIncreased.size}`,
+    };
+  }
+  if (count === 0) {
+    return {
+      status: "pass",
+      detail: comparison.before_signatures.length > 0
+        ? `console_errors=0; resolved_baseline_errors=${comparison.before_signatures.length}`
+        : "console_errors=0",
+    };
+  }
+  return {
+    status: "warn",
+    detail: `console_errors=${count}; unchanged_baseline_errors=${count}`,
+  };
 }
 
 /**
@@ -428,20 +488,26 @@ export function preCompleteGate(task: TaskFile, ctx: GateContext): GateReport {
     const design = record.design;
     const evidencePaths = new Set(record.evidence.map((entry) => entry.path));
     const missingPaths = design?.evidence_paths.filter((evidencePath) => !evidencePaths.has(evidencePath)) ?? [];
-    const valid = Boolean(
+    const visualValid = Boolean(
       design?.rendered_verification
       && design.evidence_paths.length > 0
       && design.viewports.length > 0
-      && design.console_errors === 0
       && missingPaths.length === 0,
     );
+    const consoleErrors = evaluateConsoleErrors(design, evidencePaths);
     checks.push({
       id: "design-rendered-verification",
       description: "material UI의 screenshot, viewport, console evidence가 유효하다",
-      status: valid ? "pass" : "fail",
-      detail: valid
-        ? `${design!.viewports.join(", ")}; evidence=${design!.evidence_paths.length}; console_errors=0`
-        : `rendered=${design?.rendered_verification ?? false}; evidence=${design?.evidence_paths.length ?? 0}; viewports=${design?.viewports.length ?? 0}; console_errors=${design?.console_errors ?? "missing"}${missingPaths.length ? `; unlisted=${missingPaths.join(",")}` : ""}`,
+      status: !visualValid || consoleErrors.status === "fail"
+        ? "fail"
+        : consoleErrors.status,
+      detail: [
+        `rendered=${design?.rendered_verification ?? false}`,
+        `evidence=${design?.evidence_paths.length ?? 0}`,
+        `viewports=${design?.viewports.join(", ") || "missing"}`,
+        consoleErrors.detail,
+        missingPaths.length ? `unlisted=${missingPaths.join(",")}` : undefined,
+      ].filter(Boolean).join("; "),
     });
   } else if (record.record_version === 0 && designProfile) {
     checks.push({

@@ -32,7 +32,7 @@ bass capability complete TASK-001 ponytail:full --host codex \
 
 Invoke only when claim returns `run`. `reuse` means consume the existing completion. `uncertain` means an earlier invocation may have caused side effects, so stop without retrying. A new attempt creates a new call ID.
 
-For material UI, settle direction before code and render actual target viewports after the meaningful change. Record screenshots and console error count. Small UI fixes inherit DESIGN.md.
+For material UI, settle direction before code and render actual target viewports after the meaningful change. Record screenshots and console error count. A clean console passes with `console_errors: 0`; if errors remain, record `design.console_error_comparison` with the routes/browser/viewports/steps in `conditions`, before/after SHA-256 signatures of normalized and secret-redacted errors (one per occurrence), and before/after capture paths included in the evidence list. Unchanged baseline errors warn for review; missing or inconsistent evidence, new signatures, or increased occurrences fail. Small UI fixes inherit DESIGN.md.
 
 External runners and workspace executors do not receive broader authority. Prime Agent, OMC, and Orca must follow the BASS graph and loop. Graft only supplies selected context; Buzz only consumes sanitized events.
 
