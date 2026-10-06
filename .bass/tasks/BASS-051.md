@@ -1,7 +1,7 @@
 ---
 id: BASS-051
 title: Prune redundant agent and skill instructions
-status: REVIEW
+status: DONE
 type: refactor
 profile: cli
 risk:
