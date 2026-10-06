@@ -1,0 +1,12 @@
+
+> @offbeat24/bass@0.8.0 bass
+> node dist/cli/main.js evaluate --task BASS-060
+
+[bass evaluate] results:
+  [L1] typecheck: PASS (exit=0, 361ms) — npm run typecheck
+    evidence: .bass/evidence/BASS-060/attempt-2/L1-typecheck.log
+  [L2] tests: PASS (exit=0, 2361ms) — npm test
+    evidence: .bass/evidence/BASS-060/attempt-2/L2-tests.log
+  [L2] build: PASS (exit=0, 268ms) — npm run build
+    evidence: .bass/evidence/BASS-060/attempt-2/L2-build.log
+  => ALL PASS

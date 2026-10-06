@@ -1,0 +1,384 @@
+{
+  "record_version": 2,
+  "execution_contract": {
+    "contract_version": 1,
+    "plan_fingerprint": "2fdfb06f4b07eb4c44e8c7ee3c92bf80425ef560a75e381465c636837de88e9b",
+    "capability_calls": [
+      "ponytail:full"
+    ]
+  },
+  "capability_invocations": [
+    {
+      "call_id": "3427c71f7e777fefc6a4df544d34bf0d8784e8fc3c79c740e0abfb68f91f2d7b",
+      "attempt": 1,
+      "capability_call": "ponytail:full",
+      "host": "codex",
+      "status": "pass",
+      "summary": "Reviewed the release metadata and notes; all version files are necessary release surfaces and no unrelated abstraction or dependency was added.",
+      "evidence_path": ".bass/evidence/BASS-060/ponytail-review.md"
+    }
+  ],
+  "task_id": "BASS-060",
+  "summary_of_changes": "Prepared BASS 0.8.0 release metadata and notes, and updated the plugin launcher to accept project version 0.8.0.",
+  "why": "Publish the observer, approved time-budget resume, and semantic judgment improvements already merged in PR #10 as a versioned release.",
+  "files_changed": [
+    ".agents/plugins/marketplace.json",
+    ".bass/events.jsonl",
+    ".bass/evidence/BASS-060/attempt-2/L1-typecheck.log",
+    ".bass/evidence/BASS-060/attempt-2/L2-build.log",
+    ".bass/evidence/BASS-060/attempt-2/L2-tests.log",
+    ".bass/evidence/BASS-060/attempt-2/L3-evaluate.log",
+    ".bass/evidence/BASS-060/attempt-2/L3-package-smoke.log",
+    ".bass/evidence/BASS-060/attempt-2/L3-performance-budget.log",
+    ".bass/evidence/BASS-060/attempt-2/L3-plugin-manifest.log",
+    ".bass/evidence/BASS-060/attempt-3/L1-typecheck.log",
+    ".bass/evidence/BASS-060/attempt-3/L2-build.log",
+    ".bass/evidence/BASS-060/attempt-3/L2-tests.log",
+    ".bass/evidence/BASS-060/attempt-3/L3-evaluate.log",
+    ".bass/evidence/BASS-060/attempt-3/L3-package-smoke.log",
+    ".bass/evidence/BASS-060/attempt-3/L3-performance-budget.log",
+    ".bass/evidence/BASS-060/attempt-3/L3-plugin-manifest.log",
+    ".bass/evidence/BASS-060/attempt-3/evaluate.log",
+    ".bass/evidence/BASS-060/bass-evaluate.log",
+    ".bass/evidence/BASS-060/claude-plugin.log",
+    ".bass/evidence/BASS-060/claude-root.log",
+    ".bass/evidence/BASS-060/ponytail-review.md",
+    ".bass/evidence/BASS-060/release-readiness.md",
+    ".bass/evidence/BASS-060/verification.md",
+    ".bass/evidence/BASS-060/verify-initial.log",
+    ".bass/evidence/BASS-060/verify.log",
+    ".bass/records/BASS-060.approvals.json",
+    ".bass/records/BASS-060.json",
+    ".bass/tasks/BASS-060.md",
+    ".claude-plugin/marketplace.json",
+    "AGENTS.md",
+    "README.md",
+    "RELEASE_NOTES.md",
+    "bass.yaml",
+    "docs/semantic.md",
+    "package-lock.json",
+    "package.json",
+    "plugins/bass/.claude-plugin/plugin.json",
+    "plugins/bass/.codex-plugin/plugin.json",
+    "plugins/bass/scripts/bass-launcher.cjs"
+  ],
+  "models_used": [],
+  "verification": {
+    "evaluations_run": [
+      {
+        "name": "typecheck",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "tests-238",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "build",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "package-smoke",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "plugin-manifest",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "performance-budget",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "claude-marketplace-validation",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "claude-plugin-validation",
+        "level": 3,
+        "status": "pass"
+      }
+    ],
+    "not_verified": [
+      "PR checks on Ubuntu, macOS, Windows, and GitGuardian are pending.",
+      "GitHub Release v0.8.0 and its release-triggered GitHub Packages publication are pending."
+    ]
+  },
+  "critic_findings": {
+    "total": 0,
+    "open_high_or_medium": 0,
+    "report_path": ".bass/evidence/BASS-060/ponytail-review.md"
+  },
+  "known_limitations": [
+    "Remote CI, GitHub Release publication, and package workflow have not yet completed."
+  ],
+  "out_of_scope_findings": [],
+  "docs_updated": {
+    "needed": true,
+    "updated": [
+      "AGENTS.md",
+      "README.md",
+      "RELEASE_NOTES.md",
+      "docs/semantic.md"
+    ]
+  },
+  "lessons": {
+    "recorded": false,
+    "candidates": []
+  },
+  "rollback": {
+    "method": "Before publication, revert the release PR. After v0.8.0 is published, preserve its tag and issue a later patch release if needed."
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "fail",
+      "started_at": "2026-10-06T08:39:14.813Z",
+      "completed_at": "2026-10-06T08:46:50.461Z",
+      "failure_fingerprint": "launcher-version-range-080"
+    },
+    {
+      "attempt": 2,
+      "status": "pass",
+      "started_at": "2026-10-06T08:47:31.791Z",
+      "completed_at": "2026-10-06T08:51:51.125Z"
+    },
+    {
+      "attempt": 3,
+      "status": "pass",
+      "started_at": "2026-10-06T08:53:00.114Z",
+      "completed_at": "2026-10-06T08:53:35.179Z"
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/attempt-2/L1-typecheck.log",
+      "sha256": "41443c80af4b643c618767caa4101d8cb7009bac4781f9e5bb994462aff34219",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/attempt-2/L2-build.log",
+      "sha256": "1a1a80b939d7f584f64570c43dc2884dc19c2b103eb47e7f560f465d5e6acb88",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/attempt-2/L2-tests.log",
+      "sha256": "3e3bc854f74b4c2ad6295b9a28bb5960b813dc962949adc2c4b4b1d837537dec",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/attempt-2/L3-evaluate.log",
+      "sha256": "c615e68425ef513c9559ea63ab97431a5852320c74e8691a9d4279a349a554d1",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/attempt-2/L3-package-smoke.log",
+      "sha256": "7fdf54013c62482840d29595d3ffbca09becca79f37be7cf2606d5b36cf6d23c",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/attempt-2/L3-performance-budget.log",
+      "sha256": "10f424687ca1cce969ec87608619348c38c12e2bca9a816a939b0ca634e02109",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/attempt-2/L3-plugin-manifest.log",
+      "sha256": "9e15811dcfa9f39e76baa9309c2081b289079c1fa2fc48b2b6999dd3f9dbb9e5",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/attempt-3/L1-typecheck.log",
+      "sha256": "210446bb648a4f67d959634e89b3e385bfc078e65cfa98c6e37a3b874a8ae15d",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/attempt-3/L2-build.log",
+      "sha256": "435756c420ceb29d1fc4e0a91a648f68f070e5a9138ab1a3b6ab0d327ccd05d5",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/attempt-3/L2-tests.log",
+      "sha256": "dbefb720ecf4408b14710c3f3ba8093b0e4e49ad3fe09095f4003cf850690962",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/attempt-3/L3-evaluate.log",
+      "sha256": "83e98a175d1aa1c06691198b72f82ed45f6095e0998c9ae4fd2d481ad8bed0c3",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/attempt-3/L3-package-smoke.log",
+      "sha256": "9f80309413a0347d8d3eaf8b01b5edd3f44875ec9346235ec6eb2cf5b30b6828",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/attempt-3/L3-performance-budget.log",
+      "sha256": "251180de2c22726da18f6b951c3f956605c9fc6d20b339b2a6d967826aa1354f",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/attempt-3/L3-plugin-manifest.log",
+      "sha256": "b41007bdb8cd99c7d960e37a262c769fd4dd9dead875e6ee4f3c375a5cf8f140",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/attempt-3/evaluate.log",
+      "sha256": "696823a2e1667cd2c8e9a5f7ce25ff035fc46595aee8fe62d72fdfecfd1591b8",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/bass-evaluate.log",
+      "sha256": "d057c7a15787a95cac96ae89a560ef8a59f57ed073ead7cf73448f8bfbed7099",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/claude-plugin.log",
+      "sha256": "29fb8273a259451e4d27bbf8ff7badc50b00d8d8e76b6716ee0930a49fadd85b",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/claude-root.log",
+      "sha256": "70108b51fa401a1ee16aa2ffb8fcdbf39f4da2f61e524ba4c3105cf0d65ff905",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "capability-review",
+      "path": ".bass/evidence/BASS-060/ponytail-review.md",
+      "sha256": "e03fad813a045b22a84c05344a745f6e19f06d313668e50aae3be4795205e18c",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "release-readiness",
+      "path": ".bass/evidence/BASS-060/release-readiness.md",
+      "sha256": "d6a0fc9adf53d297d187f106cf2716595cc721acf119a77eaf384318a6f2c9bb",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-060/verification.md",
+      "sha256": "04cb0ea29318004e41df35ac13fdbd514794b5c86e2a150790861c8f41bac84f",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/verify-initial.log",
+      "sha256": "0738d485523791043d4635719744c30f3727fbbcf542747e1e6bcc79d495614a",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-060/verify.log",
+      "sha256": "2b54be8a3b663d4edfba25d6d93fc3840be72125614d1c7fc3addc650ebc1b3a",
+      "produced_by": "BASS-060 release verification",
+      "at": "2026-10-06T08:55:36.288Z"
+    }
+  ],
+  "context": {
+    "sources": [],
+    "total_chars": 0,
+    "omitted": []
+  },
+  "usage": {
+    "turns": 3,
+    "attempts": 3,
+    "input_tokens": "unknown",
+    "output_tokens": "unknown",
+    "cached_input_tokens": "unknown",
+    "evaluator_tokens": "unknown",
+    "tool_calls": "unknown",
+    "subagents": 0,
+    "estimated_cost": "unknown"
+  },
+  "scope": {
+    "actual_files": [
+      ".agents/plugins/marketplace.json",
+      ".bass/events.jsonl",
+      ".bass/evidence/BASS-060/attempt-2/L1-typecheck.log",
+      ".bass/evidence/BASS-060/attempt-2/L2-build.log",
+      ".bass/evidence/BASS-060/attempt-2/L2-tests.log",
+      ".bass/evidence/BASS-060/attempt-2/L3-evaluate.log",
+      ".bass/evidence/BASS-060/attempt-2/L3-package-smoke.log",
+      ".bass/evidence/BASS-060/attempt-2/L3-performance-budget.log",
+      ".bass/evidence/BASS-060/attempt-2/L3-plugin-manifest.log",
+      ".bass/evidence/BASS-060/attempt-3/L1-typecheck.log",
+      ".bass/evidence/BASS-060/attempt-3/L2-build.log",
+      ".bass/evidence/BASS-060/attempt-3/L2-tests.log",
+      ".bass/evidence/BASS-060/attempt-3/L3-evaluate.log",
+      ".bass/evidence/BASS-060/attempt-3/L3-package-smoke.log",
+      ".bass/evidence/BASS-060/attempt-3/L3-performance-budget.log",
+      ".bass/evidence/BASS-060/attempt-3/L3-plugin-manifest.log",
+      ".bass/evidence/BASS-060/attempt-3/evaluate.log",
+      ".bass/evidence/BASS-060/bass-evaluate.log",
+      ".bass/evidence/BASS-060/claude-plugin.log",
+      ".bass/evidence/BASS-060/claude-root.log",
+      ".bass/evidence/BASS-060/ponytail-review.md",
+      ".bass/evidence/BASS-060/release-readiness.md",
+      ".bass/evidence/BASS-060/verification.md",
+      ".bass/evidence/BASS-060/verify-initial.log",
+      ".bass/evidence/BASS-060/verify.log",
+      ".bass/records/BASS-060.approvals.json",
+      ".bass/records/BASS-060.json",
+      ".bass/tasks/BASS-060.md",
+      ".claude-plugin/marketplace.json",
+      "AGENTS.md",
+      "README.md",
+      "RELEASE_NOTES.md",
+      "bass.yaml",
+      "docs/semantic.md",
+      "package-lock.json",
+      "package.json",
+      "plugins/bass/.claude-plugin/plugin.json",
+      "plugins/bass/.codex-plugin/plugin.json",
+      "plugins/bass/scripts/bass-launcher.cjs"
+    ],
+    "outside_allowed": [],
+    "forbidden_touched": []
+  }
+}

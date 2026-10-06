@@ -1,0 +1,15 @@
+
+> @offbeat24/bass@0.8.0 bass
+> node dist/cli/main.js evaluate --task BASS-060 --levels 3
+
+[bass evaluate] results:
+  [L3] package-smoke: SKIPPED (exit=0, 0ms) — npm run smoke:package
+    reused passing result for unchanged diff fingerprint
+    evidence: .bass/evidence/BASS-060/attempt-3/L3-package-smoke.log
+  [L3] plugin-manifest: SKIPPED (exit=0, 0ms) — npm run validate:plugin
+    reused passing result for unchanged diff fingerprint
+    evidence: .bass/evidence/BASS-060/attempt-3/L3-plugin-manifest.log
+  [L3] performance-budget: SKIPPED (exit=0, 0ms) — npm run benchmark:performance
+    reused passing result for unchanged diff fingerprint
+    evidence: .bass/evidence/BASS-060/attempt-3/L3-performance-budget.log
+  => ALL PASS

@@ -1,0 +1,12 @@
+{
+  "task_id": "BASS-060",
+  "risk_approvals": [
+    {
+      "rule_id": "deploy-release",
+      "decision": "approved",
+      "approver": "user",
+      "reason": "User explicitly authorized the BASS 0.8.0 release and browser publication in this conversation.",
+      "at": "2026-10-06T08:39:12.006Z"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+
+> @offbeat24/bass@0.8.0 bass
+> node dist/cli/main.js evaluate --task BASS-060
+
+[bass evaluate] results:
+  [L1] typecheck: SKIPPED (exit=0, 0ms) — npm run typecheck
+    reused passing result for unchanged diff fingerprint
+    evidence: .bass/evidence/BASS-060/attempt-3/L1-typecheck.log
+  [L2] tests: SKIPPED (exit=0, 0ms) — npm test
+    reused passing result for unchanged diff fingerprint
+    evidence: .bass/evidence/BASS-060/attempt-3/L2-tests.log
+  [L2] build: SKIPPED (exit=0, 0ms) — npm run build
+    reused passing result for unchanged diff fingerprint
+    evidence: .bass/evidence/BASS-060/attempt-3/L2-build.log
+  => ALL PASS

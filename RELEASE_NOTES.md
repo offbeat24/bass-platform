@@ -1,3 +1,24 @@
+# BASS 0.8.0 — 승인된 시간 예산 재개와 로컬 관찰
+
+BASS 0.8.0은 0.7.0과 호환되는 기능 릴리스다. 현재 프로젝트의 진행 상황을 로컬에서 관찰하고, 시간 예산이 끝난 작업은 사람의 승인과 append-only 이력을 거쳐 제한적으로 재개할 수 있다.
+
+## 주요 변경
+
+- **로컬 실행 관찰.** `bass observe`가 `127.0.0.1`에 읽기 전용 페이지를 열어 작업 상태, 예산, 근거와 BASS 이벤트를 보여준다. 로컬 Codex·Claude 도구 이벤트도 함께 표시하며, 작업 카드를 선택하면 해당 작업의 순서 있는 과정을 확인할 수 있다.
+- **도구 미리보기의 제한.** 관찰 hook은 길이를 제한하고 비밀값을 가린 짧은 입력·출력 미리보기만 메모리에 보관한다. 대화와 모델 추론은 파일에 저장하지 않으며 Codex hosted 도구는 로컬 hook에서 관찰되지 않는다.
+- **승인된 시간 재개.** `bass task resume TASK-001 --approved-by user --reason "Continue after timeout"`은 마지막 차단 사유가 정확히 `loop time budget exhausted`일 때만 허용된다. 열린 시도를 먼저 닫아야 한다. 재개 표시는 이벤트 로그에 추가되고 시간 기준만 갱신한다. 시도·턴·무진전·반복 실패 한도와 완료 게이트는 누적 유지된다.
+- **불확실한 명세 판단의 사람 검토.** 선택형 TypeSafe 명세 판단은 Noul 점수가 0.8 이상이면 통과, 0.2 이하이면 문제, 그 사이면 불확실로 분류해 자동 통과시키지 않는다.
+
+## 호환성과 설치
+
+TypeSafe 판단은 계속 기본값이 꺼져 있다. 활성화한 live 요청에는 별도의 사람 승인이 필요하고 제공자 사용 비용이 발생한다. 기존의 결정적 검사와 최종 사람 승인은 그대로 적용된다.
+
+```bash
+npm install -g @offbeat24/bass@0.8.0
+```
+
+---
+
 # BASS 0.7.0 — 작업 계약과 검증 기준 개선
 
 BASS 0.7.0은 `v0.6.0` 이후의 작업 계약·모델 라우팅·material UI 검증 변경을 묶는다.
@@ -15,7 +36,7 @@ BASS 0.7.0은 `v0.6.0` 이후의 작업 계약·모델 라우팅·material UI �
 
 ## 검증 상태
 
-로컬 typecheck, build, Codex plugin validation, Claude plugin validation은 통과했다. 테스트 스위트는 실행하지 않았다. GitHub Release와 패키지 배포는 별도 승인 및 완료 처리를 기다린다.
+`npm run verify`와 plugin 검증, Ubuntu·macOS·Windows 및 GitGuardian CI가 통과했다. [GitHub Release v0.7.0](https://github.com/offbeat24/bass-platform/releases/tag/v0.7.0)과 이에 연결된 GitHub Packages 배포도 완료됐다.
 
 ---
 
@@ -36,7 +57,7 @@ BASS 0.6.0은 TypeSafe Jev를 이용한 선택형 의미 판단을 추가한다.
 
 0.5.x 프로젝트는 `bass upgrade --check`로 변경을 확인한 뒤 `bass upgrade --apply`로 갱신할 수 있다. 이전 작업과 Run Record는 계속 읽으며, 의미 판단을 활성화한 새 작업은 Run Record v3에 판단 해시와 사람의 해제 기록을 연결한다. 자세한 설정과 근거 목록 형식은 [TypeSafe 사용 안내](docs/semantic.md)를 참고한다.
 
-현재 이 문서는 **출시 후보 문안**이다. 로컬 229개 테스트와 Ubuntu·macOS·Windows CI는 통과했지만, 합의한 120개 한국어·영어 실모델 평가와 게시 패키지 설치 검증은 아직 완료되지 않았다. 안정판 출시는 해당 결과와 사람의 최종 인수 판단 후에 진행한다.
+이 검증 상태는 2026-09-20 출시 후보 초안 당시의 기록이다. 이후 BASS-056에서 2026-10-06에 영어·한국어 synthetic 120개 사례 평가를 완료했다. 이 합성 결과는 실제 제품 사용 데이터나 운영 telemetry를 뜻하지 않는다.
 
 ---
 
