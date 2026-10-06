@@ -49,6 +49,10 @@ Full logs live under `.bass/evidence/<task-id>/`. Events contain one-line summar
 
 A repeated claim in the same attempt returns `reuse` after completion or `uncertain` after an incomplete start. Neither path reinvokes the provider. Only a newly started attempt permits an intentional retry.
 
+### Observe a local run
+
+Run `bass observe` from the project to open a read-only live page with task state, attempt/turn/time budget, evaluations, evidence, blockers, and a chronological BASS plus agent-tool timeline. Select a task card to enter its numbered, task-specific process history; use “전체 작업” to return. Local Codex and Claude Code activity for the active task appears alongside its BASS stages. The server binds to `127.0.0.1`; if automatic browser launch is unavailable, open the printed URL. Use `--no-open` to print the URL without launching a browser and Ctrl-C to stop the observer. Local tool events include only bounded, redacted previews held in memory; conversations and model reasoning are not collected. Codex `PostToolUse` also runs after a Bash command exits nonzero; Claude Code reports execution failures through `PostToolUseFailure` (permission denials are a separate case). Codex hosted tools are not visible to local hooks.
+
 ## Review and done
 
 `pre-review` validates the Run Record, current plan fingerprint, capability events, final passing attempt, evidence checksums, context freshness, actual scope, model deviations, docs, rollback, critics, and material UI evidence. It does not manufacture final human approval.

@@ -9,4 +9,5 @@ dist/
 .bass/semantic/slots/
 .bass/semantic/evaluation-root/
 .bass/local.yaml
+.bass/observer-runtime.json*
 !.bass/evidence/**/*.log

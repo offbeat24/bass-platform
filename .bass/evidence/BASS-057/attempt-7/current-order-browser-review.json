@@ -1,0 +1,18 @@
+{
+  "browser": "Google Chrome via CUA",
+  "url": "http://127.0.0.1:49896/",
+  "task": "BASS-057",
+  "view": "task detail",
+  "task_status": "ACTIVE",
+  "current_step_panel_visible": true,
+  "history_count": 72,
+  "history_order": "newest-first",
+  "visible_sequence_at_top": [
+    "72",
+    "71",
+    "70",
+    "69"
+  ],
+  "oldest_sequence_at_bottom": "01",
+  "notes": "Confirmed through the live Chrome accessibility tree and screenshot. The current-step panel is separate above the list; event records themselves are shown newest to oldest."
+}

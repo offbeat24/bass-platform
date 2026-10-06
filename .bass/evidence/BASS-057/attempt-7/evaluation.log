@@ -1,0 +1,5 @@
+BASS-057 attempt 7 targeted verification
+PASS — npm run typecheck (L1-typecheck.log)
+PASS — npx vitest run tests/observe.test.ts (4 tests; L2-tests.log)
+PASS — npm run build (L2-build.log)
+PASS — Chrome rendered detail history newest-first: 72, 71, 70, 69 at top; 01 at bottom; live-step callout remains separate.

@@ -1,0 +1,37 @@
+{
+  "tab_id": 1337890186,
+  "entries": [
+    {
+      "sequence": 1,
+      "kind": "log",
+      "level": "error",
+      "text": "Permissions policy violation: unload is not allowed in this document.",
+      "url": "chrome-extension://mbnbehikldjhnfehhnaidhjhoofhpehk/inspector.b9415ea5.js",
+      "line": 405,
+      "timestamp": 1791267892022.406,
+      "truncated": false
+    },
+    {
+      "sequence": 2,
+      "kind": "log",
+      "level": "error",
+      "text": "Failed to load resource: net::ERR_FAILED",
+      "url": "chrome-extension://invalid/",
+      "timestamp": 1791267892054.253,
+      "truncated": false
+    },
+    {
+      "sequence": 3,
+      "kind": "console",
+      "level": "log",
+      "text": "%c[rhwp]%c DevTools 사용 가능 — rhwpDev.help() 로 시작하세요 color:#2563eb;font-weight:bold color:inherit",
+      "url": "chrome-extension://pgakpjflombjmehnebnbpnalhegaanag/dev-tools-inject.js",
+      "line": 154,
+      "column": 11,
+      "timestamp": 1791267892111.32,
+      "truncated": false
+    }
+  ],
+  "next_since": 3,
+  "truncated": false
+}

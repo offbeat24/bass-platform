@@ -1,0 +1,19 @@
+{
+  "browser": "Google Chrome via CUA",
+  "url": "http://127.0.0.1:65273/",
+  "task": "BASS-057",
+  "view": "task detail",
+  "checks": {
+    "current_step_panel_visible": true,
+    "current_step_precedes_numbered_history": true,
+    "current_step_text": [
+      "지금 진행 중",
+      "ponytail:full 실행 중",
+      "도구 실행",
+      "BASS · 시도 6"
+    ],
+    "history_starts_at_sequence": "01",
+    "history_count": 68
+  },
+  "notes": "Verified in the open Chrome tab. The current capability event is pinned above the unchanged chronological, numbered event history."
+}

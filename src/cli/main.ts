@@ -35,6 +35,7 @@ import { appendEvent, currentAttempt, EVENT_KINDS, EVENT_STATUSES, finishAttempt
 import { claimCapability, completeCapability, type CapabilityCompletionStatus } from "../task/capability.js";
 import { buildProjectStatus, formatProjectStatus, watchProjectStatus } from "../task/status.js";
 import { prepareSemantic, verifySemantic, semanticReport, resolveFinding } from "../semantic/workflow.js";
+import { startObserver } from "../observe/index.js";
 
 const program = new Command();
 program
@@ -409,6 +410,28 @@ capabilityCmd
       ...(opts.evidence ? { evidence: String(opts.evidence) } : {}),
     });
     console.log(opts.json ? JSON.stringify(result, null, 2) : `${result.changed ? "completed" : "unchanged"}: ${result.callId} attempt=${result.attempt}`);
+  });
+
+program
+  .command("observe")
+  .description("현재 BASS 프로젝트의 읽기 전용 로컬 관찰 페이지 열기")
+  .option("--no-open", "브라우저를 자동으로 열지 않고 주소만 출력")
+  .action(async (opts) => {
+    const { projectRoot, config } = requireProject();
+    const observer = await startObserver(projectRoot, config, { openBrowser: Boolean(opts.open) });
+    console.log(`BASS observer: ${observer.url}`);
+    await new Promise<void>((resolve) => {
+      const stop = (): void => {
+        process.off("SIGINT", stop);
+        process.off("SIGTERM", stop);
+        void observer.close().catch(() => {}).finally(() => {
+          console.log("BASS observer stopped.");
+          resolve();
+        });
+      };
+      process.once("SIGINT", stop);
+      process.once("SIGTERM", stop);
+    });
   });
 
 program

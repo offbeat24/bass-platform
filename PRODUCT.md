@@ -21,15 +21,15 @@ BASS remains the product name. The 0.5 descriptor is “Codex–Claude Portable 
 
 ## Scope
 
-CLI core, Codex/Claude plugin skills and hooks, repository contracts, model alias recommendations, external provider boundaries, and read-only status observation.
+CLI core, Codex/Claude plugin skills and hooks, repository contracts, model alias recommendations, external provider boundaries, and optional read-only local observation.
 
 ## Non-goals
 
-Web dashboard, TUI, autonomous approval, external harness installation, model hosting, or replacement of repository-native build and design systems.
+Hosted or remote dashboard, TUI, autonomous approval, external harness installation, model hosting, or replacement of repository-native build and design systems.
 
 ## Open decisions
 
-Evaluate a read-only web console in a later version only after 3 project types, 20 tasks, 5 loops, parallel experience, team feedback, and a stable event schema.
+`bass observe` is an opt-in local page for one project. Its task cards open chronological process details for each task. BASS event files and task records remain the source of truth; live tool previews stay in memory only.
 
 ## Decisions and history
 

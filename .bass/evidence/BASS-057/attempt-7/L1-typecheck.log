@@ -1,0 +1,4 @@
+
+> @offbeat24/bass@0.7.0 typecheck
+> tsc --noEmit
+

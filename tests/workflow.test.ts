@@ -245,6 +245,67 @@ describe("pre-complete 게이트", () => {
     expect(report.checks.find((check) => check.id === "capability-invocations")?.status).toBe("fail");
   });
 
+  it("계획이 바뀌어도 각 시도의 fingerprint로 capability 이력을 검증한다", () => {
+    const root = makeTempProject({});
+    const file = writeTask(root, "T-207", { status: "ACTIVE", riskLevel: "medium" });
+    const task = parseTaskFile(file);
+    const config = loadConfig({ projectRoot: root });
+    const firstPlan = buildExecutionPlan(config, task);
+    const currentPlan = { ...firstPlan, planFingerprint: "1".repeat(64) };
+    const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), "bass-gate-revised-plan-"));
+    const invocations = [];
+
+    for (const [index, plan] of [firstPlan, currentPlan].entries()) {
+      const attempt = index + 1;
+      const summary = `provider result for plan ${attempt}`;
+      startAttempt({ projectRoot: root, task, plan });
+      const claim = claimCapability({
+        projectRoot: root,
+        task,
+        plan,
+        config: config.bassYaml,
+        capabilityCall: "ponytail:full",
+        host: "codex",
+        inspection: { homeDir: fakeHome, commandAvailable: (command) => command === "ponytail", active: new Set(["ponytail"]) },
+      });
+      completeCapability({
+        projectRoot: root,
+        task,
+        plan,
+        config: config.bassYaml,
+        capabilityCall: "ponytail:full",
+        host: "codex",
+        status: "pass",
+        summary,
+      });
+      finishAttempt({ projectRoot: root, task, plan, result: "pass", summary });
+      invocations.push({
+        call_id: claim.callId,
+        attempt,
+        capability_call: "ponytail:full",
+        host: "codex",
+        status: "pass",
+        summary,
+      });
+    }
+
+    writeRunRecord(root, "T-207", {
+      record_version: 2,
+      execution_contract: {
+        contract_version: currentPlan.contractVersion,
+        plan_fingerprint: currentPlan.planFingerprint,
+        capability_calls: currentPlan.capabilityCalls,
+      },
+      capability_invocations: invocations,
+    });
+    const report = preReviewGate(task, {
+      projectRoot: root,
+      effective: config.effective,
+      executionPlan: currentPlan,
+    });
+    expect(report.checks.find((check) => check.id === "capability-invocations")?.status).toBe("pass");
+  });
+
   it("실패한 평가가 있으면 실패", () => {
     const { root, task, effective } = setup();
     writeRunRecord(root, "T-200", {

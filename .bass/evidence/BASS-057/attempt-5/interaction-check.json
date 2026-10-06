@@ -1,0 +1,47 @@
+{
+  "ok": true,
+  "tab_id": 1337890201,
+  "value": {
+    "active": {
+      "count": "1",
+      "ids": [
+        "BASS-057"
+      ]
+    },
+    "overflow": false,
+    "reset": {
+      "filter": "true",
+      "sort": "recent"
+    },
+    "statusSort": {
+      "ordered": true,
+      "statuses": [
+        "진행 중",
+        "검토 대기",
+        "검토 대기",
+        "검토 대기",
+        "검토 대기",
+        "완료",
+        "완료",
+        "완료",
+        "완료",
+        "완료",
+        "취소"
+      ]
+    },
+    "titleSort": {
+      "first": "배포 가능한 CLI와 런타임 버전 검증 추가",
+      "last": "Ship BASS 0.4 Product-to-Ship Harness",
+      "ordered": true
+    },
+    "waiting": {
+      "count": "4",
+      "ids": [
+        "BASS-040",
+        "BASS-051",
+        "BASS-052",
+        "BASS-055"
+      ]
+    }
+  }
+}
