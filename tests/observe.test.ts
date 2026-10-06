@@ -48,7 +48,7 @@ describe("local observer", () => {
     observers.push(observer);
     const descriptorPath = path.join(project, ".bass", "observer-runtime.json");
     const descriptor = JSON.parse(fs.readFileSync(descriptorPath, "utf8"));
-    expect(fs.statSync(descriptorPath).mode & 0o777).toBe(0o600);
+    if (process.platform !== "win32") expect(fs.statSync(descriptorPath).mode & 0o777).toBe(0o600);
 
     await sendHook(project, { hook_event_name: "PreToolUse", turn_id: "turn-c", tool_use_id: "call-c", tool_name: "Bash", tool_input: { command: "npm test observer-only-preview-12345" } });
     await sendHook(project, { hook_event_name: "PostToolUse", turn_id: "turn-c", tool_use_id: "call-c", tool_name: "Bash", tool_input: { command: "npm test observer-only-preview-12345" }, tool_response: "PASS OPENAI_API_KEY=leak123", duration_ms: 900 });
