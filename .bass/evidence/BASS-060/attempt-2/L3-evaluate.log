@@ -1,0 +1,12 @@
+
+> @offbeat24/bass@0.8.0 bass
+> node dist/cli/main.js evaluate --task BASS-060 --levels 3
+
+[bass evaluate] results:
+  [L3] package-smoke: PASS (exit=0, 7825ms) — npm run smoke:package
+    evidence: .bass/evidence/BASS-060/attempt-2/L3-package-smoke.log
+  [L3] plugin-manifest: PASS (exit=0, 133ms) — npm run validate:plugin
+    evidence: .bass/evidence/BASS-060/attempt-2/L3-plugin-manifest.log
+  [L3] performance-budget: PASS (exit=0, 275ms) — npm run benchmark:performance
+    evidence: .bass/evidence/BASS-060/attempt-2/L3-performance-budget.log
+  => ALL PASS

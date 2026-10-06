@@ -1,0 +1,9 @@
+name: performance-budget
+level: 3
+command: npm run benchmark:performance
+status: skipped
+exit_code: 0
+duration_ms: 0
+
+--- output ---
+reused passing result for unchanged diff fingerprint
