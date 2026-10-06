@@ -1,7 +1,7 @@
 ---
 id: BASS-040
 title: Ship BASS 0.4 Product-to-Ship Harness
-status: REVIEW
+status: DONE
 type: feature
 profile: cli
 
