@@ -1,0 +1,364 @@
+{
+  "record_version": 2,
+  "execution_contract": {
+    "contract_version": 1,
+    "plan_fingerprint": "bcc5f51920a3a45154b0aaed23082288278844cd75893fd5dbc1bea276472161",
+    "capability_calls": [
+      "ponytail:full"
+    ]
+  },
+  "capability_invocations": [
+    {
+      "call_id": "46e4f352768829da1918e388dbe2acf731ffafecd61567f914db6c836e112ab3",
+      "attempt": 2,
+      "capability_call": "ponytail:full",
+      "host": "codex",
+      "status": "pass",
+      "summary": "Used Ponytail full to keep the recovery and evaluation path minimal; confirmed activation and completed the scoped simplicity pass"
+    }
+  ],
+  "task_id": "BASS-056",
+  "summary_of_changes": "Completed the optional TypeSafe semantic evaluation, documented the human-approval and value-measurement policy, and recorded the baseline comparison and BASS evidence.",
+  "why": "Evaluate whether typed semantic judgments improve BASS specification, context, and evidence decisions while preserving deterministic gates and human final approval.",
+  "files_changed": [
+    ".bass/events.jsonl",
+    ".bass/evidence/BASS-056/attempt-2/semantic-baseline-comparison.md",
+    ".bass/evidence/BASS-056/attempt-2/semantic-evaluation-dry-run.log",
+    ".bass/evidence/BASS-056/attempt-2/semantic-live-evaluation-choice-v1.json",
+    ".bass/evidence/BASS-056/attempt-2/semantic-live-evaluation-choice-v1.log",
+    ".bass/evidence/BASS-056/attempt-2/semantic-live-evaluation-noul-v1.json",
+    ".bass/evidence/BASS-056/attempt-2/semantic-live-evaluation-noul-v1.log",
+    ".bass/evidence/BASS-056/attempt-2/semantic-live-evaluation-noul.log",
+    ".bass/evidence/BASS-056/attempt-2/semantic-live-evaluation.log",
+    ".bass/evidence/BASS-056/attempt-2/verify-after-noul.log",
+    ".bass/evidence/BASS-056/attempt-3/L1-typecheck.log",
+    ".bass/evidence/BASS-056/attempt-3/L2-build.log",
+    ".bass/evidence/BASS-056/attempt-3/L2-tests.log",
+    ".bass/evidence/BASS-056/attempt-3/L3-package-smoke.log",
+    ".bass/evidence/BASS-056/attempt-3/L3-performance-budget.log",
+    ".bass/evidence/BASS-056/attempt-3/L3-plugin-manifest.log",
+    ".bass/evidence/BASS-056/attempt-3/architecture-1.yaml",
+    ".bass/evidence/BASS-056/attempt-3/bass-evaluate.log",
+    ".bass/evidence/BASS-056/attempt-3/claude-plugin-validate.log",
+    ".bass/evidence/BASS-056/attempt-3/codex-plugin-validate.log",
+    ".bass/evidence/BASS-056/attempt-3/critic-review.md",
+    ".bass/evidence/BASS-056/attempt-3/security-1.yaml",
+    ".bass/evidence/BASS-056/attempt-3/semantic-baseline-comparison.md",
+    ".bass/evidence/BASS-056/attempt-3/semantic-live-evaluation-v2.log",
+    ".bass/evidence/BASS-056/attempt-3/semantic-live-evaluation.json",
+    ".bass/evidence/BASS-056/attempt-3/verify-2026-10-06.log",
+    ".bass/evidence/BASS-056/semantic-live-evaluation.json",
+    ".bass/evidence/BASS-056/verify-2026-10-06.log",
+    ".bass/records/BASS-056.json",
+    ".bass/tasks/BASS-056.md",
+    "docs/semantic.md",
+    "docs/workflows.md",
+    "scripts/evaluate-semantic.mjs",
+    "src/cli/main.ts",
+    "src/semantic/workflow.ts",
+    "src/task/events.ts",
+    "src/task/status.ts",
+    "tests/events.test.ts",
+    "tests/semantic.test.ts"
+  ],
+  "models_used": [
+    {
+      "role": "semantic evaluator",
+      "alias": "TypeSafe",
+      "actual_model": "jev-1.13.0",
+      "reason": "User-approved Korean and English synthetic evaluation"
+    }
+  ],
+  "verification": {
+    "evaluations_run": [
+      {
+        "name": "typecheck",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "tests (233)",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "build",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "package smoke",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "Codex plugin validation",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "Claude plugin validation",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "performance benchmark",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "TypeSafe live evaluation (120 synthetic cases)",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "git diff --check",
+        "level": 1,
+        "status": "pass"
+      }
+    ],
+    "not_verified": [
+      "Ubuntu, macOS, and Windows CI was not rerun for this final local working tree.",
+      "Installation of a published package was not tested; local package smoke passed.",
+      "No package publication, tag, merge, or push was performed."
+    ]
+  },
+  "critic_findings": {
+    "total": 1,
+    "open_high_or_medium": 0,
+    "report_path": ".bass/evidence/BASS-056/attempt-3/critic-review.md"
+  },
+  "known_limitations": [
+    "The 90-case holdout was inspected and iterated while repairing ambiguous positive examples; it is not independent validation or production telemetry.",
+    "Normal evidence acceptance was 12/14 (85.7%), two cases below the deterministic proxy's 14/14.",
+    "The raw metric name specNormalFalsePositive is misleading; the comparison documents that it counts normal cases not auto-passed.",
+    "Estimated cost is the TypeSafe evaluator spend only: USD 0.005902722 cumulative.",
+    "Stable release and cross-platform CI remain outside the completed local task evidence."
+  ],
+  "out_of_scope_findings": [],
+  "docs_updated": {
+    "needed": true,
+    "updated": [
+      "docs/semantic.md",
+      "docs/workflows.md",
+      ".bass/tasks/BASS-056.md"
+    ]
+  },
+  "lessons": {
+    "recorded": false,
+    "candidates": []
+  },
+  "rollback": {
+    "method": "Keep semantic.mode off (the project default) for immediate fallback; revert the semantic adapter and workflow changes to remove TypeSafe integration, retaining the evaluation evidence and event history."
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "no-progress",
+      "started_at": "2026-09-19T18:17:10.971Z",
+      "completed_at": "2026-10-06T01:15:05.844Z",
+      "failure_fingerprint": "4280ad1434e652336a29f0e6bf8b948fc1b3fbb699af51420af744b77a5c8285"
+    },
+    {
+      "attempt": 2,
+      "status": "fail",
+      "started_at": "2026-10-06T02:01:00.700Z",
+      "completed_at": "2026-10-06T04:36:43.610Z",
+      "failure_fingerprint": "847fe73e1bc5521f1ddb679d4e52ab4c031f87491ed425763e4f502c4c5b8033"
+    },
+    {
+      "attempt": 3,
+      "status": "pass",
+      "started_at": "2026-10-06T04:36:51.171Z",
+      "completed_at": "2026-10-06T04:50:34.105Z"
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-056/attempt-3/verify-2026-10-06.log",
+      "sha256": "30c970eb273b43f3a172c3b0bc4c1aedc5690014095f38d6a1803af1b573689f",
+      "produced_by": "npm run verify",
+      "at": "2026-10-06T04:45:01.721Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-056/attempt-3/L1-typecheck.log",
+      "sha256": "2111e7952ddd57a495910de8a078568b25ad0add9758efd667337bfa1db4e780",
+      "produced_by": "bass evaluate --task BASS-056",
+      "at": "2026-10-06T04:46:21.784Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-056/attempt-3/L2-tests.log",
+      "sha256": "4a7842df7991dc45a91ede1d51defbb9273cf4c9df6f6b948a72fce0c7d841c7",
+      "produced_by": "bass evaluate --task BASS-056",
+      "at": "2026-10-06T04:46:23.704Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-056/attempt-3/L2-build.log",
+      "sha256": "7f8d6fca26cc386b56dbd6ab5f0cc86407d64021810007134e28a7e66f6c6667",
+      "produced_by": "bass evaluate --task BASS-056",
+      "at": "2026-10-06T04:46:23.932Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-056/attempt-3/L3-package-smoke.log",
+      "sha256": "bc67426d23cad4a6c520d24b9ac195e3441a9f57c0cc42a9eef92417db659b80",
+      "produced_by": "bass evaluate --task BASS-056",
+      "at": "2026-10-06T04:46:29.610Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-056/attempt-3/L3-plugin-manifest.log",
+      "sha256": "59d211d0348604e21590cb38939cc842662e4b3f2cf86a639f2d038e09a08cf2",
+      "produced_by": "bass evaluate --task BASS-056",
+      "at": "2026-10-06T04:46:29.736Z"
+    },
+    {
+      "kind": "verification-log",
+      "path": ".bass/evidence/BASS-056/attempt-3/L3-performance-budget.log",
+      "sha256": "5061ad21e40450478f12a3055980e029c4dce183e4a508c967d556f02da463e8",
+      "produced_by": "bass evaluate --task BASS-056",
+      "at": "2026-10-06T04:46:29.980Z"
+    },
+    {
+      "kind": "plugin-validation",
+      "path": ".bass/evidence/BASS-056/attempt-3/codex-plugin-validate.log",
+      "sha256": "c1db80fdd8a433fc4bfeda313e4707c98668e40b173be0e79c778ce015a3cd11",
+      "produced_by": "npm run validate:plugin",
+      "at": "2026-10-06T04:46:11.012Z"
+    },
+    {
+      "kind": "plugin-validation",
+      "path": ".bass/evidence/BASS-056/attempt-3/claude-plugin-validate.log",
+      "sha256": "70108b51fa401a1ee16aa2ffb8fcdbf39f4da2f61e524ba4c3105cf0d65ff905",
+      "produced_by": "claude plugin validate .",
+      "at": "2026-10-06T04:46:11.606Z"
+    },
+    {
+      "kind": "evaluation",
+      "path": ".bass/evidence/BASS-056/attempt-3/semantic-live-evaluation.json",
+      "sha256": "58b4be31d74149828b83b6969706afb0c8fbe1fbce89ebe06fe83b26d46da0a3",
+      "produced_by": "User-approved TypeSafe live evaluation",
+      "at": "2026-10-06T04:48:47.953Z"
+    },
+    {
+      "kind": "evaluation-log",
+      "path": ".bass/evidence/BASS-056/attempt-3/semantic-live-evaluation-v2.log",
+      "sha256": "ba36b63ade3201ec4d8a926ab720090c6cb72d5b55369ea8179166a14bde5f90",
+      "produced_by": "User-provided evaluator summary",
+      "at": "2026-10-06T04:40:30.609Z"
+    },
+    {
+      "kind": "comparison",
+      "path": ".bass/evidence/BASS-056/attempt-3/semantic-baseline-comparison.md",
+      "sha256": "dd5e03cbd2af4a73a0bebc28b003becb0977f5427f5e6f171471a448639cb13a",
+      "produced_by": "BASS-056 evaluation analysis",
+      "at": "2026-10-06T04:48:47.957Z"
+    },
+    {
+      "kind": "review",
+      "path": ".bass/evidence/BASS-056/attempt-3/critic-review.md",
+      "sha256": "6f45f444d9a91ed45bad08b85098baf0c6fa44f16627da0041992b62fbd12c83",
+      "produced_by": "BASS critics",
+      "at": "2026-10-06T04:48:47.968Z"
+    },
+    {
+      "kind": "critic",
+      "path": ".bass/evidence/BASS-056/attempt-3/security-1.yaml",
+      "sha256": "b39dcdc17d4d1a9aa4d75ab7ac61ce1d74d251173aa4b56dbe10ca779d929af4",
+      "produced_by": "Security critic",
+      "at": "2026-10-06T04:48:47.961Z"
+    },
+    {
+      "kind": "critic",
+      "path": ".bass/evidence/BASS-056/attempt-3/architecture-1.yaml",
+      "sha256": "499b11de8c5d0ad4f773bd555730e1f2db70e4c70ed5d7325e4193fe214939e4",
+      "produced_by": "Architecture critic",
+      "at": "2026-10-06T04:48:47.964Z"
+    },
+    {
+      "kind": "evaluation-history",
+      "path": ".bass/evidence/BASS-056/attempt-2/semantic-live-evaluation-choice-v1.json",
+      "sha256": "162c50fd89919230aab8dbd8f200d1ae46948f9762c14a80d10fbceba00b4b16",
+      "produced_by": "First TypeSafe evaluation",
+      "at": "2026-10-06T02:20:26.038Z"
+    },
+    {
+      "kind": "evaluation-history",
+      "path": ".bass/evidence/BASS-056/attempt-2/semantic-live-evaluation-noul-v1.json",
+      "sha256": "225df514185ca2e1a353b51d0b7f6e5852e362d8a45c39adf9b7a989a0a54f87",
+      "produced_by": "Noul threshold diagnosis",
+      "at": "2026-10-06T04:39:03.313Z"
+    }
+  ],
+  "context": {
+    "sources": [],
+    "total_chars": 0,
+    "omitted": []
+  },
+  "usage": {
+    "turns": "unknown",
+    "attempts": 3,
+    "input_tokens": "unknown",
+    "output_tokens": "unknown",
+    "cached_input_tokens": "unknown",
+    "evaluator_tokens": "unknown",
+    "tool_calls": "unknown",
+    "subagents": 0,
+    "estimated_cost": 0.005902722
+  },
+  "scope": {
+    "actual_files": [
+      ".bass/events.jsonl",
+      ".bass/evidence/BASS-056/attempt-2/semantic-baseline-comparison.md",
+      ".bass/evidence/BASS-056/attempt-2/semantic-evaluation-dry-run.log",
+      ".bass/evidence/BASS-056/attempt-2/semantic-live-evaluation-choice-v1.json",
+      ".bass/evidence/BASS-056/attempt-2/semantic-live-evaluation-choice-v1.log",
+      ".bass/evidence/BASS-056/attempt-2/semantic-live-evaluation-noul-v1.json",
+      ".bass/evidence/BASS-056/attempt-2/semantic-live-evaluation-noul-v1.log",
+      ".bass/evidence/BASS-056/attempt-2/semantic-live-evaluation-noul.log",
+      ".bass/evidence/BASS-056/attempt-2/semantic-live-evaluation.log",
+      ".bass/evidence/BASS-056/attempt-2/verify-after-noul.log",
+      ".bass/evidence/BASS-056/attempt-3/L1-typecheck.log",
+      ".bass/evidence/BASS-056/attempt-3/L2-build.log",
+      ".bass/evidence/BASS-056/attempt-3/L2-tests.log",
+      ".bass/evidence/BASS-056/attempt-3/L3-package-smoke.log",
+      ".bass/evidence/BASS-056/attempt-3/L3-performance-budget.log",
+      ".bass/evidence/BASS-056/attempt-3/L3-plugin-manifest.log",
+      ".bass/evidence/BASS-056/attempt-3/architecture-1.yaml",
+      ".bass/evidence/BASS-056/attempt-3/bass-evaluate.log",
+      ".bass/evidence/BASS-056/attempt-3/claude-plugin-validate.log",
+      ".bass/evidence/BASS-056/attempt-3/codex-plugin-validate.log",
+      ".bass/evidence/BASS-056/attempt-3/critic-review.md",
+      ".bass/evidence/BASS-056/attempt-3/security-1.yaml",
+      ".bass/evidence/BASS-056/attempt-3/semantic-baseline-comparison.md",
+      ".bass/evidence/BASS-056/attempt-3/semantic-live-evaluation-v2.log",
+      ".bass/evidence/BASS-056/attempt-3/semantic-live-evaluation.json",
+      ".bass/evidence/BASS-056/attempt-3/verify-2026-10-06.log",
+      ".bass/evidence/BASS-056/semantic-live-evaluation.json",
+      ".bass/evidence/BASS-056/verify-2026-10-06.log",
+      ".bass/records/BASS-056.json",
+      ".bass/tasks/BASS-056.md",
+      "docs/semantic.md",
+      "docs/workflows.md",
+      "scripts/evaluate-semantic.mjs",
+      "src/cli/main.ts",
+      "src/semantic/workflow.ts",
+      "src/task/events.ts",
+      "src/task/status.ts",
+      "tests/events.test.ts",
+      "tests/semantic.test.ts"
+    ],
+    "outside_allowed": [],
+    "forbidden_touched": []
+  },
+  "human_approval": {
+    "approved": true,
+    "approver": "user",
+    "at": "2026-10-06T04:51:37.567Z",
+    "notes": "User authorized completing BASS-056 and moving it to DONE; this records acceptance of the reviewed local result and does not approve publication."
+  }
+}

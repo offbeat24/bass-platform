@@ -1,0 +1,15 @@
+critic: architecture
+task_id: BASS-056
+iteration: 1
+no_issues_found: false
+findings:
+  - severity: low
+    confidence: confirmed
+    category: correctness
+    evidence:
+      file: scripts/evaluate-semantic.mjs
+      location: metrics.specNormalFalsePositive
+    description: The metric counts normal cases where pass is false, which is a non-acceptance or false-negative rate rather than a false-positive rate. The final comparison explains the observed meaning, but the JSON field remains easy to misread.
+    impact: Consumers of the raw report may invert the metric's meaning when evaluating normal-specification behavior.
+    verification: Inspect the predicate over gold=true cases; it counts items where item.pass is false and the pass threshold is an upper bound.
+    suggested_fix: Rename the field to specNormalNotPassed in a future report-schema change, preserving an alias if consumers rely on the current name.

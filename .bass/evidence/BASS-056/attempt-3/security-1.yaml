@@ -1,0 +1,5 @@
+critic: security
+task_id: BASS-056
+iteration: 1
+no_issues_found: true
+findings: []

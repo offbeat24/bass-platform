@@ -10,6 +10,8 @@ import { appendEvent } from "../task/events.js";
 
 const findingSchema = z.object({ id: z.string(), subject: z.string(), status: z.enum(["pass", "problem", "uncertain"]), confidence: z.number().min(0).max(1), source: z.string() });
 type Finding = z.infer<typeof findingSchema>;
+export const SEMANTIC_YES_THRESHOLD = 0.8;
+export const SEMANTIC_NO_THRESHOLD = 0.2;
 const referenceSchema = z.object({ source: z.string(), selector: z.string().optional(), line: z.number().int().positive().optional(), quote: z.string().optional(), sha256: z.string() });
 const stageSchema = z.object({
   stage: z.enum(["prepare", "verify"]), input_hash: z.string(), model: z.string(),
@@ -37,26 +39,25 @@ function taskInput(task: TaskFile, config: LoadedConfig): string {
 function paragraphs(text: string): string[] {
   return text.split(/\r?\n/).map((line) => line.replace(/^[-*]\s*/, "").trim()).filter(Boolean);
 }
-function verdict(answer: { choice: string; confidence: number }, subject: string, source: string): Finding {
-  const status = answer.confidence < 0.8 ? "uncertain" : answer.choice === "pass" ? "pass" : answer.choice === "problem" ? "problem" : "uncertain";
-  return { id: digest({ source, subject }).slice(0, 16), subject, source, status, confidence: answer.confidence };
+function noulVerdict(answer: { noul: number }, subject: string, source: string): Finding {
+  const status = answer.noul >= SEMANTIC_YES_THRESHOLD ? "pass" : answer.noul <= SEMANTIC_NO_THRESHOLD ? "problem" : "uncertain";
+  return { id: digest({ source, subject }).slice(0, 16), subject, source, status, confidence: Math.abs(2 * answer.noul - 1) };
 }
-export function choice(instructions: string): SemanticQuestion {
-  return { type: "choice", instructions, criteria: {
-    pass: "The stated condition is clearly satisfied by the supplied text.",
-    problem: "The stated condition is clearly violated by the supplied text.",
-    uncertain: "The supplied text cannot establish either conclusion.",
-  } };
+function noul(instructions: string, yes: string, no: string): SemanticQuestion {
+  return { type: "noul", instructions, criteria: { true: yes, false: no } };
 }
 export function specificationQuestions(acceptance: string[]): Record<string, SemanticQuestion> {
   const questions: Record<string, SemanticQuestion> = {
-    conflict: choice("Are the shipping and excluded descriptions compatible? Return problem for a direct contradiction."),
+    compatibility: noul("Are `shipping` and `excluded` compatible, with no direct contradiction?",
+      "They describe compatible scopes without directly contradicting each other.", "They describe incompatible or directly contradictory work."),
     task_kind: { type: "choice", instructions: "Which task kind best describes the requested work?", criteria: { explore: null, delete: null, fix: null, feature: null, refactor: null, release: null } },
     surface: { type: "choice", instructions: "Which main project surface does this task affect?", criteria: { ui: null, data: null, game: null, release: null, docs: null, other: null } },
   };
   for (let index = 0; index < acceptance.length; index++) {
-    questions[`observable_${index}`] = choice(`Is acceptance[${index}] observable or measurable? Return problem if it is only a vague aspiration.`);
-    questions[`covered_${index}`] = choice(`Does verification cover acceptance[${index}]? Return problem if there is no concrete matching check.`);
+    questions[`observable_${index}`] = noul(`Is acceptance[${index}] objectively testable from an observable result?`,
+      "The criterion can be checked against a concrete result.", "The criterion is vague or cannot be checked objectively.");
+    questions[`covered_${index}`] = noul(`Does verification specify a concrete check that directly tests acceptance[${index}]?`,
+      "Verification names a concrete check that directly tests this criterion.", "Verification is absent, vague, or unrelated to this criterion.");
   }
   return questions;
 }
@@ -166,10 +167,10 @@ export async function prepareSemantic(projectRoot: string, config: LoadedConfig,
   try {
     const first = await askSemantic(projectRoot, config.bassYaml.semantic, { state, questions });
     const answer = first.response.answers;
-    const findings = [verdict(answer["conflict"] as { choice: string; confidence: number }, "Shipping and excluded scope do not conflict", "What we are shipping / What we are not shipping")];
+    const findings = [noulVerdict(answer["compatibility"] as { noul: number }, "Shipping and excluded scope do not conflict", "What we are shipping / What we are not shipping")];
     acceptance.forEach((criterion, index) => {
-      findings.push(verdict(answer[`observable_${index}`] as { choice: string; confidence: number }, criterion, `Acceptance criteria:${index + 1}`));
-      findings.push(verdict(answer[`covered_${index}`] as { choice: string; confidence: number }, criterion, `Verification:${index + 1}`));
+      findings.push(noulVerdict(answer[`observable_${index}`] as { noul: number }, criterion, `Acceptance criteria:${index + 1}`));
+      findings.push(noulVerdict(answer[`covered_${index}`] as { noul: number }, criterion, `Verification:${index + 1}`));
     });
     const references: Candidate[] = [];
     let contextDecisions: NonNullable<SemanticStage["context_decisions"]> = [];

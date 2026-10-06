@@ -1,0 +1,15 @@
+{
+  "total": 120,
+  "development": 30,
+  "holdout": 90,
+  "perDimension": {
+    "spec": 40,
+    "context": 40,
+    "evidence": 40
+  },
+  "languages": {
+    "ko": 60,
+    "en": 60
+  },
+  "estimatedMaximumReservationsUsd": 0.323
+}
