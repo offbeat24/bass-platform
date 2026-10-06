@@ -19,7 +19,7 @@
     }
   ],
   "task_id": "BASS-060",
-  "summary_of_changes": "Prepared BASS 0.8.0 release metadata and notes, and updated the plugin launcher to accept project version 0.8.0.",
+  "summary_of_changes": "Prepared and released BASS 0.8.0; PR #11 merged, v0.8.0 published, and the release-triggered npm publish step succeeded.",
   "why": "Publish the observer, approved time-budget resume, and semantic judgment improvements already merged in PR #10 as a versioned release.",
   "files_changed": [
     ".agents/plugins/marketplace.json",
@@ -43,6 +43,7 @@
     ".bass/evidence/BASS-060/claude-plugin.log",
     ".bass/evidence/BASS-060/claude-root.log",
     ".bass/evidence/BASS-060/ponytail-review.md",
+    ".bass/evidence/BASS-060/release-publish.md",
     ".bass/evidence/BASS-060/release-readiness.md",
     ".bass/evidence/BASS-060/verification.md",
     ".bass/evidence/BASS-060/verify-initial.log",
@@ -104,12 +105,29 @@
         "name": "claude-plugin-validation",
         "level": 3,
         "status": "pass"
+      },
+      {
+        "name": "github-pr-checks-ubuntu-macos-windows-gitguardian",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "github-release-v0.8.0-target",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "github-release-workflow-run-6",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "github-packages-npm-publish",
+        "level": 3,
+        "status": "pass"
       }
     ],
-    "not_verified": [
-      "PR checks on Ubuntu, macOS, Windows, and GitGuardian are pending.",
-      "GitHub Release v0.8.0 and its release-triggered GitHub Packages publication are pending."
-    ]
+    "not_verified": []
   },
   "critic_findings": {
     "total": 0,
@@ -117,7 +135,7 @@
     "report_path": ".bass/evidence/BASS-060/ponytail-review.md"
   },
   "known_limitations": [
-    "Remote CI, GitHub Release publication, and package workflow have not yet completed."
+    "Release workflow run #6 emitted non-blocking Node 20-to-24 action and Ubuntu runner migration notices; all checks and publication steps succeeded."
   ],
   "out_of_scope_findings": [],
   "docs_updated": {
@@ -294,9 +312,9 @@
     {
       "kind": "release-readiness",
       "path": ".bass/evidence/BASS-060/release-readiness.md",
-      "sha256": "d6a0fc9adf53d297d187f106cf2716595cc721acf119a77eaf384318a6f2c9bb",
+      "sha256": "cb1ccacb97443b85ed49df2afdec93f403bb2effc358fa0b6e124d7a270fa3c2",
       "produced_by": "BASS-060 release verification",
-      "at": "2026-10-06T08:55:36.288Z"
+      "at": "2026-10-06T09:13:03Z"
     },
     {
       "kind": "verification",
@@ -318,6 +336,13 @@
       "sha256": "2b54be8a3b663d4edfba25d6d93fc3840be72125614d1c7fc3addc650ebc1b3a",
       "produced_by": "BASS-060 release verification",
       "at": "2026-10-06T08:55:36.288Z"
+    },
+    {
+      "kind": "release-publication",
+      "path": ".bass/evidence/BASS-060/release-publish.md",
+      "sha256": "1fb1eb72d0823ff7f06ee816158931415448fe59405bbbc9ee4e1907e32947ba",
+      "produced_by": "BrowserSkill GitHub release and package workflow verification",
+      "at": "2026-10-06T09:13:03Z"
     }
   ],
   "context": {
@@ -359,6 +384,7 @@
       ".bass/evidence/BASS-060/claude-plugin.log",
       ".bass/evidence/BASS-060/claude-root.log",
       ".bass/evidence/BASS-060/ponytail-review.md",
+      ".bass/evidence/BASS-060/release-publish.md",
       ".bass/evidence/BASS-060/release-readiness.md",
       ".bass/evidence/BASS-060/verification.md",
       ".bass/evidence/BASS-060/verify-initial.log",
@@ -380,5 +406,11 @@
     ],
     "outside_allowed": [],
     "forbidden_touched": []
+  },
+  "human_approval": {
+    "approved": true,
+    "approver": "user",
+    "at": "2026-10-06T09:13:17.036Z",
+    "notes": "사용자가 모두 승인하고 BASS 0.8.0 릴리스까지 명시적으로 요청함. PR #11 병합, v0.8.0 공개 및 npm publish 워크플로 성공을 BrowserSkill로 확인."
   }
 }
