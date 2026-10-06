@@ -1,7 +1,7 @@
 import type { LoadedConfig } from "../config/loader.js";
 import { buildExecutionPlan } from "../execution/planner.js";
 import { loadRunRecord } from "./runRecord.js";
-import { currentAttempt, readEvents } from "./events.js";
+import { currentAttempt, LOOP_BUDGET_RESUME_EVENT, readEvents } from "./events.js";
 import { listTasks } from "./taskFile.js";
 import { buildTaskGraph } from "./taskGraph.js";
 
@@ -71,6 +71,13 @@ export function buildProjectStatus(
     const eventAttempts = events.filter((event) => event.kind === "attempt.started").length;
     const last = events.at(-1) ?? null;
     const blocked = [...events].reverse().find((event) => event.kind === "task.blocked") ?? null;
+    const latestResumeIndex = events.reduce(
+      (index, event, currentIndex) => event.kind === "task.started" && event.name === LOOP_BUDGET_RESUME_EVENT
+        ? currentIndex
+        : index,
+      -1,
+    );
+    const blockedIndex = blocked ? events.lastIndexOf(blocked) : -1;
     let record: ReturnType<typeof loadRunRecord> = null;
     try {
       record = loadRunRecord(projectRoot, task.frontmatter.id);
@@ -88,7 +95,7 @@ export function buildProjectStatus(
       current_attempt: currentAttempt(eventRead.events, task.frontmatter.id),
       max_attempts: plan.loop.maxAttempts,
       last_activity: last?.at ?? null,
-      blocked_reason: blocked?.summary ?? null,
+      blocked_reason: blockedIndex > latestResumeIndex ? blocked?.summary ?? null : null,
       evaluations: record?.verification.evaluations_run.map((item) => ({ name: item.name, status: item.status })) ?? [],
       open_high_or_medium: record?.critic_findings.open_high_or_medium ?? 0,
       evidence: record?.evidence.length ?? 0,

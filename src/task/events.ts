@@ -22,6 +22,7 @@ export const EVENT_KINDS = [
 ] as const;
 
 export const EVENT_STATUSES = ["running", "pass", "fail", "no-progress", "blocked", "skipped", "error"] as const;
+export const LOOP_BUDGET_RESUME_EVENT = "loop-budget-resume";
 
 const summarySchema = z.string().min(1).max(500).refine((value) => !/[\r\n]/.test(value), "summary must be one line");
 
@@ -74,6 +75,11 @@ export interface AttemptActionResult {
   attempt: number;
   blocked: boolean;
   reason?: string;
+  event?: BassEvent;
+}
+
+export interface ResumeActionResult {
+  changed: boolean;
   event?: BassEvent;
 }
 
@@ -133,6 +139,77 @@ export function currentAttempt(events: BassEvent[], taskId: string): number | nu
   return starts.map((event) => event.attempt!).reverse().find((attempt) => !completions.has(attempt)) ?? null;
 }
 
+export function resumeLoopBudget(opts: {
+  projectRoot: string;
+  task: TaskFile;
+  plan: ExecutionPlan;
+  approvedBy: string;
+  reason: string;
+  now?: Date;
+}): ResumeActionResult {
+  const taskId = opts.task.frontmatter.id;
+  const approvedBy = opts.approvedBy.trim();
+  const reason = opts.reason.trim();
+  if (!approvedBy || approvedBy.length > 80 || /[\r\n]/.test(approvedBy)) {
+    throw new Error("--approved-by must be a single line of 1-80 characters");
+  }
+  if (!reason || reason.length > 350 || /[\r\n]/.test(reason)) {
+    throw new Error("--reason must be a single line of 1-350 characters");
+  }
+
+  const { events } = readEvents(opts.projectRoot);
+  const currentTask = findTask(opts.projectRoot, taskId);
+  const taskEvents = events.filter((event) => event.task_id === taskId);
+  const attempt = currentAttempt(events, taskId);
+  const blocks = taskEvents
+    .map((event, index) => ({ event, index }))
+    .filter(({ event }) => event.kind === "task.blocked");
+  const latestBlock = blocks.at(-1);
+  const latestResume = taskEvents
+    .map((event, index) => ({ event, index }))
+    .filter(({ event }) => event.kind === "task.started" && event.name === LOOP_BUDGET_RESUME_EVENT)
+    .at(-1);
+  const summary = normalizeEventSummary(`loop budget resume approved by ${approvedBy}: ${reason}`);
+
+  if (latestResume && latestBlock && latestResume.index > latestBlock.index) {
+    if (latestResume.event.summary !== summary) {
+      throw new Error("A different loop-budget resume is already recorded; preserve its approval and reason");
+    }
+    const currentStatus = normalizeWorkflowState(currentTask.frontmatter.status);
+    if (currentStatus === "ACTIVE") {
+      return { changed: false, event: latestResume.event };
+    }
+    if (currentStatus !== "NEEDS_DECISION") {
+      throw new Error(`Recorded resume cannot reopen ${taskId} from ${currentStatus}`);
+    }
+    if (attempt !== null) throw new Error(`Cannot resume ${taskId} while attempt ${attempt} is open`);
+    const result = transitionTask(opts.projectRoot, taskId, "ACTIVE");
+    return { changed: result.changed, event: latestResume.event };
+  }
+
+  if (normalizeWorkflowState(currentTask.frontmatter.status) !== "NEEDS_DECISION") {
+    throw new Error(`Loop-budget resume requires NEEDS_DECISION status (current: ${currentTask.frontmatter.status})`);
+  }
+  if (!latestBlock || latestBlock.event.summary !== "loop time budget exhausted") {
+    throw new Error("Loop-budget resume requires the latest block reason to be exactly 'loop time budget exhausted'");
+  }
+  if (attempt !== null) throw new Error(`Cannot resume ${taskId} while attempt ${attempt} is open; finish it first`);
+  const starts = taskEvents.filter((event) => event.kind === "attempt.started");
+  if (starts.length >= opts.plan.loop.maxAttempts) {
+    throw new Error(`Cannot resume ${taskId}: attempt budget exhausted (${starts.length}/${opts.plan.loop.maxAttempts})`);
+  }
+
+  const event = appendEvent(opts.projectRoot, {
+    task_id: taskId,
+    kind: "task.started",
+    status: "running",
+    name: LOOP_BUDGET_RESUME_EVENT,
+    summary,
+  });
+  const result = transitionTask(opts.projectRoot, taskId, "ACTIVE");
+  return { changed: result.changed, event };
+}
+
 export function startAttempt(opts: {
   projectRoot: string;
   task: TaskFile;
@@ -145,6 +222,7 @@ export function startAttempt(opts: {
   }
   const now = opts.now ?? new Date();
   const { events } = readEvents(opts.projectRoot);
+  const taskEvents = events.filter((event) => event.task_id === opts.task.frontmatter.id);
   const open = currentAttempt(events, opts.task.frontmatter.id);
   if (open !== null) {
     const started = events.find(
@@ -153,15 +231,18 @@ export function startAttempt(opts: {
     if (started?.plan_fingerprint && started.plan_fingerprint !== opts.plan.planFingerprint) {
       throw new Error(`Open attempt ${open} is bound to a different ExecutionPlan; finish it before changing the plan`);
     }
+    const windowStartedAt = loopBudgetStartedAt(taskEvents);
+    if (windowStartedAt && now.getTime() - Date.parse(windowStartedAt) > opts.plan.loop.maxMinutes * 60_000) {
+      return { changed: false, attempt: open, blocked: true, reason: "loop time budget exhausted; finish the open attempt before resuming" };
+    }
     return { changed: false, attempt: open, blocked: false };
   }
-  const taskEvents = events.filter((event) => event.task_id === opts.task.frontmatter.id);
   const starts = taskEvents.filter((event) => event.kind === "attempt.started");
   if (starts.length >= opts.plan.loop.maxAttempts) {
     return blockAttempt(opts.projectRoot, opts.task.frontmatter.id, starts.length, "NEEDS_EXPERT", "attempt budget exhausted", now);
   }
-  const firstStarted = starts[0]?.at;
-  if (firstStarted && now.getTime() - Date.parse(firstStarted) > opts.plan.loop.maxMinutes * 60_000) {
+  const windowStartedAt = loopBudgetStartedAt(taskEvents);
+  if (windowStartedAt && now.getTime() - Date.parse(windowStartedAt) > opts.plan.loop.maxMinutes * 60_000) {
     return blockAttempt(opts.projectRoot, opts.task.frontmatter.id, starts.length, "NEEDS_DECISION", "loop time budget exhausted", now);
   }
 
@@ -227,8 +308,8 @@ export function finishAttempt(opts: {
   const totalTurns = events
     .filter((item) => item.kind === "attempt.completed")
     .reduce((sum, item) => sum + (item.turns ?? 0), 0);
-  const firstStarted = events.find((item) => item.kind === "attempt.started");
-  const elapsed = firstStarted ? now.getTime() - Date.parse(firstStarted.at) : 0;
+  const windowStartedAt = loopBudgetStartedAt(events);
+  const elapsed = windowStartedAt ? now.getTime() - Date.parse(windowStartedAt) : 0;
   if (totalTurns > opts.plan.loop.maxTurns) {
     return blockAfterEvent(opts.projectRoot, opts.task.frontmatter.id, attempt, event, "NEEDS_DECISION", `turn budget exceeded: ${totalTurns}/${opts.plan.loop.maxTurns}`, now);
   }
@@ -251,6 +332,17 @@ export function finishAttempt(opts: {
     return blockAfterEvent(opts.projectRoot, opts.task.frontmatter.id, attempt, event, "NEEDS_EXPERT", "attempt budget exhausted", now);
   }
   return { changed: true, attempt, blocked: false, event };
+}
+
+function loopBudgetStartedAt(events: BassEvent[]): string | undefined {
+  const firstAttempt = events.find((event) => event.kind === "attempt.started");
+  if (!firstAttempt) return undefined;
+  const lastResume = [...events].reverse().find(
+    (event) => event.kind === "task.started" && event.name === LOOP_BUDGET_RESUME_EVENT,
+  );
+  return lastResume && Date.parse(lastResume.at) >= Date.parse(firstAttempt.at)
+    ? lastResume.at
+    : firstAttempt.at;
 }
 
 function blockAttempt(

@@ -31,7 +31,7 @@ import { normalizeWorkflowState } from "../workflow/stateMachine.js";
 import { getRuntime, parseRuntimeTargets, runtimeCatalog } from "../runtime/catalog.js";
 import { recommendRuntimes } from "../runtime/recommendation.js";
 import { buildTaskGraph, formatTaskGraph } from "../task/taskGraph.js";
-import { appendEvent, currentAttempt, EVENT_KINDS, EVENT_STATUSES, finishAttempt, readEvents, startAttempt } from "../task/events.js";
+import { appendEvent, currentAttempt, EVENT_KINDS, EVENT_STATUSES, finishAttempt, readEvents, resumeLoopBudget, startAttempt } from "../task/events.js";
 import { claimCapability, completeCapability, type CapabilityCompletionStatus } from "../task/capability.js";
 import { buildProjectStatus, formatProjectStatus, watchProjectStatus } from "../task/status.js";
 import { prepareSemantic, verifySemantic, semanticReport, resolveFinding } from "../semantic/workflow.js";
@@ -246,6 +246,27 @@ attemptCmd
     });
     console.log(opts.json ? JSON.stringify(result, null, 2) : `finished: ${taskId} attempt=${result.attempt}${result.reason ? `; blocked=${result.reason}` : ""}`);
     if (result.blocked) process.exitCode = 1;
+  });
+taskCmd
+  .command("resume <taskId>")
+  .requiredOption("--approved-by <name>", "계속 진행을 승인한 사람")
+  .requiredOption("--reason <reason>", "시간 예산 재개 사유")
+  .description("시간 예산 초과로 보류된 작업을 사람 승인과 함께 재개")
+  .action((taskId, opts) => {
+    const { projectRoot, config } = requireProject();
+    const task = findTask(projectRoot, taskId);
+    const plan = requirePreTask(projectRoot, config, {
+      ...task,
+      frontmatter: { ...task.frontmatter, status: "ACTIVE" },
+    });
+    const result = resumeLoopBudget({
+      projectRoot,
+      task,
+      plan,
+      approvedBy: String(opts.approvedBy),
+      reason: String(opts.reason),
+    });
+    console.log(`${result.changed ? "resumed" : "unchanged"}: ${taskId}${result.event ? ` at ${result.event.at}` : ""}`);
   });
 taskCmd
   .command("new <taskId>")
