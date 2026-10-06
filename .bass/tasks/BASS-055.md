@@ -1,7 +1,7 @@
 ---
 id: BASS-055
 title: Route BASS instructions only when relevant
-status: REVIEW
+status: DONE
 type: refactor
 profile: cli
 risk:
