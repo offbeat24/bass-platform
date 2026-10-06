@@ -31,10 +31,11 @@ import { normalizeWorkflowState } from "../workflow/stateMachine.js";
 import { getRuntime, parseRuntimeTargets, runtimeCatalog } from "../runtime/catalog.js";
 import { recommendRuntimes } from "../runtime/recommendation.js";
 import { buildTaskGraph, formatTaskGraph } from "../task/taskGraph.js";
-import { appendEvent, currentAttempt, EVENT_KINDS, EVENT_STATUSES, finishAttempt, readEvents, startAttempt } from "../task/events.js";
+import { appendEvent, currentAttempt, EVENT_KINDS, EVENT_STATUSES, finishAttempt, readEvents, resumeLoopBudget, startAttempt } from "../task/events.js";
 import { claimCapability, completeCapability, type CapabilityCompletionStatus } from "../task/capability.js";
 import { buildProjectStatus, formatProjectStatus, watchProjectStatus } from "../task/status.js";
 import { prepareSemantic, verifySemantic, semanticReport, resolveFinding } from "../semantic/workflow.js";
+import { startObserver } from "../observe/index.js";
 
 const program = new Command();
 program
@@ -248,6 +249,27 @@ attemptCmd
     if (result.blocked) process.exitCode = 1;
   });
 taskCmd
+  .command("resume <taskId>")
+  .requiredOption("--approved-by <name>", "계속 진행을 승인한 사람")
+  .requiredOption("--reason <reason>", "시간 예산 재개 사유")
+  .description("시간 예산 초과로 보류된 작업을 사람 승인과 함께 재개")
+  .action((taskId, opts) => {
+    const { projectRoot, config } = requireProject();
+    const task = findTask(projectRoot, taskId);
+    const plan = requirePreTask(projectRoot, config, {
+      ...task,
+      frontmatter: { ...task.frontmatter, status: "ACTIVE" },
+    });
+    const result = resumeLoopBudget({
+      projectRoot,
+      task,
+      plan,
+      approvedBy: String(opts.approvedBy),
+      reason: String(opts.reason),
+    });
+    console.log(`${result.changed ? "resumed" : "unchanged"}: ${taskId}${result.event ? ` at ${result.event.at}` : ""}`);
+  });
+taskCmd
   .command("new <taskId>")
   .description("에이전트가 표준 작업 파일을 멱등하게 준비")
   .requiredOption("--title <title>")
@@ -388,6 +410,28 @@ capabilityCmd
       ...(opts.evidence ? { evidence: String(opts.evidence) } : {}),
     });
     console.log(opts.json ? JSON.stringify(result, null, 2) : `${result.changed ? "completed" : "unchanged"}: ${result.callId} attempt=${result.attempt}`);
+  });
+
+program
+  .command("observe")
+  .description("현재 BASS 프로젝트의 읽기 전용 로컬 관찰 페이지 열기")
+  .option("--no-open", "브라우저를 자동으로 열지 않고 주소만 출력")
+  .action(async (opts) => {
+    const { projectRoot, config } = requireProject();
+    const observer = await startObserver(projectRoot, config, { openBrowser: Boolean(opts.open) });
+    console.log(`BASS observer: ${observer.url}`);
+    await new Promise<void>((resolve) => {
+      const stop = (): void => {
+        process.off("SIGINT", stop);
+        process.off("SIGTERM", stop);
+        void observer.close().catch(() => {}).finally(() => {
+          console.log("BASS observer stopped.");
+          resolve();
+        });
+      };
+      process.once("SIGINT", stop);
+      process.once("SIGTERM", stop);
+    });
   });
 
 program

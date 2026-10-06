@@ -1,0 +1,14 @@
+[bass evaluate] results:
+  [L1] typecheck: PASS (exit=0, 267ms) — npm run typecheck
+    evidence: .bass/evidence/BASS-056/attempt-3/L1-typecheck.log
+  [L2] tests: PASS (exit=0, 1911ms) — npm test
+    evidence: .bass/evidence/BASS-056/attempt-3/L2-tests.log
+  [L2] build: PASS (exit=0, 219ms) — npm run build
+    evidence: .bass/evidence/BASS-056/attempt-3/L2-build.log
+  [L3] package-smoke: PASS (exit=0, 5671ms) — npm run smoke:package
+    evidence: .bass/evidence/BASS-056/attempt-3/L3-package-smoke.log
+  [L3] plugin-manifest: PASS (exit=0, 119ms) — npm run validate:plugin
+    evidence: .bass/evidence/BASS-056/attempt-3/L3-plugin-manifest.log
+  [L3] performance-budget: PASS (exit=0, 237ms) — npm run benchmark:performance
+    evidence: .bass/evidence/BASS-056/attempt-3/L3-performance-budget.log
+  => ALL PASS

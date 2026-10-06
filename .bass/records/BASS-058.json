@@ -1,0 +1,196 @@
+{
+  "record_version": 2,
+  "execution_contract": {
+    "contract_version": 1,
+    "plan_fingerprint": "0ad7b60f55a216c346a30c4f5a83a18e474fbc9b04d682fada76d1fbd05dcd45",
+    "capability_calls": [
+      "ponytail:full"
+    ]
+  },
+  "capability_invocations": [
+    {
+      "call_id": "4ef4600fbe3f32726402e34baa404204315bef113b46917c5573fb43affab903",
+      "attempt": 1,
+      "capability_call": "ponytail:full",
+      "host": "codex",
+      "status": "pass",
+      "summary": "Reused existing event shape; reset only the approved time window and retained cumulative guards",
+      "evidence_path": ".bass/evidence/BASS-058/simplicity-review.md"
+    }
+  ],
+  "task_id": "BASS-058",
+  "summary_of_changes": "Added a human-approved, audited resume path for tasks blocked by an expired loop time budget.",
+  "why": "Idle time across interrupted sessions should not permanently prevent approved continuation, while prior history and all non-time limits remain intact.",
+  "files_changed": [
+    ".bass/evidence/BASS-058/attempt-1/L1-typecheck.log",
+    ".bass/evidence/BASS-058/attempt-1/L2-build.log",
+    ".bass/evidence/BASS-058/attempt-1/L2-tests.log",
+    ".bass/evidence/BASS-058/evaluation-2026-10-06.log",
+    ".bass/evidence/BASS-058/simplicity-review.md",
+    ".bass/evidence/BASS-058/verify-2026-10-06.log",
+    ".bass/events.jsonl",
+    ".bass/records/BASS-058.json",
+    ".bass/tasks/BASS-056.md",
+    ".bass/tasks/BASS-058.md",
+    "docs/workflows.md",
+    "src/cli/main.ts",
+    "src/task/events.ts",
+    "src/task/status.ts",
+    "tests/events.test.ts"
+  ],
+  "models_used": [],
+  "verification": {
+    "evaluations_run": [
+      {
+        "name": "typecheck",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "tests",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "build",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "package smoke",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "plugin validation",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "performance benchmark",
+        "level": 2,
+        "status": "pass"
+      }
+    ],
+    "not_verified": [
+      "Cross-platform CI was not run; no platform-specific change was made."
+    ]
+  },
+  "critic_findings": {
+    "total": 0,
+    "open_high_or_medium": 0,
+    "report_path": ".bass/evidence/BASS-058/simplicity-review.md"
+  },
+  "known_limitations": [
+    "The local CLI records the supplied approver label but does not authenticate the operator identity."
+  ],
+  "out_of_scope_findings": [],
+  "docs_updated": {
+    "needed": true,
+    "updated": [
+      "docs/workflows.md"
+    ]
+  },
+  "lessons": {
+    "recorded": false,
+    "candidates": []
+  },
+  "rollback": {
+    "method": "Revert the resume command, time-anchor selection, status presentation, and docs; preserve all appended event history."
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "pass",
+      "started_at": "2026-10-06T01:48:27.285Z",
+      "completed_at": "2026-10-06T01:58:23.771Z"
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-058/verify-2026-10-06.log",
+      "sha256": "11649863b740b02d50cf3b2ae85f2eafea6cf3621005311ec68ceb8dce1afa07",
+      "produced_by": "npm run verify",
+      "at": "2026-10-06T01:58:23.771Z"
+    },
+    {
+      "kind": "evaluation",
+      "path": ".bass/evidence/BASS-058/evaluation-2026-10-06.log",
+      "sha256": "0994a673d9217366b1cbd7a9e0d807ec2eb54167089db99d7bd3c0648a94b90f",
+      "produced_by": "bass evaluate --task BASS-058",
+      "at": "2026-10-06T01:58:23.771Z"
+    },
+    {
+      "kind": "simplicity-review",
+      "path": ".bass/evidence/BASS-058/simplicity-review.md",
+      "sha256": "ae1d0bbfc49034ebfea15babaad7fc74c488a8dfebaf604cdca80071f4df8f91",
+      "produced_by": "BASS simplicity review",
+      "at": "2026-10-06T01:58:23.771Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-058/attempt-1/L1-typecheck.log",
+      "sha256": "f963af5455e4264eb42c0519ea1a7270ad34c60749b71040c7496d392e94e766",
+      "produced_by": "BASS L1 typecheck",
+      "at": "2026-10-06T01:58:23.771Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-058/attempt-1/L2-tests.log",
+      "sha256": "1fe167e870d2081c4ed687daac8b000c3fc16360f2217a5837406a87cacc5e84",
+      "produced_by": "BASS L2 tests",
+      "at": "2026-10-06T01:58:23.771Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-058/attempt-1/L2-build.log",
+      "sha256": "7d4c6de7929940849b36bff01950441ef9d31db3e7753b75c42b07b166d28575",
+      "produced_by": "BASS L2 build",
+      "at": "2026-10-06T01:58:23.771Z"
+    }
+  ],
+  "context": {
+    "sources": [],
+    "total_chars": 0,
+    "omitted": []
+  },
+  "usage": {
+    "turns": "unknown",
+    "attempts": 1,
+    "input_tokens": "unknown",
+    "output_tokens": "unknown",
+    "cached_input_tokens": "unknown",
+    "evaluator_tokens": "unknown",
+    "tool_calls": "unknown",
+    "subagents": "unknown",
+    "estimated_cost": "unknown"
+  },
+  "scope": {
+    "actual_files": [
+      ".bass/evidence/BASS-058/attempt-1/L1-typecheck.log",
+      ".bass/evidence/BASS-058/attempt-1/L2-build.log",
+      ".bass/evidence/BASS-058/attempt-1/L2-tests.log",
+      ".bass/evidence/BASS-058/evaluation-2026-10-06.log",
+      ".bass/evidence/BASS-058/simplicity-review.md",
+      ".bass/evidence/BASS-058/verify-2026-10-06.log",
+      ".bass/events.jsonl",
+      ".bass/records/BASS-058.json",
+      ".bass/tasks/BASS-056.md",
+      ".bass/tasks/BASS-058.md",
+      "docs/workflows.md",
+      "src/cli/main.ts",
+      "src/task/events.ts",
+      "src/task/status.ts",
+      "tests/events.test.ts"
+    ],
+    "outside_allowed": [],
+    "forbidden_touched": []
+  },
+  "human_approval": {
+    "approved": true,
+    "approver": "user",
+    "at": "2026-10-06T05:07:01.308Z",
+    "notes": "User approved the reviewed BASS-058 resume procedure in this conversation."
+  }
+}

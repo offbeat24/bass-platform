@@ -114,7 +114,10 @@ bass evaluate --task TASK-001
 bass task attempt finish TASK-001 --result pass --summary "checks passed" --turns 3
 bass gate pre-review TASK-001
 bass status --watch
+bass observe
 ```
+
+`bass observe` opens an optional read-only page for the current project at a loopback-only address. It combines BASS workflow history with short-lived local Codex and Claude Code tool events. Select a task card to inspect its numbered process history and use “전체 작업” to return. If the browser does not open, use the printed address; press Ctrl-C in the command terminal to stop it. Pass `--no-open` to print the address without launching a browser. Hosted Codex tools are outside local hook coverage.
 
 세션 훅은 BASS 저장소에서만 짧은 안내를 제공한다. 읽기 전용 질문은 관련 근거만 확인하고, 구현할 때 해당 task의 guide를 읽는다. 이미 정해진 작업은 요구사항 정리를 다시 시작하지 않고 구현과 영향받은 검증까지 진행한다.
 
@@ -170,6 +173,6 @@ claude plugin validate .
 
 이벤트 reader는 schema v1·v2를 함께 읽는다. 0.2–0.4 task와 기존 Run Record도 기본값으로 읽으며 완료 이력을 일괄 재작성하지 않는다. 새 Run Record v2는 `execution_contract`와 `capability_invocations`를 기록한다. push와 package publish는 별도 승인 작업이다.
 
-웹 콘솔과 TUI는 0.5 범위가 아니다. 충분한 실제 프로젝트·task·반복 loop와 팀 피드백이 쌓이고 이벤트 형식이 안정된 뒤에만 별도 버전의 읽기 전용 콘솔을 검토한다. 현재 Codex IDE 확장은 플러그인 설치 릴리스 매트릭스에서 제외하고 저장소의 `AGENTS.md`와 로컬 스킬만 적용한다.
+원격 웹 콘솔과 TUI는 범위에 포함하지 않는다. 선택 기능인 `bass observe`는 현재 프로젝트만 읽으며 도구 미리보기는 프로세스 메모리에만 둔다. 현재 Codex IDE 확장은 플러그인 설치 릴리스 매트릭스에서 제외하고 저장소의 `AGENTS.md`와 로컬 스킬만 적용한다.
 
 상세 문서: [Architecture](docs/architecture.md), [Configuration](docs/configuration.md), [Workflows](docs/workflows.md), [Agent operations](docs/agent-operations.md), [Existing repository adoption](docs/adopting-existing-project.md).

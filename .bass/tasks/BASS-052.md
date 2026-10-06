@@ -1,7 +1,7 @@
 ---
 id: BASS-052
 title: Apply cross-profile instruction audit
-status: REVIEW
+status: DONE
 type: refactor
 profile: cli
 risk:

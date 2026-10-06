@@ -3,8 +3,9 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildExecutionPlan } from "../src/execution/planner.js";
 import { loadConfig } from "../src/config/loader.js";
-import { appendEvent, finishAttempt, readEvents, startAttempt } from "../src/task/events.js";
+import { appendEvent, finishAttempt, LOOP_BUDGET_RESUME_EVENT, readEvents, resumeLoopBudget, startAttempt } from "../src/task/events.js";
 import { parseTaskFile } from "../src/task/taskFile.js";
+import { buildProjectStatus } from "../src/task/status.js";
 import { makeTempProject, writeTask } from "./helpers.js";
 
 describe("BASS event log", () => {
@@ -129,6 +130,165 @@ describe("BASS event log", () => {
     });
     expect(result.reason).toBe("loop time budget exhausted");
     expect(parseTaskFile(task.filePath).frontmatter.status).toBe("NEEDS_DECISION");
+  });
+
+  it("명시적 승인 재개는 시간 창만 갱신하고 기존 시도·턴 상한은 유지한다", () => {
+    const { root, task, plan } = activeTask("EVENT-111", "medium", {
+      max_minutes: 1,
+      max_attempts: 3,
+      max_turns: 2,
+      no_progress_limit: 2,
+    });
+    startAttempt({ projectRoot: root, task, plan, now: new Date("2026-07-21T00:00:00Z") });
+    const expired = finishAttempt({
+      projectRoot: root,
+      task,
+      plan,
+      result: "pass",
+      summary: "attempt ended after its time window",
+      turns: 1,
+      now: new Date("2026-07-21T00:02:00Z"),
+    });
+    expect(expired.reason).toBe("loop time budget exhausted");
+    const historyBeforeResume = fs.readFileSync(path.join(root, ".bass", "events.jsonl"), "utf8");
+    const blockedTask = parseTaskFile(task.filePath);
+    const approval = resumeLoopBudget({
+      projectRoot: root,
+      task: blockedTask,
+      plan,
+      approvedBy: "reviewer",
+      reason: "Continue after the expired attempt",
+      now: new Date("2026-07-21T00:03:00Z"),
+    });
+
+    expect(approval.changed).toBe(true);
+    expect(approval.event).toMatchObject({
+      kind: "task.started",
+      name: LOOP_BUDGET_RESUME_EVENT,
+      summary: "loop budget resume approved by reviewer: Continue after the expired attempt",
+    });
+    expect(fs.readFileSync(path.join(root, ".bass", "events.jsonl"), "utf8").startsWith(historyBeforeResume)).toBe(true);
+    expect(parseTaskFile(task.filePath).frontmatter.status).toBe("ACTIVE");
+    expect(buildProjectStatus(root, loadConfig({ projectRoot: root })).tasks[0]?.blocked_reason).toBeNull();
+    expect(resumeLoopBudget({
+      projectRoot: root,
+      task: blockedTask,
+      plan,
+      approvedBy: "reviewer",
+      reason: "Continue after the expired attempt",
+      now: new Date("2026-07-21T00:03:10Z"),
+    }).changed).toBe(false);
+
+    const resumedTask = parseTaskFile(task.filePath);
+    const secondStart = startAttempt({
+      projectRoot: root,
+      task: resumedTask,
+      plan,
+      now: new Date("2026-07-21T00:03:30Z"),
+    });
+    expect(secondStart).toMatchObject({ changed: true, attempt: 2, blocked: false });
+    expect(resumeLoopBudget({
+      projectRoot: root,
+      task: resumedTask,
+      plan,
+      approvedBy: "reviewer",
+      reason: "Continue after the expired attempt",
+      now: new Date("2026-07-21T00:03:35Z"),
+    }).changed).toBe(false);
+    const secondFinish = finishAttempt({
+      projectRoot: root,
+      task: resumedTask,
+      plan,
+      result: "pass",
+      summary: "cumulative turns still apply",
+      turns: 2,
+      now: new Date("2026-07-21T00:03:45Z"),
+    });
+    expect(secondFinish.reason).toBe("turn budget exceeded: 3/2");
+    expect(readEvents(root).events.filter((event) => event.kind === "attempt.started")).toHaveLength(2);
+    expect(readEvents(root).events.filter((event) => event.name === LOOP_BUDGET_RESUME_EVENT)).toHaveLength(1);
+  });
+
+  it("시간 초과로 남은 열린 시도는 계속 재사용하지 않고 먼저 닫게 한다", () => {
+    const { root, task, plan } = activeTask("EVENT-112", "medium", { max_minutes: 1, no_progress_limit: 2 });
+    startAttempt({ projectRoot: root, task, plan, now: new Date("2026-07-21T00:00:00Z") });
+    const expiredOpen = startAttempt({
+      projectRoot: root,
+      task,
+      plan,
+      now: new Date("2026-07-21T00:02:00Z"),
+    });
+    expect(expiredOpen).toMatchObject({ changed: false, attempt: 1, blocked: true });
+    expect(readEvents(root).events.filter((event) => event.kind === "attempt.started")).toHaveLength(1);
+
+    const closed = finishAttempt({
+      projectRoot: root,
+      task,
+      plan,
+      result: "no-progress",
+      summary: "close the expired open attempt",
+      now: new Date("2026-07-21T00:02:10Z"),
+    });
+    expect(closed.reason).toBe("loop time budget exhausted");
+    expect(resumeLoopBudget({
+      projectRoot: root,
+      task: parseTaskFile(task.filePath),
+      plan,
+      approvedBy: "reviewer",
+      reason: "Approve a fresh time window",
+      now: new Date("2026-07-21T00:03:00Z"),
+    }).changed).toBe(true);
+  });
+
+  it("재개는 다른 차단 사유를 풀지 않고 시도 상한도 초기화하지 않는다", () => {
+    const { root, task, plan } = activeTask("EVENT-113", "medium", {
+      max_minutes: 1,
+      max_attempts: 1,
+      no_progress_limit: 1,
+    });
+    startAttempt({ projectRoot: root, task, plan, now: new Date("2026-07-21T00:00:00Z") });
+    const blocked = finishAttempt({
+      projectRoot: root,
+      task,
+      plan,
+      result: "no-progress",
+      summary: "no progress within the time window",
+      now: new Date("2026-07-21T00:00:30Z"),
+    });
+    expect(blocked.reason).toBe("no progress limit reached: 1");
+    expect(() => resumeLoopBudget({
+      projectRoot: root,
+      task: parseTaskFile(task.filePath),
+      plan,
+      approvedBy: "reviewer",
+      reason: "This is not a time-budget decision",
+      now: new Date("2026-07-21T00:01:00Z"),
+    })).toThrow("latest block reason");
+
+    const timedTask = activeTask("EVENT-114", "medium", { max_minutes: 1, max_attempts: 1 });
+    startAttempt({
+      projectRoot: timedTask.root,
+      task: timedTask.task,
+      plan: timedTask.plan,
+      now: new Date("2026-07-21T00:00:00Z"),
+    });
+    finishAttempt({
+      projectRoot: timedTask.root,
+      task: timedTask.task,
+      plan: timedTask.plan,
+      result: "pass",
+      summary: "time window exceeded",
+      now: new Date("2026-07-21T00:02:00Z"),
+    });
+    expect(() => resumeLoopBudget({
+      projectRoot: timedTask.root,
+      task: parseTaskFile(timedTask.task.filePath),
+      plan: timedTask.plan,
+      approvedBy: "reviewer",
+      reason: "Attempt count must remain cumulative",
+      now: new Date("2026-07-21T00:03:00Z"),
+    })).toThrow("attempt budget exhausted");
+    expect(readEvents(timedTask.root).events.filter((event) => event.name === LOOP_BUDGET_RESUME_EVENT)).toHaveLength(0);
   });
 });
 

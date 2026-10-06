@@ -14,6 +14,8 @@ semantic:
 
 Set `TYPESAFE_API_KEY` in the execution environment. BASS does not store the key. `bass doctor` checks skill availability and key presence separately; `bass doctor --semantic-api` confirms authentication with a live model-list response. The project budget applies to all requests recorded under `.bass/semantic/usage.json`. Each request reserves the maximum per-request input charge; failed calls without metered usage retain that reservation as spent. A `429` may be retried once within the same budget. Remove a budget ledger only after reconciling the real provider bill.
 
+Before an agent initiates a live TypeSafe request, get explicit human approval for that task or evaluation. An API key or `semantic.mode: enforce` is not approval. After an approved evaluation, record its cost and uncached latency, and compare its task outcomes with the existing deterministic flow. Label synthetic evaluation results as synthetic; do not present them as production telemetry.
+
 The default Jev 1.13.0 rate is built in. If you set another model, also set its current `input_usd_per_million` from TypeSafe's official price page. Reevaluate quality and thresholds before using a new model in an enforced workflow.
 
 ## Work sequence

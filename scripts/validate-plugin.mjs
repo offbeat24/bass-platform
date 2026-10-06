@@ -25,7 +25,16 @@ assert.equal(codexMarket.plugins[0].source.path, "./plugins/bass");
 assert.equal(claudeMarket.plugins[0].source, "./plugins/bass");
 assert.ok(hooks.hooks.SessionStart);
 assert.ok(hooks.hooks.PostToolUse);
+assert.ok(hooks.hooks.PreToolUse);
+assert.ok(hooks.hooks.PostToolUseFailure);
 assert.match(hooks.hooks.PostToolUse[0].matcher, /(?:^|\|)Bash(?:\||$)/);
+for (const event of ["PreToolUse", "PostToolUse", "PostToolUseFailure"]) {
+  const observer = hooks.hooks[event].flatMap((group) => group.hooks ?? [])
+    .find((handler) => handler.command?.includes("observer-event.cjs"));
+  assert.ok(observer, `${event} must report to the local observer`);
+  assert.equal(observer.async, true, `${event} must not block the agent`);
+}
+assert.ok(fs.existsSync(path.join(root, "plugins", "bass", "hooks", "observer-event.cjs")));
 assert.match(launcher, /pluginVersion\(\)/);
 assert.match(launcher, /split\(["']\+["'],\s*1\)/);
 assert.match(launcher, /process\.env\.npm_execpath/);

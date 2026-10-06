@@ -285,5 +285,11 @@
     ],
     "outside_allowed": [],
     "forbidden_touched": []
+  },
+  "human_approval": {
+    "approved": true,
+    "approver": "user",
+    "at": "2026-10-06T08:05:48.738Z",
+    "notes": "User explicitly approved all four pending BASS reviews in this chat."
   }
 }

@@ -1,0 +1,8 @@
+[bass evaluate] results:
+  [L1] typecheck: PASS (exit=0, 310ms) — npm run typecheck
+    evidence: .bass/evidence/BASS-058/attempt-1/L1-typecheck.log
+  [L2] tests: PASS (exit=0, 2380ms) — npm test
+    evidence: .bass/evidence/BASS-058/attempt-1/L2-tests.log
+  [L2] build: PASS (exit=0, 260ms) — npm run build
+    evidence: .bass/evidence/BASS-058/attempt-1/L2-build.log
+  => ALL PASS

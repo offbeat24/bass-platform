@@ -18,7 +18,7 @@ Prime Agent is not bundled. Its persistent REPL, recursive agents, and continual
 - ECC, gstack, and Spec Kit: principles/clarification/specification/technical plan/task slicing become PRODUCT, TECH, DESIGN, optional feature spec, and BASS tasks. Their prompt suites are not copied.
 - Claude Loop: explicit `stop_when`, required evidence, attempt/turn/time/no-progress budgets, and repeated-failure blocking.
 - Prime Agent continual harness: evidence-backed, rollback-friendly refinement proposals without self-modifying the base prompt.
-- Herdr and cmux: observation through task status, last activity, attempts, evaluations, evidence, and usage. BASS adds no pane manager or dashboard.
+- Herdr and cmux: observation through task status, last activity, attempts, evaluations, evidence, and usage. Optional `bass observe` shows one local project and tool timeline; BASS adds no pane manager or hosted dashboard.
 - OMC and Orca: multi-agent execution remains subordinate to BASS dependency and path ownership contracts.
 
 ## Doctor contract

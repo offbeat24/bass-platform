@@ -1,0 +1,747 @@
+{
+  "record_version": 2,
+  "execution_contract": {
+    "contract_version": 1,
+    "plan_fingerprint": "028a0ba1ff7439a09476ee56a56bf25df65d99a6279965f9a3da94cd3524a7ae",
+    "capability_calls": [
+      "ponytail:full"
+    ]
+  },
+  "capability_invocations": [
+    {
+      "call_id": "390c64593f6f5cce1fc0ae12b028258b7e532447635b319642f73e77504343c0",
+      "attempt": 2,
+      "capability_call": "ponytail:full",
+      "host": "codex",
+      "status": "pass",
+      "summary": "Kept the observer on Node and browser built-ins, reused 056/058 event history, and added task-specific numbered drill-down without dependencies",
+      "evidence_path": ".bass/evidence/BASS-057/simplicity-review.md"
+    },
+    {
+      "call_id": "236add3ee29c47c690c2153f8a4a025a1991d5f6224ad6272ed2e2602cb65cfe",
+      "attempt": 3,
+      "capability_call": "ponytail:full",
+      "host": "codex",
+      "status": "pass",
+      "summary": "Added semantic phase colors and symbols, restrained navigation and connection motion, reduced-motion support, and verified desktop/mobile rendering",
+      "evidence_path": ".bass/evidence/BASS-057/simplicity-review.md"
+    },
+    {
+      "call_id": "c6c369b4aab62c952fdc4889d159f89d661ae6b2023da6239299f4d16055a7c4",
+      "attempt": 4,
+      "capability_call": "ponytail:full",
+      "host": "codex",
+      "status": "pass",
+      "summary": "Preserved historical capability-call IDs across task-plan revisions and added regression coverage; observer phase polish remains verified",
+      "evidence_path": ".bass/evidence/BASS-057/simplicity-review.md"
+    },
+    {
+      "call_id": "a9f247502be728245ab34982f87f7ab4084f12e2f0eabec0284fd66b16b4e0f5",
+      "attempt": 5,
+      "capability_call": "ponytail:full",
+      "host": "codex",
+      "status": "pass",
+      "summary": "Added status counts and filters with recent, status, ID, and title sorting; live browser checks passed on desktop and mobile",
+      "evidence_path": ".bass/evidence/BASS-057/simplicity-review.md"
+    },
+    {
+      "call_id": "8c687dc0747e1f49b7123ec0b1b2547957fd6720b7914fd6004eb2c039ea65e7",
+      "attempt": 6,
+      "capability_call": "ponytail:full",
+      "host": "codex",
+      "status": "pass",
+      "summary": "Pinned the current attempt, unfinished capability, or running local tool above chronological task history; reviewed the open Chrome detail and verified the selector with focused and full tests",
+      "evidence_path": ".bass/evidence/BASS-057/simplicity-review.md"
+    },
+    {
+      "call_id": "5a89cca43fd895167434ba917390e95443c6026b5c37fa6a07894061e797d9bb",
+      "attempt": 7,
+      "capability_call": "ponytail:full",
+      "host": "codex",
+      "status": "pass",
+      "summary": "Reversed task detail history to newest-first, preserved chronological sequence labels, and verified 72 to 01 in Chrome",
+      "evidence_path": ".bass/evidence/BASS-057/simplicity-review.md"
+    }
+  ],
+  "task_id": "BASS-057",
+  "summary_of_changes": "Added an optional local BASS observer with live agent-tool events, status filters and sorting, task-specific histories, a pinned active step, and newest-first detail records with chronological sequence numbers.",
+  "why": "Let users watch the current harness run and inspect each task step while keeping the existing event log and CLI as the source of record.",
+  "files_changed": [
+    ".bass/events.jsonl",
+    ".bass/evidence/BASS-057/attempt-2/L1-typecheck.log",
+    ".bass/evidence/BASS-057/attempt-2/L2-build.log",
+    ".bass/evidence/BASS-057/attempt-2/L2-tests.log",
+    ".bass/evidence/BASS-057/attempt-2/observer-BASS-058.png",
+    ".bass/evidence/BASS-057/attempt-2/observer-console.json",
+    ".bass/evidence/BASS-057/attempt-2/observer-overview.png",
+    ".bass/evidence/BASS-057/attempt-2/observer-task-detail.png",
+    ".bass/evidence/BASS-057/attempt-3/L1-typecheck.log",
+    ".bass/evidence/BASS-057/attempt-3/L2-build.log",
+    ".bass/evidence/BASS-057/attempt-3/L2-tests.log",
+    ".bass/evidence/BASS-057/attempt-3/build.log",
+    ".bass/evidence/BASS-057/attempt-3/detail-desktop.png",
+    ".bass/evidence/BASS-057/attempt-3/detail-mobile.png",
+    ".bass/evidence/BASS-057/attempt-3/evaluation.log",
+    ".bass/evidence/BASS-057/attempt-3/mobile-layout.json",
+    ".bass/evidence/BASS-057/attempt-3/observer-console.json",
+    ".bass/evidence/BASS-057/attempt-3/observer-tests.log",
+    ".bass/evidence/BASS-057/attempt-3/typecheck.log",
+    ".bass/evidence/BASS-057/attempt-4/L1-typecheck.log",
+    ".bass/evidence/BASS-057/attempt-4/L2-build.log",
+    ".bass/evidence/BASS-057/attempt-4/L2-tests.log",
+    ".bass/evidence/BASS-057/attempt-4/evaluation.log",
+    ".bass/evidence/BASS-057/attempt-5/L1-typecheck.log",
+    ".bass/evidence/BASS-057/attempt-5/L2-build.log",
+    ".bass/evidence/BASS-057/attempt-5/L2-tests.log",
+    ".bass/evidence/BASS-057/attempt-5/evaluation.log",
+    ".bass/evidence/BASS-057/attempt-5/interaction-check.json",
+    ".bass/evidence/BASS-057/attempt-5/mobile-layout.json",
+    ".bass/evidence/BASS-057/attempt-5/observer-console.json",
+    ".bass/evidence/BASS-057/attempt-5/overview-desktop.png",
+    ".bass/evidence/BASS-057/attempt-5/overview-mobile.png",
+    ".bass/evidence/BASS-057/attempt-6/L1-typecheck.log",
+    ".bass/evidence/BASS-057/attempt-6/L2-build.log",
+    ".bass/evidence/BASS-057/attempt-6/L2-tests.log",
+    ".bass/evidence/BASS-057/attempt-6/current-step-browser-review.json",
+    ".bass/evidence/BASS-057/attempt-6/evaluation.log",
+    ".bass/evidence/BASS-057/attempt-7/L1-typecheck.log",
+    ".bass/evidence/BASS-057/attempt-7/L2-build.log",
+    ".bass/evidence/BASS-057/attempt-7/L2-tests.log",
+    ".bass/evidence/BASS-057/attempt-7/current-order-browser-review.json",
+    ".bass/evidence/BASS-057/attempt-7/evaluation.log",
+    ".bass/evidence/BASS-057/evaluation-2026-10-06.log",
+    ".bass/evidence/BASS-057/simplicity-review.md",
+    ".bass/evidence/BASS-057/verify-2026-10-06.log",
+    ".bass/records/BASS-057.json",
+    ".bass/tasks/BASS-057.md",
+    ".gitignore",
+    "DESIGN.md",
+    "PRODUCT.md",
+    "README.md",
+    "docs/agent-harness-plugins.md",
+    "docs/semantic.md",
+    "docs/workflows.md",
+    "plugins/bass/hooks/hooks.json",
+    "plugins/bass/hooks/observer-event.cjs",
+    "scripts/evaluate-semantic.mjs",
+    "scripts/validate-plugin.mjs",
+    "src/cli/main.ts",
+    "src/observe/index.ts",
+    "src/semantic/workflow.ts",
+    "src/task/events.ts",
+    "src/task/status.ts",
+    "src/workflow/gates.ts",
+    "tests/events.test.ts",
+    "tests/observe.test.ts",
+    "tests/semantic.test.ts",
+    "tests/workflow.test.ts"
+  ],
+  "models_used": [],
+  "verification": {
+    "evaluations_run": [
+      {
+        "name": "typecheck",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "tests (237)",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "build",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "package smoke",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "plugin validation",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "performance benchmark",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "typecheck (attempt 4)",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "tests (attempt 4)",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "build (attempt 4)",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "typecheck (attempt 5)",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "tests (attempt 5)",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "build (attempt 5)",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "typecheck (attempt 6)",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "tests (attempt 6)",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "build (attempt 6)",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "typecheck (attempt 7)",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "observer tests (4, attempt 7)",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "build (attempt 7)",
+        "level": 2,
+        "status": "pass"
+      }
+    ],
+    "not_verified": [
+      "Cross-platform CI was not run."
+    ]
+  },
+  "critic_findings": {
+    "total": 0,
+    "open_high_or_medium": 0,
+    "report_path": ".bass/evidence/BASS-057/simplicity-review.md"
+  },
+  "known_limitations": [
+    "Codex hosted tools are outside local hook coverage.",
+    "The observer handles one local project and process; tool previews stay in memory and are bounded."
+  ],
+  "out_of_scope_findings": [],
+  "docs_updated": {
+    "needed": true,
+    "updated": [
+      "PRODUCT.md",
+      "DESIGN.md",
+      "README.md",
+      "docs/workflows.md",
+      "docs/agent-harness-plugins.md"
+    ]
+  },
+  "lessons": {
+    "recorded": false,
+    "candidates": []
+  },
+  "rollback": {
+    "method": "Remove the observe CLI command, observer module, page, and hook entries; preserve BASS event history and the completed BASS-056/058 changes."
+  },
+  "design": {
+    "rendered_verification": true,
+    "environment": "BrowserSkill Chrome",
+    "notes": "Task detail displays the full event history newest-first while retaining chronological sequence numbers: the latest record has the highest number and the oldest remains 01 at the bottom. During active attempt 7, Chrome showed 72, 71, 70, 69 at the top and 01 at the end; the live-step callout remained separate above the list. Desktop and 390px mobile layouts were reviewed in earlier attempts, including overview filters, sorting, preserved selection during polling, and no mobile overflow. Captured console checks had no observer-origin errors; injected Chrome extension messages were excluded.",
+    "evidence_paths": [
+      ".bass/evidence/BASS-057/attempt-2/observer-overview.png",
+      ".bass/evidence/BASS-057/attempt-2/observer-task-detail.png",
+      ".bass/evidence/BASS-057/attempt-2/observer-BASS-058.png",
+      ".bass/evidence/BASS-057/attempt-2/observer-console.json",
+      ".bass/evidence/BASS-057/attempt-3/detail-desktop.png",
+      ".bass/evidence/BASS-057/attempt-3/detail-mobile.png",
+      ".bass/evidence/BASS-057/attempt-3/mobile-layout.json",
+      ".bass/evidence/BASS-057/attempt-3/observer-console.json",
+      ".bass/evidence/BASS-057/attempt-5/overview-desktop.png",
+      ".bass/evidence/BASS-057/attempt-5/overview-mobile.png",
+      ".bass/evidence/BASS-057/attempt-5/interaction-check.json",
+      ".bass/evidence/BASS-057/attempt-5/mobile-layout.json",
+      ".bass/evidence/BASS-057/attempt-5/observer-console.json",
+      ".bass/evidence/BASS-057/attempt-6/current-step-browser-review.json",
+      ".bass/evidence/BASS-057/attempt-7/current-order-browser-review.json"
+    ],
+    "viewports": [
+      "1200x943 desktop",
+      "390x844 mobile"
+    ],
+    "console_errors": 0
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "no-progress",
+      "started_at": "2026-10-06T05:08:57.699Z",
+      "completed_at": "2026-10-06T05:43:58.263Z",
+      "failure_fingerprint": "b2972a1d894c60f7d0d0a51db64ddfb0a6881e4dc2827fb305a878015c022063"
+    },
+    {
+      "attempt": 2,
+      "status": "pass",
+      "started_at": "2026-10-06T05:44:47.257Z",
+      "completed_at": "2026-10-06T06:04:07.840Z"
+    },
+    {
+      "attempt": 3,
+      "parent_attempt": 2,
+      "status": "pass",
+      "started_at": "2026-10-06T06:21:55.715Z",
+      "completed_at": "2026-10-06T06:29:43.063Z"
+    },
+    {
+      "attempt": 4,
+      "parent_attempt": 3,
+      "status": "pass",
+      "started_at": "2026-10-06T06:33:34.944Z",
+      "completed_at": "2026-10-06T06:36:06.430Z"
+    },
+    {
+      "attempt": 5,
+      "parent_attempt": 4,
+      "status": "pass",
+      "started_at": "2026-10-06T06:36:25.457Z",
+      "completed_at": "2026-10-06T06:52:37.341Z"
+    },
+    {
+      "attempt": 6,
+      "parent_attempt": 5,
+      "status": "pass",
+      "started_at": "2026-10-06T06:54:07.728Z",
+      "completed_at": "2026-10-06T07:04:21.778Z"
+    },
+    {
+      "attempt": 7,
+      "parent_attempt": 6,
+      "status": "pass",
+      "started_at": "2026-10-06T07:20:17.253Z",
+      "completed_at": "2026-10-06T07:24:44.340Z"
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-057/verify-2026-10-06.log",
+      "sha256": "4e9ce1bf1b1aded303036f97c16a36df4bbd1c132084a40afbf31092f2fa04f4",
+      "produced_by": "npm run verify",
+      "at": "2026-10-06T05:57:28.331Z"
+    },
+    {
+      "kind": "evaluation",
+      "path": ".bass/evidence/BASS-057/evaluation-2026-10-06.log",
+      "sha256": "f745f26548a21ccd02bf133a9f2798d9c653086ee9da383d714e92524ed6e810",
+      "produced_by": "bass evaluate --task BASS-057",
+      "at": "2026-10-06T06:03:58.072Z"
+    },
+    {
+      "kind": "simplicity-review",
+      "path": ".bass/evidence/BASS-057/simplicity-review.md",
+      "sha256": "07c55258334899c88e21da816ae4dfa67e113e5937928cc78abf5b7a5efad3c7",
+      "produced_by": "BASS simplicity review, attempts 3–7",
+      "at": "2026-10-06T07:24:27.096Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-2/L1-typecheck.log",
+      "sha256": "0387f1e7a180d78df4d91b8d750d3b88241abbe429bb276c1f44e962ebf25dec",
+      "produced_by": "BASS L1 typecheck",
+      "at": "2026-10-06T05:57:34.889Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-2/L2-tests.log",
+      "sha256": "eec2a3cbe31ae8a5c606209a443d9d3060a3bb12c4a7d5867a84ca245e8a23cc",
+      "produced_by": "BASS L2 tests",
+      "at": "2026-10-06T05:57:58.808Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-2/L2-build.log",
+      "sha256": "455fe1c0dd819bca9154b8e946c78fc08cc7625f68cc6125d16f26f79cb03344",
+      "produced_by": "BASS L2 build",
+      "at": "2026-10-06T05:57:38.788Z"
+    },
+    {
+      "kind": "ui-screenshot",
+      "path": ".bass/evidence/BASS-057/attempt-2/observer-overview.png",
+      "sha256": "5014bb275e78303787aa81f92c7de58529df3b87c5afbc73268fa5d8a5ceb273",
+      "produced_by": "BrowserSkill Chrome overview",
+      "at": "2026-10-06T05:58:46.913Z"
+    },
+    {
+      "kind": "ui-screenshot",
+      "path": ".bass/evidence/BASS-057/attempt-2/observer-task-detail.png",
+      "sha256": "2819958c34775135f3a4a00d0ecd59d67efc74173fd21bd8c50914225b0118f9",
+      "produced_by": "BrowserSkill Chrome BASS-056 detail",
+      "at": "2026-10-06T05:59:14.622Z"
+    },
+    {
+      "kind": "ui-screenshot",
+      "path": ".bass/evidence/BASS-057/attempt-2/observer-BASS-058.png",
+      "sha256": "ab0f04d51becf48565518440252940614b235ac15b0fd692550947afc168bc1e",
+      "produced_by": "BrowserSkill Chrome BASS-058 detail",
+      "at": "2026-10-06T06:00:03.414Z"
+    },
+    {
+      "kind": "console-log",
+      "path": ".bass/evidence/BASS-057/attempt-2/observer-console.json",
+      "sha256": "636d5e61812b4c186819d584db17f0835b4ca2ef48717891b3d6785c6b0775ef",
+      "produced_by": "BrowserSkill Chrome console after final server load",
+      "at": "2026-10-06T06:01:34.576Z"
+    },
+    {
+      "kind": "evaluation",
+      "path": ".bass/evidence/BASS-057/attempt-3/evaluation.log",
+      "sha256": "1ed1202b8cc6a0a50e7b02951611f0f9d97599c9217e1b8482c373913c068d16",
+      "produced_by": "bass evaluate --task BASS-057",
+      "at": "2026-10-06T06:31:02.396Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-3/L1-typecheck.log",
+      "sha256": "08e435df45132dc446009ba4ff7a5032eb3f392b89004f0be676fd2cb8b1b3f9",
+      "produced_by": "BASS L1 typecheck",
+      "at": "2026-10-06T06:31:02.396Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-3/L2-tests.log",
+      "sha256": "3b9be453378f184f84d169d1a5f369ef4b933dce28be2499d7bc5587f523abb0",
+      "produced_by": "BASS L2 full tests",
+      "at": "2026-10-06T06:31:02.396Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-3/L2-build.log",
+      "sha256": "90cb19df7e80d8c77dd776c7379623fede59b91df9d21c31f119723687331898",
+      "produced_by": "BASS L2 build",
+      "at": "2026-10-06T06:31:02.396Z"
+    },
+    {
+      "kind": "ui-screenshot",
+      "path": ".bass/evidence/BASS-057/attempt-3/detail-desktop.png",
+      "sha256": "ac57b9baa801375e90c4de0929952125e84b947e70a41dccda9ebffe0b596832",
+      "produced_by": "BrowserSkill Chrome 1200x943 desktop",
+      "at": "2026-10-06T06:31:02.396Z"
+    },
+    {
+      "kind": "ui-screenshot",
+      "path": ".bass/evidence/BASS-057/attempt-3/detail-mobile.png",
+      "sha256": "b59f010b8c462a66d78ec40a6890a7f940e1854c8d7f8f011dae51a763b83c02",
+      "produced_by": "BrowserSkill Chrome iPhone 14 detail",
+      "at": "2026-10-06T06:31:02.396Z"
+    },
+    {
+      "kind": "ui-layout",
+      "path": ".bass/evidence/BASS-057/attempt-3/mobile-layout.json",
+      "sha256": "d7667c2d87b7432a9392e72a46ddcd6f325cf74c9ccb58fb749cc2c71f896799",
+      "produced_by": "BrowserSkill Chrome 390px overflow check",
+      "at": "2026-10-06T06:31:02.396Z"
+    },
+    {
+      "kind": "console-log",
+      "path": ".bass/evidence/BASS-057/attempt-3/observer-console.json",
+      "sha256": "e8401b1eb85d336065dfb57871113ee7af5ac82d273de80cf46ed3a3e5d8cefb",
+      "produced_by": "BrowserSkill Chrome console after page load",
+      "at": "2026-10-06T06:31:02.396Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-3/typecheck.log",
+      "sha256": "f3cceaeaf859fab874d2aba42dc50b56e659b577c1544073e2cfae0e1c3b99f8",
+      "produced_by": "npm run typecheck",
+      "at": "2026-10-06T06:31:02.396Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-3/observer-tests.log",
+      "sha256": "58791067f0fc096d848337bbcda16541e078effdb8760eca004456e0341fbe15",
+      "produced_by": "npm test -- tests/observe.test.ts",
+      "at": "2026-10-06T06:31:02.396Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-3/build.log",
+      "sha256": "edb43c0f5825ddaf3c7498d0088cb7036c4c729c59fbd804c62efbbb051a6de9",
+      "produced_by": "npm run build",
+      "at": "2026-10-06T06:31:02.396Z"
+    },
+    {
+      "kind": "evaluation",
+      "path": ".bass/evidence/BASS-057/attempt-4/evaluation.log",
+      "sha256": "d7e80bc969c3e3f074772efdacb932fe85c960fe8f2f532e823f20a0a5eba015",
+      "produced_by": "BASS evaluate --task BASS-057 attempt 4",
+      "at": "2026-10-06T06:35:10.252Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-4/L1-typecheck.log",
+      "sha256": "aeb4dce18e5922c61c017300f3e97e7c0bafbe2aab394a9250d0316436d7bdb0",
+      "produced_by": "BASS attempt 4 typecheck",
+      "at": "2026-10-06T06:35:07.512Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-4/L2-tests.log",
+      "sha256": "c91d6bcbc445e3fd2f3af490f20ab7f7fbf998fd98efcaf34225d7ee7386dac3",
+      "produced_by": "BASS attempt 4 tests",
+      "at": "2026-10-06T06:35:09.974Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-4/L2-build.log",
+      "sha256": "d50016360be75b74174b70efdf027e752965afa7b890dac344fedc66ceb672a0",
+      "produced_by": "BASS attempt 4 build",
+      "at": "2026-10-06T06:35:10.248Z"
+    },
+    {
+      "kind": "evaluation",
+      "path": ".bass/evidence/BASS-057/attempt-5/evaluation.log",
+      "sha256": "1cacd3cb55f1a90f525b044bffb8359444401d50c183bfaec853052b4e321e26",
+      "produced_by": "BASS evaluate --task BASS-057 attempt 5",
+      "at": "2026-10-06T06:51:01.320Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-5/L1-typecheck.log",
+      "sha256": "91d082834f05073b6b98125e16872d939e7f171434891967716b0fc73770772c",
+      "produced_by": "BASS attempt 5 typecheck",
+      "at": "2026-10-06T06:50:56.706Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-5/L2-tests.log",
+      "sha256": "6fb3217b857b616fcbdfde410528482c71d86c76453567abe8f2ea866efbfa3e",
+      "produced_by": "BASS attempt 5 tests",
+      "at": "2026-10-06T06:51:00.881Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-5/L2-build.log",
+      "sha256": "2c8724dced6c89f2edff15bcfb3e5b1985d9c69e623675f5726c174b6aea1937",
+      "produced_by": "BASS attempt 5 build",
+      "at": "2026-10-06T06:51:01.311Z"
+    },
+    {
+      "kind": "evaluation",
+      "path": ".bass/evidence/BASS-057/attempt-6/evaluation.log",
+      "sha256": "e6df1170b9b9d4acc000c4a377c6f872d41c285cedad5d1320f4a10221a6d27f",
+      "produced_by": "BASS evaluate --task BASS-057 attempt 6",
+      "at": "2026-10-06T06:58:54.162Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-6/L1-typecheck.log",
+      "sha256": "b4324b9d660e681565986413a6a4c9dd554fa5472edeab0c0d1b3090ea017a2c",
+      "produced_by": "BASS attempt 6 typecheck",
+      "at": "2026-10-06T06:58:51.242Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-6/L2-tests.log",
+      "sha256": "8fbfca0b4299d02669fccfb7f69107dcfc78044277b35de25ec02a97ed5b333a",
+      "produced_by": "BASS attempt 6 tests",
+      "at": "2026-10-06T06:58:53.852Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-6/L2-build.log",
+      "sha256": "b177a06f2f8e28bb84a7f75110d5e00cea3dfd4c8741e75a5f065bc0e657c7c5",
+      "produced_by": "BASS attempt 6 build",
+      "at": "2026-10-06T06:58:54.159Z"
+    },
+    {
+      "kind": "ui-screenshot",
+      "path": ".bass/evidence/BASS-057/attempt-5/overview-desktop.png",
+      "sha256": "113b0b5ff7287aee42cd7f1ff9567736465c3fe4fb108f913ae7e0fb03a44c90",
+      "produced_by": "BrowserSkill Chrome attempt 5 desktop overview",
+      "at": "2026-10-06T06:44:40.394Z"
+    },
+    {
+      "kind": "ui-screenshot",
+      "path": ".bass/evidence/BASS-057/attempt-5/overview-mobile.png",
+      "sha256": "c23196151f19b74e7c127701d5922c43f46e93892b32dac20d0b3f677a1db531",
+      "produced_by": "BrowserSkill Chrome attempt 5 mobile overview",
+      "at": "2026-10-06T06:42:56.656Z"
+    },
+    {
+      "kind": "interaction-check",
+      "path": ".bass/evidence/BASS-057/attempt-5/interaction-check.json",
+      "sha256": "be339723dd6dfc80412c9e3fb8a4a11cfe2c359406a89f7be66988c2394b5af6",
+      "produced_by": "BrowserSkill Chrome attempt 5 interaction review",
+      "at": "2026-10-06T06:49:42.806Z"
+    },
+    {
+      "kind": "ui-layout",
+      "path": ".bass/evidence/BASS-057/attempt-5/mobile-layout.json",
+      "sha256": "c3f66e5c7631161e239f440d14b39c3d21121484d9616d72e21d4ffd8ef8644d",
+      "produced_by": "BrowserSkill Chrome attempt 5 mobile layout check",
+      "at": "2026-10-06T06:43:08.283Z"
+    },
+    {
+      "kind": "console-log",
+      "path": ".bass/evidence/BASS-057/attempt-5/observer-console.json",
+      "sha256": "b014785ff6d87f027b682df404e38f45e01111932990afc8497e2be7fdb4156c",
+      "produced_by": "BrowserSkill Chrome attempt 5 console review",
+      "at": "2026-10-06T06:49:14.773Z"
+    },
+    {
+      "kind": "browser-review",
+      "path": ".bass/evidence/BASS-057/attempt-6/current-step-browser-review.json",
+      "sha256": "318f6c9fc396ebfedc39bf63b503561f1d0846c1e37fd7184f9d5c0d7341a59a",
+      "produced_by": "Google Chrome CUA attempt 6 current-step review",
+      "at": "2026-10-06T07:04:10.358Z"
+    },
+    {
+      "kind": "verification",
+      "path": ".bass/evidence/BASS-057/attempt-7/evaluation.log",
+      "sha256": "8f5300501b4e6835654cc5e6ee72928b4b9a95c62ff51a20e672c542721d08b9",
+      "produced_by": "BASS-057 attempt 7 targeted verification",
+      "at": "2026-10-06T07:25:22.447Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-7/L1-typecheck.log",
+      "sha256": "f3cceaeaf859fab874d2aba42dc50b56e659b577c1544073e2cfae0e1c3b99f8",
+      "produced_by": "npm run typecheck, attempt 7",
+      "at": "2026-10-06T07:22:21.826Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-7/L2-tests.log",
+      "sha256": "48120104ec33c4966de09e4ff6f00ac3f192882a274a919c63633078410399e6",
+      "produced_by": "npx vitest run tests/observe.test.ts, attempt 7",
+      "at": "2026-10-06T07:22:25.546Z"
+    },
+    {
+      "kind": "evaluator-log",
+      "path": ".bass/evidence/BASS-057/attempt-7/L2-build.log",
+      "sha256": "edb43c0f5825ddaf3c7498d0088cb7036c4c729c59fbd804c62efbbb051a6de9",
+      "produced_by": "npm run build, attempt 7",
+      "at": "2026-10-06T07:22:21.834Z"
+    },
+    {
+      "kind": "browser-review",
+      "path": ".bass/evidence/BASS-057/attempt-7/current-order-browser-review.json",
+      "sha256": "2fa2aa83ef5304c6fc79a03ec67239b2b911d3c7656685a31e3436c83cee94a9",
+      "produced_by": "Google Chrome CUA newest-first history review",
+      "at": "2026-10-06T07:24:27.730Z"
+    }
+  ],
+  "context": {
+    "sources": [],
+    "total_chars": 0,
+    "omitted": []
+  },
+  "usage": {
+    "turns": "unknown",
+    "attempts": 7,
+    "input_tokens": "unknown",
+    "output_tokens": "unknown",
+    "cached_input_tokens": "unknown",
+    "evaluator_tokens": "unknown",
+    "tool_calls": "unknown",
+    "subagents": 0,
+    "estimated_cost": "unknown"
+  },
+  "scope": {
+    "actual_files": [
+      ".bass/events.jsonl",
+      ".bass/evidence/BASS-057/attempt-2/L1-typecheck.log",
+      ".bass/evidence/BASS-057/attempt-2/L2-build.log",
+      ".bass/evidence/BASS-057/attempt-2/L2-tests.log",
+      ".bass/evidence/BASS-057/attempt-2/observer-BASS-058.png",
+      ".bass/evidence/BASS-057/attempt-2/observer-console.json",
+      ".bass/evidence/BASS-057/attempt-2/observer-overview.png",
+      ".bass/evidence/BASS-057/attempt-2/observer-task-detail.png",
+      ".bass/evidence/BASS-057/attempt-3/L1-typecheck.log",
+      ".bass/evidence/BASS-057/attempt-3/L2-build.log",
+      ".bass/evidence/BASS-057/attempt-3/L2-tests.log",
+      ".bass/evidence/BASS-057/attempt-3/build.log",
+      ".bass/evidence/BASS-057/attempt-3/detail-desktop.png",
+      ".bass/evidence/BASS-057/attempt-3/detail-mobile.png",
+      ".bass/evidence/BASS-057/attempt-3/evaluation.log",
+      ".bass/evidence/BASS-057/attempt-3/mobile-layout.json",
+      ".bass/evidence/BASS-057/attempt-3/observer-console.json",
+      ".bass/evidence/BASS-057/attempt-3/observer-tests.log",
+      ".bass/evidence/BASS-057/attempt-3/typecheck.log",
+      ".bass/evidence/BASS-057/attempt-4/L1-typecheck.log",
+      ".bass/evidence/BASS-057/attempt-4/L2-build.log",
+      ".bass/evidence/BASS-057/attempt-4/L2-tests.log",
+      ".bass/evidence/BASS-057/attempt-4/evaluation.log",
+      ".bass/evidence/BASS-057/attempt-5/L1-typecheck.log",
+      ".bass/evidence/BASS-057/attempt-5/L2-build.log",
+      ".bass/evidence/BASS-057/attempt-5/L2-tests.log",
+      ".bass/evidence/BASS-057/attempt-5/evaluation.log",
+      ".bass/evidence/BASS-057/attempt-5/interaction-check.json",
+      ".bass/evidence/BASS-057/attempt-5/mobile-layout.json",
+      ".bass/evidence/BASS-057/attempt-5/observer-console.json",
+      ".bass/evidence/BASS-057/attempt-5/overview-desktop.png",
+      ".bass/evidence/BASS-057/attempt-5/overview-mobile.png",
+      ".bass/evidence/BASS-057/attempt-6/L1-typecheck.log",
+      ".bass/evidence/BASS-057/attempt-6/L2-build.log",
+      ".bass/evidence/BASS-057/attempt-6/L2-tests.log",
+      ".bass/evidence/BASS-057/attempt-6/current-step-browser-review.json",
+      ".bass/evidence/BASS-057/attempt-6/evaluation.log",
+      ".bass/evidence/BASS-057/attempt-7/L1-typecheck.log",
+      ".bass/evidence/BASS-057/attempt-7/L2-build.log",
+      ".bass/evidence/BASS-057/attempt-7/L2-tests.log",
+      ".bass/evidence/BASS-057/attempt-7/current-order-browser-review.json",
+      ".bass/evidence/BASS-057/attempt-7/evaluation.log",
+      ".bass/evidence/BASS-057/evaluation-2026-10-06.log",
+      ".bass/evidence/BASS-057/simplicity-review.md",
+      ".bass/evidence/BASS-057/verify-2026-10-06.log",
+      ".bass/records/BASS-057.json",
+      ".bass/tasks/BASS-057.md",
+      ".gitignore",
+      "DESIGN.md",
+      "PRODUCT.md",
+      "README.md",
+      "docs/agent-harness-plugins.md",
+      "docs/semantic.md",
+      "docs/workflows.md",
+      "plugins/bass/hooks/hooks.json",
+      "plugins/bass/hooks/observer-event.cjs",
+      "scripts/evaluate-semantic.mjs",
+      "scripts/validate-plugin.mjs",
+      "src/cli/main.ts",
+      "src/observe/index.ts",
+      "src/semantic/workflow.ts",
+      "src/task/events.ts",
+      "src/task/status.ts",
+      "src/workflow/gates.ts",
+      "tests/events.test.ts",
+      "tests/observe.test.ts",
+      "tests/semantic.test.ts",
+      "tests/workflow.test.ts"
+    ],
+    "outside_allowed": [],
+    "forbidden_touched": []
+  },
+  "human_approval": {
+    "approved": true,
+    "approver": "user",
+    "at": "2026-10-06T07:46:26.734Z",
+    "notes": "User approved the BASS-057 review as passed."
+  }
+}

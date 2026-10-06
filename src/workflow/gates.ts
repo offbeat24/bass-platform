@@ -305,8 +305,12 @@ export function preCompleteGate(task: TaskFile, ctx: GateContext): GateReport {
       const plannedExternal = ctx.executionPlan.capabilityCalls.filter(
         (capabilityCall) => providerForCapabilityCall(capabilityCall) !== null,
       );
-      const completionEvents = readEvents(ctx.projectRoot).events.filter(
-        (event) => event.task_id === fm.id && event.kind === "capability.completed",
+      const taskEvents = readEvents(ctx.projectRoot).events.filter((event) => event.task_id === fm.id);
+      const completionEvents = taskEvents.filter((event) => event.kind === "capability.completed");
+      const attemptFingerprints = new Map(
+        taskEvents
+          .filter((event) => event.kind === "attempt.started" && event.attempt && event.plan_fingerprint)
+          .map((event) => [event.attempt!, event.plan_fingerprint!]),
       );
       const seen = new Set<string>();
       for (const invocation of record.capability_invocations) {
@@ -319,7 +323,7 @@ export function preCompleteGate(task: TaskFile, ctx: GateContext): GateReport {
           invocationIssues.push(`evidence not in manifest: ${invocation.evidence_path}`);
         }
         const expectedId = capabilityCallId(
-          ctx.executionPlan.planFingerprint,
+          attemptFingerprints.get(invocation.attempt) ?? ctx.executionPlan.planFingerprint,
           fm.id,
           invocation.attempt,
           invocation.capability_call,

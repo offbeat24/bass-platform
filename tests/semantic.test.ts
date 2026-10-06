@@ -27,7 +27,7 @@ function fixture() {
   return { root, config, taskFile, task: parseTaskFile(taskFile) };
 }
 
-function fakeFetch(opts: { problem?: boolean; relation?: string; rateLimit?: boolean } = {}) {
+function fakeFetch(opts: { problem?: boolean; uncertain?: boolean; relation?: string; rateLimit?: boolean } = {}) {
   let calls = 0;
   const mock = vi.fn(async (_url: string, init?: RequestInit) => {
     calls++;
@@ -35,6 +35,7 @@ function fakeFetch(opts: { problem?: boolean; relation?: string; rateLimit?: boo
     const request = JSON.parse(String(init?.body)) as { questions: Record<string, { type: string }> };
     const answers = Object.fromEntries(Object.entries(request.questions).map(([name, question]) => {
       if (question.type === "score") return [name, { type: "score", score: 2, confidence: 0.99, probabilities: { "0": 0, "1": 0, "2": 1 } }];
+      if (question.type === "noul") return [name, { type: "noul", noul: opts.uncertain && name.startsWith("covered_") ? 0.5 : opts.problem && name.startsWith("covered_") ? 0.01 : 0.99 }];
       const choice = name === "relation" ? opts.relation ?? "supports" : name === "task_kind" ? "fix" : name === "surface" ? "data"
         : opts.problem && name.startsWith("covered_") ? "problem" : "pass";
       return [name, { type: "choice", choice, confidence: 0.99, probabilities: { [choice]: 1 } }];
@@ -83,6 +84,13 @@ describe("optional semantic workflow", () => {
     expect(semanticGate(root, parseTaskFile(taskFile), config, "prepare").status).toBe("fail");
     expect(() => resolveFinding(root, parseTaskFile(taskFile), config, finding.id, "Old input", "user"))
       .toThrow("input changed");
+  });
+
+  it("routes uncertain yes/no specification judgments to review", async () => {
+    const { root, config, task } = fixture(); fakeFetch({ uncertain: true });
+    const result = await prepareSemantic(root, config, task);
+    expect("status" in result && result.status).toBe("needs-work");
+    expect(readStage(root, "SEM-1", "prepare")!.findings.some((item) => item.status === "uncertain")).toBe(true);
   });
 
   it("checks exact quoted task evidence and stops unsupported completion", async () => {

@@ -1,5 +1,6 @@
 {
   "record_version": 1,
+  "capability_invocations": [],
   "task_id": "BASS-040",
   "summary_of_changes": "Expanded BASS into a portable Product-to-Ship Harness with product shaping artifacts, selective context, task graphs, bounded attempts, checksum-backed evidence, optional provider contracts, model roles, and read-only event/status observation.",
   "why": "The 0.3 runtime needed one authoritative, portable contract from idea shaping through implementation, verification, iteration, evidence, documentation, and human review without copying external harnesses or adding a console.",
@@ -101,13 +102,41 @@
   ],
   "verification": {
     "evaluations_run": [
-      { "name": "typecheck", "level": 1, "status": "pass" },
-      { "name": "tests", "level": 2, "status": "pass" },
-      { "name": "build", "level": 2, "status": "pass" },
-      { "name": "package-smoke", "level": 3, "status": "pass" },
-      { "name": "plugin-manifest", "level": 3, "status": "pass" },
-      { "name": "performance-budget", "level": 3, "status": "pass" },
-      { "name": "claude-plugin-validation", "level": 3, "status": "pass" }
+      {
+        "name": "typecheck",
+        "level": 1,
+        "status": "pass"
+      },
+      {
+        "name": "tests",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "build",
+        "level": 2,
+        "status": "pass"
+      },
+      {
+        "name": "package-smoke",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "plugin-manifest",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "performance-budget",
+        "level": 3,
+        "status": "pass"
+      },
+      {
+        "name": "claude-plugin-validation",
+        "level": 3,
+        "status": "pass"
+      }
     ],
     "not_verified": [
       "Optional Prime Agent, Graft, OMC, Orca, and Buzz providers were not selected, installed, or invoked end to end.",
@@ -146,10 +175,10 @@
   },
   "lessons": {
     "recorded": true,
-      "candidates": [
-        "Routine machine evidence must not reset same-failure or no-progress detection.",
-        "Actual scope checks should represent a rename as both the deleted source and added destination.",
-        "Checksum-backed evidence must be intentionally tracked and emitted in a diff-clean text form."
+    "candidates": [
+      "Routine machine evidence must not reset same-failure or no-progress detection.",
+      "Actual scope checks should represent a rename as both the deleted source and added destination.",
+      "Checksum-backed evidence must be intentionally tracked and emitted in a diff-clean text form."
     ]
   },
   "rollback": {
@@ -373,5 +402,11 @@
       "If the event contract remains stable, design a read-only consumer without moving task state authority out of BASS files."
     ],
     "status": "pending"
+  },
+  "human_approval": {
+    "approved": true,
+    "approver": "user",
+    "at": "2026-10-06T08:05:48.418Z",
+    "notes": "User explicitly approved all four pending BASS reviews in this chat."
   }
 }

@@ -1,0 +1,24 @@
+{
+  "passed": false,
+  "metrics": {
+    "specProblemRecall": 1,
+    "specConflictRecall": 1,
+    "specVerificationGapRecall": 1,
+    "specNormalFalsePositive": 0.9285714285714286,
+    "contextTopFive": 1,
+    "contextKeywordTopFive": 0.5333333333333333,
+    "evidenceBadAccepted": 0,
+    "evidenceContradictionsAccepted": 0,
+    "evidenceInsufficientAccepted": 0,
+    "evidenceNormalAccepted": 0.8571428571428571,
+    "abstentionRate": 0.34444444444444444,
+    "meanLatencyMs": 1,
+    "meanApiLatencyMs": 0,
+    "cachedHoldoutCases": 90
+  },
+  "usage": {
+    "reservedUsd": 0,
+    "spentUsd": 0.004815215999999999
+  },
+  "output": "/Users/okestro/croquis/deck/BASS/bass-platform/.bass/evidence/BASS-056/semantic-live-evaluation.json"
+}

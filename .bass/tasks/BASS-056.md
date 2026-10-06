@@ -1,7 +1,7 @@
 ---
 id: BASS-056
 title: Add optional TypeSafe semantic judgments and prepare 0.6.0
-status: ACTIVE
+status: DONE
 type: feature
 profile: cli
 risk:
@@ -20,6 +20,13 @@ loop:
 
 BASS checks evidence existence and required sections, but cannot evaluate whether task text is coherent or whether completion claims are supported by text evidence.
 
+## Facts
+
+- The labeled evaluator uses 120 synthetic cases across spec, context, and evidence; 30 cases are development data and 90 are holdout, with English and Korean represented.
+- Live evaluation pins Jev 1.13.0, reads `TYPESAFE_API_KEY` at runtime, and shares a one-dollar usage ledger across retries.
+- The evaluator measures a keyword top-five baseline for context. Specification and evidence comparisons require a separately documented deterministic presence-gate proxy; these synthetic cases are not historical product telemetry.
+- Positive specification cases state an observable expected outcome and matching verification assertion; after reviewing results, reruns on this fixed holdout are iterative rather than independent validation.
+
 ## What we are shipping
 
 Optional TypeSafe integration for specification checks, semantic context recommendations, evidence checks, reporting and bounded costs; BASS 0.6.0 package and shared plugin.
@@ -31,6 +38,8 @@ Mandatory external calls, automatic final approval, image analysis, a web consol
 ## Decisions
 
 Default off, opt-in enforce. Preserve human final acceptance and the deterministic gates. Pin Jev 1.13.0 for evaluated judgments. Release only after the agreed live evaluation succeeds.
+
+Use Noul for binary specification checks: probabilities at or above 0.8 pass, at or below 0.2 indicate a problem, and values between them remain uncertain for human review.
 
 ## Assumptions
 
