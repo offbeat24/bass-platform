@@ -330,3 +330,4 @@
 {"schema_version":2,"at":"2026-10-06T08:53:22.421Z","task_id":"BASS-060","attempt":3,"kind":"evaluation.completed","status":"skipped","name":"performance-budget","summary":"performance-budget skipped","duration_ms":0}
 {"schema_version":2,"at":"2026-10-06T08:53:22.421Z","task_id":"BASS-060","attempt":3,"kind":"evidence.recorded","status":"pass","name":"evaluation-log:performance-budget","summary":"evaluation log recorded: .bass/evidence/BASS-060/attempt-3/L3-performance-budget.log"}
 {"schema_version":2,"at":"2026-10-06T08:53:35.179Z","task_id":"BASS-060","attempt":3,"kind":"attempt.completed","status":"pass","summary":"Added the approval sidecar to the captured release scope; revalidated BASS contracts and reused unchanged passing L1–L3 evidence.","turns":1,"duration_ms":35065}
+{"schema_version":2,"at":"2026-10-06T09:13:18.883Z","task_id":"BASS-060","kind":"task.completed","status":"pass","summary":"task finalized as DONE"}

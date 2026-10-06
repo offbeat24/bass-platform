@@ -1,7 +1,7 @@
 ---
 id: BASS-060
 title: Release BASS 0.8.0
-status: ACTIVE
+status: DONE
 type: release
 profile: cli
 
